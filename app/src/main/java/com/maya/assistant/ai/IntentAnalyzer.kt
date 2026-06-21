@@ -8,22 +8,31 @@ object IntentAnalyzer {
     // English
     private val OPEN_PATTERNS = listOf("open", "kholo", "khol", "launch", "start", "chalo", "chala", "kholো", "খোলো", "खोलो", "افتح", "ouvrir")
     private val CLOSE_PATTERNS = listOf("close", "band", "band karo", "বন্ধ", "বন্ধ করো", "बंद", "أغلق", "fermer")
-    private val CALL_PATTERNS = listOf("call", "phone", "ring", "dial", "কল", "ফোন", "कॉल", "اتصل", "appeler")
+    private val CALL_PATTERNS = listOf("call", "phone", "ring", "dial", "কল", "ফোন", "कॉल", "اتصل", "appeler", "call karo", "কল করো", "ফোন করো")
     private val WHATSAPP_CALL = listOf("whatsapp call", "video call", "হোয়াটসঅ্যাপ কল")
+    private val IMO_CALL = listOf("imo call", "imo কল", "আইএমও কল", "call on imo")
+    private val MESSENGER_CALL = listOf("messenger call", "messenger কল", "মেসেঞ্জার কল", "fb call", "facebook call")
+    private val TELEGRAM_CALL = listOf("telegram call", "telegram কল", "টেলিগ্রাম কল", "call on telegram")
     private val MSG_PATTERNS = listOf("message", "msg", "send", "bhejo", "likho", "মেসেজ", "পাঠাও", "संदेश", "رسالة", "message")
     private val YOUTUBE_PATTERNS = listOf("youtube", "video play", "play on youtube", "ইউটিউব")
     private val SPOTIFY_PATTERNS = listOf("spotify", "play music", "gaana", "song", "গান", "सॉन्ग", "أغنية", "musique")
+    private val MUSIC_PLAY_PATTERNS = listOf("music play", "play music", "song চালাও", "গান চালাও", "music চালাও", "song বাজাও", "গান বাজাও", "play song", "music বাজাও")
     private val VOLUME_UP = listOf("volume up", "louder", "badhao", "tez karo", "ভলিউম বাড়াও", "आवाज़ बढ़ाओ", "ارفع الصوت", "augmenter le volume")
     private val VOLUME_DOWN = listOf("volume down", "lower", "kam karo", "dhima karo", "ভলিউম কমাও", "आवाज़ कम करो", "اخفض الصوت", "baisser le volume")
     private val FLASHLIGHT_ON = listOf("flashlight on", "torch on", "light on", "ফ্ল্যাশলাইট চালু", "टॉर्च चालূ", "شعلة على", "lampe allumée")
     private val FLASHLIGHT_OFF = listOf("flashlight off", "torch off", "light off", "ফ্ল্যাশলাইট বন্ধ", "टॉर्च बंद", "شعلة إيقاف", "lampe éteinte")
     private val SCREENSHOT_PATTERNS = listOf("screenshot", "screen shot", "capture screen", "স্ক্রিনশট", "स्क्रीनशॉट", "لقطة شاشة", "capture d'écran")
     private val READ_SCREEN_PATTERNS = listOf("read screen", "screen read", "স্ক্রিন পড়ো", "স্ক্রিনে কী আছে", "what's on screen", "read the screen", "screen content", "স্ক্রিন কন্টেন্ট")
+    private val BATTERY_PATTERNS = listOf("battery", "ব্যাটারি", "চার্জ", "charge", "बैटरی", "بطارية")
+    private val WIFI_PATTERNS = listOf("wifi", "wifi on", "wifi off", "wifi চালু", "wifi বন্ধ", "ওয়াইফাই", "वाईफाई", "واي فاي")
+    private val BLUETOOTH_PATTERNS = listOf("bluetooth", "bluetooth on", "bluetooth off", "bluetooth চালু", "bluetooth বন্ধ", "ব্লুটুথ", "ब्लूटूथ", "بلوتوث")
+    private val BRIGHTNESS_PATTERNS = listOf("brightness", "brightness bar", "ব্রাইটনেস", "screen brightness", "brightness বাড়াও", "brightness কমাও")
+    private val SETTINGS_OPEN_PATTERNS = listOf("settings", "setting", "সেটিংস", "सेटिंग", "إعدادات", "réglages")
     private val SCROLL_UP_PATTERNS = listOf("scroll up", "upar scroll", "উপরে স্ক্রল", "ऊपर स्क्रॉल", "تمرير لأعلى", "défiler vers le haut")
     private val SCROLL_DOWN_PATTERNS = listOf("scroll down", "niche scroll", "নিচে স্ক্রল", "नीचे स्क्रॉल", "تمرير لأسفل", "défiler vers le bas")
     private val BACK_PATTERNS = listOf("back", "পেছনে", "पीछे", "رجوع", "retour")
     private val HOME_PATTERNS = listOf("home", "হোম", "घर", "الرئيسية", "accueil")
-    private val NOTIFICATION_PATTERNS = listOf("notification", "notification bar", "নোটিফিকেশन", "सूचना", "إشعار", "notification")
+    private val NOTIFICATION_PATTERNS = listOf("notification", "notification bar", "নোটিফিকেশন", "सूचना", "إشعار", "notification")
 
     fun analyze(text: String): VoiceCommand {
         val lower = text.lowercase().trim()
@@ -56,6 +65,34 @@ object IntentAnalyzer {
             READ_SCREEN_PATTERNS.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.READ_SCREEN)
 
+            // Battery check
+            BATTERY_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.BATTERY_CHECK)
+
+            // Settings open
+            SETTINGS_OPEN_PATTERNS.any { lower.contains(it) } && !lower.contains("wifi") && !lower.contains("bluetooth") ->
+                VoiceCommand(text, CommandType.SETTINGS_OPEN)
+
+            // WiFi
+            WIFI_PATTERNS.any { lower.contains(it) } -> {
+                val action = if (lower.contains("off") || lower.contains("বন্ধ")) "off" else "on"
+                VoiceCommand(text, if (action == "on") CommandType.SETTINGS_WIFI_ON else CommandType.SETTINGS_WIFI_OFF)
+            }
+
+            // Bluetooth
+            BLUETOOTH_PATTERNS.any { lower.contains(it) } -> {
+                val action = if (lower.contains("off") || lower.contains("বন্ধ")) "off" else "on"
+                VoiceCommand(text, if (action == "on") CommandType.SETTINGS_BLUETOOTH_ON else CommandType.SETTINGS_BLUETOOTH_OFF)
+            }
+
+            // Brightness
+            BRIGHTNESS_PATTERNS.any { lower.contains(it) } -> {
+                val level = if (lower.contains("বাড়াও") || lower.contains("up") || lower.contains("badhao")) "up"
+                    else if (lower.contains("কমাও") || lower.contains("down") || lower.contains("kam")) "down"
+                    else "50"
+                VoiceCommand(text, CommandType.SETTINGS_BRIGHTNESS, mapOf("level" to level))
+            }
+
             // Navigation
             BACK_PATTERNS.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.NAVIGATE, mapOf("action" to "back"))
@@ -73,10 +110,34 @@ object IntentAnalyzer {
             SCROLL_DOWN_PATTERNS.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.SCROLL_DOWN)
 
+            // Telegram call
+            TELEGRAM_CALL.any { lower.contains(it) } -> {
+                val name = extractAfter(lower, TELEGRAM_CALL)
+                VoiceCommand(text, CommandType.TELEGRAM_CALL, mapOf("name" to name))
+            }
+
+            // Messenger call
+            MESSENGER_CALL.any { lower.contains(it) } -> {
+                val name = extractAfter(lower, MESSENGER_CALL)
+                VoiceCommand(text, CommandType.MESSENGER_CALL, mapOf("name" to name))
+            }
+
+            // IMO call
+            IMO_CALL.any { lower.contains(it) } -> {
+                val name = extractAfter(lower, IMO_CALL)
+                VoiceCommand(text, CommandType.IMO_CALL, mapOf("name" to name))
+            }
+
             // WhatsApp call
             WHATSAPP_CALL.any { lower.contains(it) } -> {
                 val name = extractAfter(lower, WHATSAPP_CALL)
                 VoiceCommand(text, CommandType.WHATSAPP_CALL, mapOf("name" to name))
+            }
+
+            // Music play (generic — not Spotify/YouTube specific)
+            MUSIC_PLAY_PATTERNS.any { lower.contains(it) } -> {
+                val query = extractAfter(lower, MUSIC_PLAY_PATTERNS)
+                VoiceCommand(text, CommandType.MUSIC_PLAY, mapOf("query" to query))
             }
 
             // YouTube
@@ -97,8 +158,8 @@ object IntentAnalyzer {
                 VoiceCommand(text, CommandType.CLOSE_APP, mapOf("app" to appName))
             }
 
-            // Call
-            CALL_PATTERNS.any { lower.startsWith(it) || lower.contains(" $it ") } -> {
+            // Call — use contains() not startsWith() to catch "Rahim কে call করো"
+            CALL_PATTERNS.any { lower.contains(it) } -> {
                 val name = extractAfter(lower, CALL_PATTERNS)
                 VoiceCommand(text, CommandType.CALL, mapOf("name" to name))
             }
@@ -111,7 +172,7 @@ object IntentAnalyzer {
             }
 
             // Open app - last among action patterns
-            OPEN_PATTERNS.any { lower.startsWith(it) || lower.contains("$it ") } -> {
+            OPEN_PATTERNS.any { lower.contains(it) } -> {
                 val appName = extractAfter(lower, OPEN_PATTERNS)
                 VoiceCommand(text, CommandType.OPEN_APP, mapOf("app" to appName))
             }

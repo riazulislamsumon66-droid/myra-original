@@ -96,9 +96,15 @@ object AIResponseManager {
     fun extractCommand(text: String): String? {
         val commands = listOf(
             "OPEN_APP", "CLOSE_APP", "CALL", "WHATSAPP_CALL", "WHATSAPP_MSG",
-            "YOUTUBE_PLAY", "SPOTIFY_PLAY", "FLASHLIGHT_ON",
+            "YOUTUBE_PLAY", "SPOTIFY_PLAY", "MUSIC_PLAY", "FLASHLIGHT_ON",
             "FLASHLIGHT_OFF", "VOLUME_UP", "VOLUME_DOWN", "SCREENSHOT",
-            "SCROLL_UP", "SCROLL_DOWN", "BACK", "HOME", "NOTIFICATION", "SMS"
+            "SCROLL_UP", "SCROLL_DOWN", "BACK", "HOME", "NOTIFICATION", "SMS",
+            "READ_SCREEN", "BATTERY_CHECK", "SETTINGS_OPEN",
+            "SETTINGS_WIFI_ON", "SETTINGS_WIFI_OFF",
+            "SETTINGS_BLUETOOTH_ON", "SETTINGS_BLUETOOTH_OFF",
+            "SETTINGS_BRIGHTNESS",
+            "IMO_CALL", "MESSENGER_CALL", "TELEGRAM_CALL",
+            "CLICK", "SEARCH", "TYPE_TEXT"
         )
         val upper = text.uppercase()
         for (cmd in commands) {

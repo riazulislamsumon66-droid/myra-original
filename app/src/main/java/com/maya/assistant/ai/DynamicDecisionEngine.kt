@@ -4,6 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.ContactsContract
+import android.provider.Settings
+import android.os.BatteryManager
+import android.net.wifi.WifiManager
+import android.bluetooth.BluetoothAdapter
+import android.media.AudioManager
+import android.view.WindowManager
 import com.maya.assistant.apps.AppLauncher
 import com.maya.assistant.models.CommandType
 import com.maya.assistant.models.VoiceCommand
@@ -255,6 +261,165 @@ object DynamicDecisionEngine {
                 val text = command.args["text"] ?: ""
                 if (SmartAccessibilityEngine.execute("TYPE_TEXT $text").success) "লিখে দিলাম: $text"
                 else "লিখতে পারি নাই"
+            }
+
+            CommandType.BATTERY_CHECK -> {
+                try {
+                    val bm = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+                    val level = bm?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                    val scale = bm?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+                    val pct = if (level >= 0 && scale > 0) (level * 100 / scale) else -1
+                    if (pct >= 0) "ব্যাটারি এখন $pct% আছে"
+                    else "ব্যাটারি তথ্য পাওয়া যায়নি"
+                } catch (e: Exception) { "ব্যাটারি চেক করতে সমস্যা" }
+            }
+
+            CommandType.SETTINGS_OPEN -> {
+                try {
+                    val intent = Intent(Settings.ACTION_SETTINGS)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    "Settings খুলে দিলাম"
+                } catch (e: Exception) { "Settings খুলতে সমস্যা" }
+            }
+
+            CommandType.SETTINGS_WIFI_ON -> {
+                try {
+                    val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    "WiFi Settings খুলে দিলাম — চালু করো"
+                } catch (e: Exception) { "WiFi Settings খুলতে সমস্যা" }
+            }
+
+            CommandType.SETTINGS_WIFI_OFF -> {
+                try {
+                    val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    "WiFi Settings খুলে দিলাম — বন্ধ করো"
+                } catch (e: Exception) { "WiFi Settings খুলতে সমস্যা" }
+            }
+
+            CommandType.SETTINGS_BLUETOOTH_ON -> {
+                try {
+                    val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    "Bluetooth Settings খুলে দিলাম — চালু করো"
+                } catch (e: Exception) { "Bluetooth Settings খুলতে সমস্যা" }
+            }
+
+            CommandType.SETTINGS_BLUETOOTH_OFF -> {
+                try {
+                    val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    "Bluetooth Settings খুলে দিলাম — বন্ধ করো"
+                } catch (e: Exception) { "Bluetooth Settings খুলতে সমস্যা" }
+            }
+
+            CommandType.SETTINGS_BRIGHTNESS -> {
+                try {
+                    val level = command.args["level"] ?: "50"
+                    if (level == "up") {
+                        Settings.System.putInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
+                        val cur = Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, 128)
+                        Settings.System.putInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, (cur + 50).coerceAtMost(255))
+                        "ব্রাইটনেস বাড়িয়ে দিলাম"
+                    } else if (level == "down") {
+                        Settings.System.putInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
+                        val cur = Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, 128)
+                        Settings.System.putInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, (cur - 50).coerceAtLeast(10))
+                        "ব্রাইটনেস কমিয়ে দিলাম"
+                    } else {
+                        Settings.System.putInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
+                        Settings.System.putInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, (level.toIntOrNull() ?: 50).coerceIn(10, 255))
+                        "ব্রাইটনেস সেট করলাম"
+                    }
+                } catch (e: Exception) { "ব্রাইটনেস পরিবর্তন করতে সমস্যা — WRITE_SETTINGS permission দরকার" }
+            }
+
+            CommandType.WHATSAPP_CALL -> {
+                val name = command.args["name"] ?: ""
+                // Open WhatsApp, find contact, use accessibility to click call button
+                if (AppLauncher.launch(context, "whatsapp")) {
+                    scope.launch {
+                        kotlinx.coroutines.delay(2000)
+                        SmartAccessibilityEngine.execute("SEARCH $name")
+                        kotlinx.coroutines.delay(1500)
+                        SmartAccessibilityEngine.execute("CLICK call")
+                    }
+                    "WhatsApp এ কল করছি: $name"
+                } else {
+                    "WhatsApp খুলতে পারি নাই"
+                }
+            }
+
+            CommandType.IMO_CALL -> {
+                val name = command.args["name"] ?: ""
+                if (AppLauncher.launch(context, "imo")) {
+                    "IMO খুলে দিলাম — $name কে করো"
+                } else {
+                    "IMO অ্যাপ পাওয়া যায়নি"
+                }
+            }
+
+            CommandType.MESSENGER_CALL -> {
+                val name = command.args["name"] ?: ""
+                if (AppLauncher.launch(context, "messenger")) {
+                    "Messenger খুলে দিলাম — $name কে করো"
+                } else {
+                    "Messenger অ্যাপ পাওয়া যায়নি"
+                }
+            }
+
+            CommandType.TELEGRAM_CALL -> {
+                val name = command.args["name"] ?: ""
+                if (AppLauncher.launch(context, "telegram")) {
+                    "Telegram খুলে দিলাম — $name কে করো"
+                } else {
+                    "Telegram অ্যাপ পাওয়া যায়নি"
+                }
+            }
+
+            CommandType.MUSIC_PLAY -> {
+                val query = command.args["query"] ?: ""
+                // Try Spotify deep link first, fallback to YouTube
+                try {
+                    val spotifyIntent = Intent(Intent.ACTION_VIEW, Uri.parse("spotify:search:$query"))
+                    spotifyIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(spotifyIntent)
+                    "Spotify তে চালাচ্ছি: $query"
+                } catch (e: Exception) {
+                    // Fallback to YouTube
+                    try {
+                        val ytIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=${Uri.encode(query)}"))
+                        ytIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(ytIntent)
+                        "YouTube তে চালাচ্ছি: $query"
+                    } catch (e2: Exception) {
+                        "মিউজিক চালাতে সমস্যা"
+                    }
+                }
+            }
+
+            CommandType.SPOTIFY_PLAY -> {
+                val query = command.args["query"] ?: ""
+                // Use Spotify deep link with search query
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("spotify:search:$query"))
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    "Spotify তে চালাচ্ছি: $query"
+                } catch (e: Exception) {
+                    // Fallback: open Spotify app
+                    if (AppLauncher.launch(context, "spotify")) {
+                        "Spotify খুলে দিলাম — খুঁজো: $query"
+                    } else {
+                        "Spotify খুলতে পারি নাই"
+                    }
+                }
             }
 
             CommandType.READ_SCREEN -> {
