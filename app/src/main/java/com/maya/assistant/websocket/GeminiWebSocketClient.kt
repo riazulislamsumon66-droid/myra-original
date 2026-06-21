@@ -71,7 +71,7 @@ class GeminiWebSocketClient(
 
             override fun onFailure(ws: WebSocket, t: Throwable, response: Response?) {
                 isSetupComplete = false
-                val code = response?.code() ?: 0
+                val code = response?.code ?: 0
                 Log.e(TAG, "WS Failure (model #$currentModelIndex): code=$code, msg=${t.message}")
                 // Try next model
                 currentModelIndex++
