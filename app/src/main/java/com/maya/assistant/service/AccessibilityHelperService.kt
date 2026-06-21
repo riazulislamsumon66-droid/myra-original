@@ -94,7 +94,7 @@ class AccessibilityHelperService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
         currentRoot = rootInActiveWindow
-        com.myra.assistant.accessibility.AccessibilityEventManager.onEvent(event)
+        com.maya.assistant.accessibility.AccessibilityEventManager.onEvent(event)
         Log.d(TAG, "EVENT -> ${event.packageName} | ${event.className}")
     }
 

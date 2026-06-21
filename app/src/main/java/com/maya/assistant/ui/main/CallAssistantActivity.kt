@@ -557,13 +557,13 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         // Method 2: Accessibility fallback
         if (!success) {
             try {
-                val answered = com.myra.assistant.service.SmartAccessibilityEngine.click(
+                val answered = com.maya.assistant.service.SmartAccessibilityEngine.click(
                     text = "Answer"
-                ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+                ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                     contentDesc = "Answer"
-                ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+                ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                     text = "Accept"
-                ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+                ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                     contentDesc = "Accept"
                 )
                 Log.d(TAG, "Accessibility answer: $answered")
@@ -584,17 +584,17 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         try {
             // Try to click WhatsApp answer button
-            success = com.myra.assistant.service.SmartAccessibilityEngine.click(
+            success = com.maya.assistant.service.SmartAccessibilityEngine.click(
                 text = "Answer"
-            ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+            ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                 contentDesc = "Answer"
-            ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+            ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                 text = "Accept"
-            ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+            ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                 contentDesc = "Accept call"
-            ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+            ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                 id = "com.whatsapp:id/incoming_call_answer"
-            ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+            ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                 id = "com.whatsapp.w4b:id/incoming_call_answer"
             )
 
@@ -669,13 +669,13 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         // Method 2: Accessibility fallback
         if (!success) {
             try {
-                val rejected = com.myra.assistant.service.SmartAccessibilityEngine.click(
+                val rejected = com.maya.assistant.service.SmartAccessibilityEngine.click(
                     text = "Decline"
-                ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+                ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                     text = "Reject"
-                ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+                ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                     contentDesc = "Decline"
-                ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+                ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                     contentDesc = "Reject call"
                 )
                 Log.d(TAG, "Accessibility reject: $rejected")
@@ -695,15 +695,15 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         var success = false
 
         try {
-            success = com.myra.assistant.service.SmartAccessibilityEngine.click(
+            success = com.maya.assistant.service.SmartAccessibilityEngine.click(
                 text = "Decline"
-            ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+            ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                 contentDesc = "Decline"
-            ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+            ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                 text = "Reject"
-            ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+            ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                 id = "com.whatsapp:id/incoming_call_decline"
-            ) || com.myra.assistant.service.SmartAccessibilityEngine.click(
+            ) || com.maya.assistant.service.SmartAccessibilityEngine.click(
                 id = "com.whatsapp.w4b:id/incoming_call_decline"
             )
 

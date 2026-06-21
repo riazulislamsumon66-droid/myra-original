@@ -29,9 +29,9 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
     private var announced = false
 
     companion object {
-        const val ACTION_CALL_ACTIVE = "com.myra.assistant.CALL_ACTIVE"
-        const val ACTION_CALL_ENDED = "com.myra.assistant.CALL_ENDED"
-        const val ACTION_CALL_RINGING = "com.myra.assistant.CALL_RINGING"
+        const val ACTION_CALL_ACTIVE = "com.maya.assistant.CALL_ACTIVE"
+        const val ACTION_CALL_ENDED = "com.maya.assistant.CALL_ENDED"
+        const val ACTION_CALL_RINGING = "com.maya.assistant.CALL_RINGING"
         private const val CHANNEL_ID = "myra_call_channel"
         private const val TAG = "MYRA_CALL"
     }

@@ -215,7 +215,7 @@ object SecurityManager {
             "com.android.settings",
             "com.android.packageinstaller",
             "com.google.android.packageinstaller",
-            "com.myra.assistant" // Don't lock yourself
+            "com.maya.assistant" // Don't lock yourself
         )
         if (systemApps.contains(packageName)) return false // Settings should NOT be locked for now to avoid loops
 
