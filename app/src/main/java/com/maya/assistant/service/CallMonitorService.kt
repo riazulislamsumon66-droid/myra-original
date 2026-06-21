@@ -63,8 +63,9 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             // Android 12+ — use TelephonyCallback
             try {
+                val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
                 telephonyManager?.registerTelephonyCallback(
-                    { runnable -> android.os.Handler(android.os.Looper.getMainLooper()).post(runnable) },
+                    executor,
                     object : android.telephony.TelephonyCallback(),
                         android.telephony.TelephonyCallback.CallStateListener {
                         override fun onCallStateChanged(state: Int) {

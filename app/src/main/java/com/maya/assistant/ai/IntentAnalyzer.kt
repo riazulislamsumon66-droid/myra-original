@@ -31,34 +31,27 @@ object IntentAnalyzer {
         val structured = parseStructured(text)
         if (structured != null) return structured
 
-        // Natural language analysis
+        // Natural language analysis - order matters! More specific patterns first
         return when {
+            // Flashlight - highest priority for direct commands
             FLASHLIGHT_ON.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.FLASHLIGHT_ON)
 
             FLASHLIGHT_OFF.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.FLASHLIGHT_OFF)
 
+            // Volume
             VOLUME_UP.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.VOLUME_UP)
 
             VOLUME_DOWN.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.VOLUME_DOWN)
 
-            CLOSE_PATTERNS.any { lower.contains(it) } -> {
-                val appName = extractAfter(lower, CLOSE_PATTERNS)
-                VoiceCommand(text, CommandType.CLOSE_APP, mapOf("app" to appName))
-            }
-
+            // Screenshot
             SCREENSHOT_PATTERNS.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.SCREENSHOT)
 
-            SCROLL_UP_PATTERNS.any { lower.contains(it) } ->
-                VoiceCommand(text, CommandType.SCROLL_UP)
-
-            SCROLL_DOWN_PATTERNS.any { lower.contains(it) } ->
-                VoiceCommand(text, CommandType.SCROLL_DOWN)
-
+            // Navigation
             BACK_PATTERNS.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.NAVIGATE, mapOf("action" to "back"))
 
@@ -68,39 +61,93 @@ object IntentAnalyzer {
             NOTIFICATION_PATTERNS.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.NAVIGATE, mapOf("action" to "notification"))
 
+            // Scroll
+            SCROLL_UP_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.SCROLL_UP)
+
+            SCROLL_DOWN_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.SCROLL_DOWN)
+
+            // WhatsApp call
             WHATSAPP_CALL.any { lower.contains(it) } -> {
                 val name = extractAfter(lower, WHATSAPP_CALL)
                 VoiceCommand(text, CommandType.WHATSAPP_CALL, mapOf("name" to name))
             }
 
+            // YouTube
+            YOUTUBE_PATTERNS.any { lower.contains(it) } -> {
+                val song = extractAfter(lower, YOUTUBE_PATTERNS)
+                VoiceCommand(text, CommandType.YOUTUBE_PLAY, mapOf("query" to song))
+            }
+
+            // Spotify
+            SPOTIFY_PATTERNS.any { lower.contains(it) } -> {
+                val song = extractAfter(lower, SPOTIFY_PATTERNS)
+                VoiceCommand(text, CommandType.SPOTIFY_PLAY, mapOf("query" to song))
+            }
+
+            // Close app - before open app to catch "close X" patterns
+            CLOSE_PATTERNS.any { lower.contains(it) } -> {
+                val appName = extractAfter(lower, CLOSE_PATTERNS)
+                VoiceCommand(text, CommandType.CLOSE_APP, mapOf("app" to appName))
+            }
+
+            // Call
             CALL_PATTERNS.any { lower.startsWith(it) || lower.contains(" $it ") } -> {
                 val name = extractAfter(lower, CALL_PATTERNS)
                 VoiceCommand(text, CommandType.CALL, mapOf("name" to name))
             }
 
+            // Message
             MSG_PATTERNS.any { lower.contains(it) } -> {
                 val parts = lower.split(" to ", " ko ")
                 val name = if (parts.size > 1) parts[1].split(" ")[0] else ""
                 VoiceCommand(text, CommandType.WHATSAPP_MSG, mapOf("name" to name, "message" to text))
             }
 
+            // Open app - last among action patterns
             OPEN_PATTERNS.any { lower.startsWith(it) || lower.contains("$it ") } -> {
                 val appName = extractAfter(lower, OPEN_PATTERNS)
                 VoiceCommand(text, CommandType.OPEN_APP, mapOf("app" to appName))
             }
 
-            YOUTUBE_PATTERNS.any { lower.contains(it) } -> {
-                val song = extractAfter(lower, YOUTUBE_PATTERNS)
+            // Natural language fallback for common Bangla patterns
+            lower.contains("চালো") || lower.contains("চালাও") || lower.contains("play") -> {
+                // Extract what to play
+                val song = extractPlayQuery(lower)
                 VoiceCommand(text, CommandType.YOUTUBE_PLAY, mapOf("query" to song))
             }
 
-            SPOTIFY_PATTERNS.any { lower.contains(it) } -> {
-                val song = extractAfter(lower, SPOTIFY_PATTERNS)
-                VoiceCommand(text, CommandType.SPOTIFY_PLAY, mapOf("query" to song))
+            lower.contains("বন্ধ") || lower.contains("বন্ধু") -> {
+                val appName = extractAppNameFromContext(lower)
+                VoiceCommand(text, CommandType.CLOSE_APP, mapOf("app" to appName))
             }
 
             else -> VoiceCommand(text, CommandType.CONVERSATION)
         }
+    }
+
+    private fun extractPlayQuery(text: String): String {
+        val patterns = listOf("চালো", "চালাও", "play", "গান", "song")
+        for (p in patterns) {
+            val idx = text.indexOf(p)
+            if (idx != -1) {
+                val result = text.substring(idx + p.length).trim()
+                return result.ifEmpty { text }
+            }
+        }
+        return text
+    }
+
+    private fun extractAppNameFromContext(text: String): String {
+        // Try to extract app name from patterns like "X বন্ধ করো"
+        val parts = text.split(" ")
+        for (i in parts.indices) {
+            if (parts[i].contains("বন্ধ") && i > 0) {
+                return parts[i - 1]
+            }
+        }
+        return ""
     }
 
     private fun parseStructured(text: String): VoiceCommand? {

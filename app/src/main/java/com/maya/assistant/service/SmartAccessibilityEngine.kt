@@ -28,6 +28,13 @@ object SmartAccessibilityEngine {
 
         Log.d(TAG, "EXECUTE -> $cmd")
 
+        // Ensure service is connected
+        val svc = service
+        if (svc == null) {
+            Log.e(TAG, "Accessibility service not connected! Enable it in Settings.")
+            return Result(false, "Accessibility service not enabled")
+        }
+
         val success = when {
 
             cmd.startsWith("OPEN_APP", true) ->
@@ -339,28 +346,12 @@ object SmartAccessibilityEngine {
     private fun takeScreenshot(): Boolean {
         return try {
             val svc = service ?: return false
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                // Use MediaProjection API for Android 11+
-                // For now, try accessibility screenshot
-                val root = svc.rootInActiveWindow ?: return false
-                // Take screenshot via accessibility
-                takeScreenshotLegacy()
-            } else {
-                takeScreenshotLegacy()
-            }
+            // Use global action for screenshot - this works on Android 11+
+            val result = svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT)
+            Log.d(TAG, "Screenshot result: $result")
+            result
         } catch (e: Exception) {
             Log.e(TAG, "Screenshot failed: ${e.message}")
-            false
-        }
-    }
-
-    private fun takeScreenshotLegacy(): Boolean {
-        return try {
-            val svc = service ?: return false
-            // Use global action for screenshot
-            svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT)
-        } catch (e: Exception) {
-            Log.e(TAG, "Legacy screenshot failed: ${e.message}")
             false
         }
     }
@@ -376,7 +367,9 @@ object SmartAccessibilityEngine {
             // Find a scrollable node and scroll up
             val scrollable = findScrollableNode(root)
             if (scrollable != null) {
-                scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+                val result = scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+                Log.d(TAG, "Scroll up result: $result")
+                result
             } else {
                 // Fallback: gesture scroll up
                 val displayMetrics = svc.resources.displayMetrics
@@ -384,6 +377,7 @@ object SmartAccessibilityEngine {
                 val startY = displayMetrics.heightPixels * 3 / 4
                 val endY = displayMetrics.heightPixels / 4
                 ActionExecutor.swipe(svc, x, startY, x, endY, 300)
+                true
             }
         } catch (e: Exception) {
             Log.e(TAG, "Scroll up failed: ${e.message}")
@@ -397,7 +391,9 @@ object SmartAccessibilityEngine {
             val root = svc.rootInActiveWindow ?: return false
             val scrollable = findScrollableNode(root)
             if (scrollable != null) {
-                scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+                val result = scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+                Log.d(TAG, "Scroll down result: $result")
+                result
             } else {
                 // Fallback: gesture scroll down
                 val displayMetrics = svc.resources.displayMetrics
@@ -405,6 +401,7 @@ object SmartAccessibilityEngine {
                 val startY = displayMetrics.heightPixels / 4
                 val endY = displayMetrics.heightPixels * 3 / 4
                 ActionExecutor.swipe(svc, x, startY, x, endY, 300)
+                true
             }
         } catch (e: Exception) {
             Log.e(TAG, "Scroll down failed: ${e.message}")
@@ -430,6 +427,7 @@ object SmartAccessibilityEngine {
         return try {
             val svc = service ?: return false
             svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+            true
         } catch (e: Exception) {
             Log.e(TAG, "Back failed: ${e.message}")
             false
@@ -440,6 +438,7 @@ object SmartAccessibilityEngine {
         return try {
             val svc = service ?: return false
             svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+            true
         } catch (e: Exception) {
             Log.e(TAG, "Home failed: ${e.message}")
             false
@@ -450,6 +449,7 @@ object SmartAccessibilityEngine {
         return try {
             val svc = service ?: return false
             svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_NOTIFICATIONS)
+            true
         } catch (e: Exception) {
             Log.e(TAG, "Notification failed: ${e.message}")
             false

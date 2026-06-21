@@ -110,7 +110,12 @@ class ForegroundVoiceService : Service() {
                     }
                     if (intent.type != CommandType.CONVERSATION && intent.type != CommandType.UNKNOWN) {
                         scope.launch {
-                            DynamicDecisionEngine.execute(this@ForegroundVoiceService, intent)
+                            val result = DynamicDecisionEngine.execute(this@ForegroundVoiceService, intent)
+                            // Broadcast result to UI
+                            sendBroadcast(Intent("MAYA_RESPONSE").apply {
+                                putExtra("text", result)
+                                putExtra("is_result", true)
+                            })
                         }
                     }
                     // Broadcast to UI
