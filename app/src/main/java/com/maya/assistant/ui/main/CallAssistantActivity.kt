@@ -22,6 +22,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.maya.assistant.R
 import com.maya.assistant.ai.GeminiLiveClient
+import com.maya.assistant.security.SecurePrefs
 import com.maya.assistant.service.CallMonitorService
 import com.maya.assistant.utils.LiveAudioManager
 import java.util.Locale
@@ -233,8 +234,10 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
      * ✅ FIXED: Setup Gemini Live with proper prompt for call scenario
      */
     private fun setupGeminiLive() {
-        val prefs = getSharedPreferences("myra_prefs", MODE_PRIVATE)
-        val apiKey = prefs.getString("api_key", "") ?: ""
+        // Try encrypted prefs first, then plain text fallback
+        val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
+            getSharedPreferences("myra_prefs", MODE_PRIVATE).getString("api_key", "") ?: ""
+        }
         if (apiKey.isEmpty()) {
             Log.e(TAG, "No API key found")
             return

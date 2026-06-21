@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.maya.assistant.R
 import com.maya.assistant.security.BiometricManager
+import com.maya.assistant.security.SecurePrefs
 import com.maya.assistant.service.AccessibilityHelperService
 import com.maya.assistant.services.ForegroundVoiceService
 import com.maya.assistant.ui.settings.SettingsActivity
@@ -213,7 +214,10 @@ class MainActivity : AppCompatActivity() {
             addBotMessage("⚠️ Microphone permission দরকার। Settings → Apps → MAYA → Permissions → Microphone → Allow")
             return
         }
-        val apiKey = prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+        // Try encrypted prefs first, then plain text fallback
+        val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
+            prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+        }
         if (apiKey.isEmpty()) {
             addBotMessage("⚠️ API Key required. Please go to Settings → Enter Gemini API Key.")
             return

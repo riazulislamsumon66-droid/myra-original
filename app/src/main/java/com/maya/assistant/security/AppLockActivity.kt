@@ -443,10 +443,13 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun initGemini() {
-        val prefs = getSharedPreferences("myra_prefs", Context.MODE_PRIVATE)
-        val apiKey = prefs.getString("api_key", "") ?: ""
+        // Try encrypted prefs first, then plain text fallback
+        val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
+            getSharedPreferences("myra_prefs", Context.MODE_PRIVATE).getString("api_key", "") ?: ""
+        }
         if (apiKey.isEmpty()) return
 
+        val prefs = getSharedPreferences("myra_prefs", Context.MODE_PRIVATE)
         val personality = prefs.getString("personality_mode", "gf") ?: "gf"
         val systemPrompt = when(personality) {
             "gf" -> "You are MYRA, the user's caring and emotional girlfriend. Keep security responses short, sweet, and in Hinglish. Use words like 'jaan', 'babu' occasionally but keep it professional for security."

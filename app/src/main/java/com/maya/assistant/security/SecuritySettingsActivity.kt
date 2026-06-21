@@ -254,8 +254,10 @@ class SecuritySettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListene
     }
 
     private fun initGemini() {
-        val prefs = getSharedPreferences("myra_prefs", Context.MODE_PRIVATE)
-        val apiKey = prefs.getString("api_key", "") ?: ""
+        // Try encrypted prefs first, then plain text fallback
+        val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
+            getSharedPreferences("myra_prefs", Context.MODE_PRIVATE).getString("api_key", "") ?: ""
+        }
         if (apiKey.isEmpty()) return
 
         geminiClient = GeminiLiveClient(apiKey, "You are MYRA's security voice. Keep responses very short and professional.", object : GeminiLiveClient.LiveListener {
