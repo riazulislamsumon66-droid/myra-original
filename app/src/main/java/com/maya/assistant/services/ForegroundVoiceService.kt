@@ -11,6 +11,7 @@ import com.maya.assistant.ai.AIResponseManager
 import com.maya.assistant.ai.ConversationMemory
 import com.maya.assistant.ai.IntentAnalyzer
 import com.maya.assistant.ai.DynamicDecisionEngine
+import com.maya.assistant.models.CommandType
 import com.maya.assistant.ui.main.MainActivity
 import com.maya.assistant.utils.Constants
 import com.maya.assistant.utils.Logger
