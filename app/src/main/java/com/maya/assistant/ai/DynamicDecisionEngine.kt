@@ -110,7 +110,20 @@ object DynamicDecisionEngine {
             }
 
             CommandType.YOUTUBE_PLAY -> {
-                val query = command.args["query"] ?: ""
+                var query = command.args["query"] ?: ""
+                // Clean filler words from query (Gemini sometimes includes extra words)
+                val fillers = listOf(
+                    "youtube এ", "youtube-এ", "youtube te", "ইউটিউবে", "ইউটিউব",
+                    "play করো", "চালাও", "চালো", "দেখাও", "play karo",
+                    "একটা", "একটি", "ekta", "একটা", "a", "the",
+                    "hindi", "bangla", "song", "গান", "video", "music",
+                    "দাও", "show", "search", "find"
+                )
+                for (f in fillers) {
+                    query = query.replace(f, "", ignoreCase = true)
+                }
+                query = query.trim().replace(Regex("\\s+"), " ")
+                if (query.isEmpty()) query = command.raw.replace("YOUTUBE_PLAY", "", ignoreCase = true).trim()
                 try {
                     // Launch YouTube app with search query directly
                     val ytSearchIntent = Intent(Intent.ACTION_VIEW).apply {
@@ -384,7 +397,9 @@ object DynamicDecisionEngine {
             }
 
             CommandType.MUSIC_PLAY -> {
-                val query = command.args["query"] ?: ""
+                var query = command.args["query"] ?: ""
+                query = cleanMusicQuery(query)
+                if (query.isEmpty()) query = command.raw.replace("MUSIC_PLAY", "", ignoreCase = true).trim()
                 // Try Spotify deep link first, fallback to YouTube
                 try {
                     val spotifyIntent = Intent(Intent.ACTION_VIEW, Uri.parse("spotify:search:$query"))
@@ -405,16 +420,22 @@ object DynamicDecisionEngine {
             }
 
             CommandType.SPOTIFY_PLAY -> {
-                val query = command.args["query"] ?: ""
+                var query = command.args["query"] ?: ""
+                query = cleanMusicQuery(query)
+                if (query.isEmpty()) query = command.raw.replace("SPOTIFY_PLAY", "", ignoreCase = true).trim()
                 // Use Spotify deep link with search query
                 try {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("spotify:search:$query"))
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(intent)
                     "Spotify তে চালাচ্ছি: $query"
-                } catch (e: Exception) {
-                    // Fallback: open Spotify app
+                } catch (_: Exception) {
+                    // Fallback: open Spotify app with query in search
                     if (AppLauncher.launch(context, "spotify")) {
+                        scope.launch {
+                            kotlinx.coroutines.delay(1500)
+                            SmartAccessibilityEngine.execute("SEARCH $query")
+                        }
                         "Spotify খুলে দিলাম — খুঁজো: $query"
                     } else {
                         "Spotify খুলতে পারি নাই"
@@ -530,5 +551,23 @@ object DynamicDecisionEngine {
             Logger.e(TAG, "OCR click failed: ${e.message}")
             false
         }
+    }
+
+    /** Clean filler words from music/video query */
+    private fun cleanMusicQuery(query: String): String {
+        var result = query
+        val fillers = listOf(
+            "youtube এ", "youtube-এ", "youtube te", "ইউটিউবে", "ইউটিউব",
+            "spotify এ", "spotify-এ", "spotify te",
+            "play করো", "চালাও", "চালো", "দেখাও", "play karo", "play koro",
+            "একটা", "একটি", "ekta", "a ", "the ",
+            "hindi", "bangla", "song", "গান", "video", "music",
+            "দাও", "show", "search", "find", "bajao", "বাজাও",
+            "gaana", "gaan", "gana"
+        )
+        for (f in fillers) {
+            result = result.replace(f, "", ignoreCase = true)
+        }
+        return result.trim().replace(Regex("\\s+"), " ")
     }
 }
