@@ -110,19 +110,20 @@ object DynamicDecisionEngine {
                     context.startActivity(ytSearchIntent)
                     // Auto-click first result after delay using accessibility
                     scope.launch {
-                        kotlinx.coroutines.delay(4000)
+                        kotlinx.coroutines.delay(5000)
                         try {
                             val svc = SmartAccessibilityEngine.service
                             if (svc != null) {
                                 val root = svc.rootInActiveWindow
                                 if (root != null) {
-                                    val videoNode = findFirstVideoResult(root)
+                                    val videoNode = findFirstVideoResult(root, 0)
                                     if (videoNode != null) {
                                         videoNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                                         Logger.d(TAG, "Auto-clicked first YouTube result")
                                     } else {
                                         Logger.d(TAG, "No video result found in accessibility tree")
                                     }
+                                    root.recycle()
                                 }
                             }
                         } catch (ex: Exception) {
@@ -130,16 +131,18 @@ object DynamicDecisionEngine {
                         }
                     }
                     "YouTube এ চালাচ্ছি: $query"
-                } catch (e: Exception) {
-                    // Fallback: open in browser
+                } catch (e: android.content.ActivityNotFoundException) {
+                    // YouTube app not installed — fallback to browser
                     try {
                         val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=${Uri.encode(query)}"))
                         browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(browserIntent)
                         "YouTube ওয়েব এ খুঁজছি: $query"
                     } catch (e2: Exception) {
-                        "YouTube খুলতে সমস্যা"
+                        "YouTube খুলতে সমস্যা — অ্যাপ বা ব্রাউজার পাওয়া যায়নি"
                     }
+                } catch (e: Exception) {
+                    "YouTube খুলতে সমস্যা: ${e.message}"
                 }
             }
 
@@ -279,11 +282,11 @@ object DynamicDecisionEngine {
         }
     }
 
-    private fun findFirstVideoResult(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
-        // YouTube search results: look for clickable nodes with video-like text patterns
+    private fun findFirstVideoResult(node: AccessibilityNodeInfo, depth: Int): AccessibilityNodeInfo? {
+        // Guard against deep recursion (YouTube tree can be huge)
+        if (depth > 15) return null
         if (node.isClickable && node.text != null) {
             val text = node.text.toString()
-            // Video titles are typically longer than 10 chars and clickable
             if (text.length > 10 && !text.startsWith("http")) {
                 return node
             }
@@ -291,8 +294,16 @@ object DynamicDecisionEngine {
         // Recurse into children
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
-            val result = findFirstVideoResult(child)
-            if (result != null) return result
+            val result = findFirstVideoResult(child, depth + 1)
+            if (result != null) {
+                // Don't recycle the result node — caller will use it
+                // But recycle remaining siblings
+                for (j in i + 1 until node.childCount) {
+                    node.getChild(j)?.recycle()
+                }
+                return result
+            }
+            child.recycle()
         }
         return null
     }
