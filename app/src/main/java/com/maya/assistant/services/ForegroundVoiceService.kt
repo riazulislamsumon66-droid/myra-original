@@ -130,6 +130,10 @@ class ForegroundVoiceService : Service() {
                         IntentAnalyzer.analyze(clean)
                     }
                     if (intent.type != CommandType.CONVERSATION && intent.type != CommandType.UNKNOWN) {
+                        // Check accessibility before executing
+                        if (com.maya.assistant.service.SmartAccessibilityEngine.service == null) {
+                            sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", "⚠️ Accessibility Service বন্ধ আছে। Settings → Accessibility → MAYA → ON করো।"))
+                        }
                         scope.launch {
                             val result = DynamicDecisionEngine.execute(this@ForegroundVoiceService, intent)
                             // Broadcast result to UI
