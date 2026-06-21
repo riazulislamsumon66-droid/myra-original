@@ -15,6 +15,7 @@ import com.maya.assistant.ai.IntentAnalyzer
 import com.maya.assistant.ai.DynamicDecisionEngine
 import com.maya.assistant.models.CommandType
 import com.maya.assistant.ui.main.MainActivity
+import com.maya.assistant.service.PowerButtonReceiver
 import com.maya.assistant.utils.Constants
 import com.maya.assistant.utils.Logger
 import com.maya.assistant.utils.prefs
@@ -63,7 +64,7 @@ class ForegroundVoiceService : Service() {
             addAction(Intent.ACTION_SCREEN_OFF)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(powerButtonReceiver, filter, RECEIVER_NOT_EXPORTED)
+            registerReceiver(powerButtonReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(powerButtonReceiver, filter)
         }
