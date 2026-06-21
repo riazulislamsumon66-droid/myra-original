@@ -25,7 +25,7 @@ object OCRProcessor {
     }
 
     /** Suspend-friendly version for use in coroutines */
-    suspend fun extractTextSuspend(bitmap: Bitmap): String = kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+    suspend fun extractTextSuspend(bitmap: Bitmap): String = kotlinx.coroutines.suspendCoroutine { cont ->
         extractText(bitmap) { text -> cont.resume(text) }
     }
 }
