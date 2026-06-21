@@ -13,7 +13,7 @@ object Constants {
     const val PREFS_NAME = "myra_prefs"
     const val KEY_API_KEY = "api_key"
     const val KEY_USER_NAME = "user_name"
-    const val KEY_PERSONALITY = "personality"
+    const val KEY_PERSONALITY = "personality_mode"
     const val KEY_VOICE_TYPE = "voice_type"
     const val KEY_LIVE_MODE = "live_mode"
     const val KEY_PRIME_NAME = "prime_name"

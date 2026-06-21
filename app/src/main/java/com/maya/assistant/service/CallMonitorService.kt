@@ -34,7 +34,7 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
         const val ACTION_CALL_RINGING = "com.maya.assistant.CALL_RINGING"
         private const val CHANNEL_ID = "maya_call_channel"
         private const val TAG = "MAYA_CALL"
-        private const val NOTIF_ID = 1001
+        private const val NOTIF_ID = 1003
     }
 
     override fun onCreate() {
@@ -122,8 +122,10 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
         val callerName = resolveCallerName(number)
         Log.d(TAG, "Incoming: $callerName from $number")
 
-        // Announce via TTS
-        if (ttsReady) {
+        // Announce via TTS (check user preference)
+        val announceOn = getSharedPreferences("myra_prefs", MODE_PRIVATE)
+            .getBoolean("call_announce_enabled", true)
+        if (ttsReady && announceOn) {
             val announceText = "কল আসছে: $callerName"
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 tts?.speak(announceText, TextToSpeech.QUEUE_FLUSH, null, "call_announce")

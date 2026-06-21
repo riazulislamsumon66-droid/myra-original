@@ -223,6 +223,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Check app lock
+        if ((com.maya.assistant.security.SecurityManager.isAppLockEnabled(this)
+                    || com.maya.assistant.security.PatternManager.isPatternLockEnabled(this))
+            && !com.maya.assistant.security.AppLockActivity.isUnlockedThisSession) {
+            com.maya.assistant.security.AppLockActivity.launch(this)
+            return
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(responseReceiver, IntentFilter("MAYA_RESPONSE"), Context.RECEIVER_NOT_EXPORTED)
         } else {
