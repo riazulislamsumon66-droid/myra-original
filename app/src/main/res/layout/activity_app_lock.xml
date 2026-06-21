@@ -3,7 +3,7 @@
     activity_app_lock.xml
     MAYA Lock Screen — PIN | Pattern | Voice tabs
     Background: dark purple gradient to match MAYA theme
-    <!-- Top: MAYA logo / title -->
+-->
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
