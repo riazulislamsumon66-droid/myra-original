@@ -144,8 +144,8 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
 
     private fun startForegroundService() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("MYRA Running")
-            .setContentText("Monitoring calls")
+            .setContentTitle("MAYA Running")
+            .setContentText("Call monitoring active")
             .setSmallIcon(R.mipmap.img)
             .setOngoing(true)
             .build()
@@ -165,7 +165,7 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "MYRA Call Monitor",
+                "MAYA Call Monitor",
                 NotificationManager.IMPORTANCE_LOW
             )
 

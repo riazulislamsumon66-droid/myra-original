@@ -151,7 +151,7 @@ class SettingsActivity : AppCompatActivity() {
             if (!devicePolicyManager.isAdminActive(componentName)) {
                 val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
                     putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
-                    putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "MYRA needs admin to control system.")
+                    putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "MAYA needs admin to control system.")
                 }
                 startActivity(intent)
             } else {
@@ -177,9 +177,9 @@ class SettingsActivity : AppCompatActivity() {
         setDefaultAssistantBtn.setOnClickListener {
             try {
                 startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS))
-                Toast.makeText(this, "MYRA ko Default Assistant chuno 👆", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "MAYA ko Default Assistant chuno 👆", Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
-                Toast.makeText(this, "Settings → Apps → Default Apps → Assistant → MYRA", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Settings → Apps → Default Apps → Assistant → MAYA", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -241,7 +241,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun updateCallAnnounceStatus(enabled: Boolean) {
         callAnnounceStatusText.text = if (enabled) {
-            "📢 Call aane pe MYRA naam bolegi"
+            "📢 Call aane pe MAYA naam bolegi"
         } else {
             "🔇 Call announce band hai"
         }
@@ -303,7 +303,7 @@ class SettingsActivity : AppCompatActivity() {
         prefs.putBoolean("call_announce_enabled", callAnnounceSwitch.isChecked)
 
         prefs.apply()
-        Toast.makeText(this, "Settings Saved! MYRA updated. ✅", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Settings Saved! MAYA updated. ✅", Toast.LENGTH_SHORT).show()
         finish()
     }
 

@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
         micButton.setOnClickListener {
             val svc = ForegroundVoiceService.instance
             if (svc != null) {
-                val text = "Hey MYRA"
+                val text = "Hey MAYA"
                 svc.sendTextToGemini(text)
                 addUserMessage(text)
             } else {
@@ -200,9 +200,9 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(responseReceiver, IntentFilter("MYRA_RESPONSE"), Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(responseReceiver, IntentFilter("MAYA_RESPONSE"), Context.RECEIVER_NOT_EXPORTED)
         } else {
-            registerReceiver(responseReceiver, IntentFilter("MYRA_RESPONSE"))
+            registerReceiver(responseReceiver, IntentFilter("MAYA_RESPONSE"))
         }
     }
 

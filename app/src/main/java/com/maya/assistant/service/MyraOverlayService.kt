@@ -139,7 +139,7 @@ class MayaOverlayService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "MYRA Assistant",
+                "MAYA Assistant",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "MYRA is running in background"
@@ -156,8 +156,8 @@ class MayaOverlayService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("MYRA is active ❤️")
-            .setContentText("Press power button to activate overlay")
+            .setContentTitle("MAYA is active ❤️")
+            .setContentText("MAYA ready for you")
             .setSmallIcon(R.drawable.ic_myra_notif)
             .setContentIntent(pi)
             .setOngoing(true)
