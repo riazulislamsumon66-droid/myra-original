@@ -5,16 +5,24 @@ import com.maya.assistant.models.VoiceCommand
 
 object IntentAnalyzer {
 
-    private val OPEN_PATTERNS = listOf("open", "kholo", "khol", "launch", "start", "chalo", "chala")
-    private val CALL_PATTERNS = listOf("call", "phone", "ring", "dial")
-    private val WHATSAPP_CALL = listOf("whatsapp call", "video call")
-    private val MSG_PATTERNS = listOf("message", "msg", "send", "bhejo", "likho")
-    private val YOUTUBE_PATTERNS = listOf("youtube", "video play", "play on youtube")
-    private val SPOTIFY_PATTERNS = listOf("spotify", "play music", "gaana", "song")
-    private val VOLUME_UP = listOf("volume up", "louder", "badhao", "tez karo")
-    private val VOLUME_DOWN = listOf("volume down", "lower", "kam karo", "dhima karo")
-    private val FLASHLIGHT_ON = listOf("flashlight on", "torch on", "light on")
-    private val FLASHLIGHT_OFF = listOf("flashlight off", "torch off", "light off")
+    // English
+    private val OPEN_PATTERNS = listOf("open", "kholo", "khol", "launch", "start", "chalo", "chala", "kholো", "খোলো", "खोलो", "افتح", "ouvrir")
+    private val CLOSE_PATTERNS = listOf("close", "band", "band karo", "বন্ধ", "বন্ধ করো", "बंद", "أغلق", "fermer")
+    private val CALL_PATTERNS = listOf("call", "phone", "ring", "dial", "কল", "ফোন", "कॉल", "اتصل", "appeler")
+    private val WHATSAPP_CALL = listOf("whatsapp call", "video call", "হোয়াটসঅ্যাপ কল")
+    private val MSG_PATTERNS = listOf("message", "msg", "send", "bhejo", "likho", "মেসেজ", "পাঠাও", "संदेश", "رسالة", "message")
+    private val YOUTUBE_PATTERNS = listOf("youtube", "video play", "play on youtube", "ইউটিউব")
+    private val SPOTIFY_PATTERNS = listOf("spotify", "play music", "gaana", "song", "গান", "सॉन्ग", "أغنية", "musique")
+    private val VOLUME_UP = listOf("volume up", "louder", "badhao", "tez karo", "ভলিউম বাড়াও", "आवाज़ बढ़ाओ", "ارفع الصوت", "augmenter le volume")
+    private val VOLUME_DOWN = listOf("volume down", "lower", "kam karo", "dhima karo", "ভলিউম কমাও", "आवाज़ कम करो", "اخفض الصوت", "baisser le volume")
+    private val FLASHLIGHT_ON = listOf("flashlight on", "torch on", "light on", "ফ্ল্যাশলাইট চালু", "टॉर्च चालূ", "شعلة على", "lampe allumée")
+    private val FLASHLIGHT_OFF = listOf("flashlight off", "torch off", "light off", "ফ্ল্যাশলাইট বন্ধ", "टॉर्च बंद", "شعلة إيقاف", "lampe éteinte")
+    private val SCREENSHOT_PATTERNS = listOf("screenshot", "screen shot", "capture screen", "স্ক্রিনশট", "स्क्रीनशॉट", "لقطة شاشة", "capture d'écran")
+    private val SCROLL_UP_PATTERNS = listOf("scroll up", "upar scroll", "উপরে স্ক্রল", "ऊपर स्क्रॉल", "تمرير لأعلى", "défiler vers le haut")
+    private val SCROLL_DOWN_PATTERNS = listOf("scroll down", "niche scroll", "নিচে স্ক্রল", "नीचे स्क्रॉल", "تمرير لأسفل", "défiler vers le bas")
+    private val BACK_PATTERNS = listOf("back", "পেছনে", "पीछे", "رجوع", "retour")
+    private val HOME_PATTERNS = listOf("home", "হোম", "घर", "الرئيسية", "accueil")
+    private val NOTIFICATION_PATTERNS = listOf("notification", "notification bar", "নোটিফিকেশन", "सूचना", "إشعار", "notification")
 
     fun analyze(text: String): VoiceCommand {
         val lower = text.lowercase().trim()
@@ -36,6 +44,29 @@ object IntentAnalyzer {
 
             VOLUME_DOWN.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.VOLUME_DOWN)
+
+            CLOSE_PATTERNS.any { lower.contains(it) } -> {
+                val appName = extractAfter(lower, CLOSE_PATTERNS)
+                VoiceCommand(text, CommandType.CLOSE_APP, mapOf("app" to appName))
+            }
+
+            SCREENSHOT_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.SCREENSHOT)
+
+            SCROLL_UP_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.SCROLL_UP)
+
+            SCROLL_DOWN_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.SCROLL_DOWN)
+
+            BACK_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.NAVIGATE, mapOf("action" to "back"))
+
+            HOME_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.NAVIGATE, mapOf("action" to "home"))
+
+            NOTIFICATION_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.NAVIGATE, mapOf("action" to "notification"))
 
             WHATSAPP_CALL.any { lower.contains(it) } -> {
                 val name = extractAfter(lower, WHATSAPP_CALL)
@@ -79,6 +110,10 @@ object IntentAnalyzer {
                 val app = t.removePrefix("OPEN_APP").removePrefix(":").trim()
                 VoiceCommand(t, CommandType.OPEN_APP, mapOf("app" to app))
             }
+            t.startsWith("CLOSE_APP", true) -> {
+                val app = t.removePrefix("CLOSE_APP").removePrefix(":").trim()
+                VoiceCommand(t, CommandType.CLOSE_APP, mapOf("app" to app))
+            }
             t.startsWith("CALL", true) && !t.startsWith("WHATSAPP_CALL", true) -> {
                 val name = t.removePrefix("CALL").trim()
                 VoiceCommand(t, CommandType.CALL, mapOf("name" to name))
@@ -107,6 +142,9 @@ object IntentAnalyzer {
             t.equals("FLASHLIGHT_OFF", true) -> VoiceCommand(t, CommandType.FLASHLIGHT_OFF)
             t.equals("VOLUME_UP", true) -> VoiceCommand(t, CommandType.VOLUME_UP)
             t.equals("VOLUME_DOWN", true) -> VoiceCommand(t, CommandType.VOLUME_DOWN)
+            t.equals("SCREENSHOT", true) -> VoiceCommand(t, CommandType.SCREENSHOT)
+            t.equals("SCROLL_UP", true) -> VoiceCommand(t, CommandType.SCROLL_UP)
+            t.equals("SCROLL_DOWN", true) -> VoiceCommand(t, CommandType.SCROLL_DOWN)
             else -> null
         }
     }

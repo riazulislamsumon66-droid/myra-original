@@ -99,15 +99,21 @@ class ForegroundVoiceService : Service() {
                 val clean = AIResponseManager.clean(text)
                 if (clean.isNotBlank()) {
                     ConversationMemory.addAssistant(clean)
+                    // Try structured command first, then natural language
                     val cmd = AIResponseManager.extractCommand(clean)
-                    if (cmd != null) {
+                    val intent = if (cmd != null) {
+                        IntentAnalyzer.analyze(cmd)
+                    } else {
+                        // Natural language fallback - analyze directly
+                        IntentAnalyzer.analyze(clean)
+                    }
+                    if (intent.type != CommandType.CONVERSATION && intent.type != CommandType.UNKNOWN) {
                         scope.launch {
-                            val intent = IntentAnalyzer.analyze(cmd)
                             DynamicDecisionEngine.execute(this@ForegroundVoiceService, intent)
                         }
                     }
                     // Broadcast to UI
-                    sendBroadcast(Intent("MYRA_RESPONSE").putExtra("text", clean))
+                    sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", clean))
                 }
             },
             onTurnComplete = {
@@ -144,22 +150,26 @@ class ForegroundVoiceService : Service() {
     private fun buildSystemPrompt(): String {
         val userName = prefs().getString(Constants.KEY_USER_NAME, "Boss") ?: "Boss"
         val personality = prefs().getString(Constants.KEY_PERSONALITY, "friendly") ?: "friendly"
+        val language = prefs().getString(Constants.KEY_LANGUAGE, "bangla") ?: "bangla"
         return """
-YOU ARE MYRA - My Yours Responsive Assistant.
+YOU ARE MAYA - My Yours Responsive Assistant.
 User's name is $userName.
 Personality: $personality.
+Language: Reply in $language (Bangla/English/Hindi/Arabic/French based on user preference).
 
 STRICT RULES:
 - Never explain or think aloud
 - Never say: "Responding to", "I've registered", "Formulating", "Interpreting", "Processing"
 - For device actions return ONLY the command:
-  OPEN_APP <name> | CALL <name> | WHATSAPP_CALL <name>
+  OPEN_APP <name> | CLOSE_APP <name> | CALL <name> | WHATSAPP_CALL <name>
   WHATSAPP_MSG <name> <message> | YOUTUBE_PLAY <query>
   SPOTIFY_PLAY <query> | FLASHLIGHT_ON | FLASHLIGHT_OFF
-  VOLUME_UP | VOLUME_DOWN | SMS <name> <message>
-- For conversation: Reply short and natural in Hinglish
+  VOLUME_UP | VOLUME_DOWN | SCREENSHOT | SCROLL_UP | SCROLL_DOWN
+  BACK | HOME | NOTIFICATION | SMS <name> <message>
+- For conversation: Reply short and natural in user's preferred language
 - Address user as $userName
 - Be warm, witty, and human-like
+- Understand commands in Bangla, English, Hindi, Arabic, and French
         """.trimIndent()
     }
 
@@ -170,7 +180,7 @@ STRICT RULES:
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         return NotificationCompat.Builder(this, Constants.NOTIF_CHANNEL_VOICE)
-            .setContentTitle("MYRA is listening ❤️")
+            .setContentTitle("MAYA is listening ❤️")
             .setContentText("Always ready for you")
             .setSmallIcon(R.drawable.ic_myra_notif)
             .setContentIntent(pi)

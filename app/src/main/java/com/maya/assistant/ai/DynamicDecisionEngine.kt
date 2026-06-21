@@ -20,6 +20,12 @@ object DynamicDecisionEngine {
                 else "App not found: $app"
             }
 
+            CommandType.CLOSE_APP -> {
+                val app = command.args["app"] ?: ""
+                if (AppLauncher.close(context, app)) "Closing $app"
+                else "Could not close: $app"
+            }
+
             CommandType.VOLUME_UP -> {
                 SmartAccessibilityEngine.execute("VOLUME_UP")
                 "Volume badha diya"
@@ -38,6 +44,31 @@ object DynamicDecisionEngine {
             CommandType.FLASHLIGHT_OFF -> {
                 toggleFlashlight(context, false)
                 "Torch off kar diya"
+            }
+
+            CommandType.SCREENSHOT -> {
+                if (SmartAccessibilityEngine.execute("SCREENSHOT").success) "Screenshot le liya"
+                else "Screenshot nahi le paya"
+            }
+
+            CommandType.SCROLL_UP -> {
+                if (SmartAccessibilityEngine.execute("SCROLL_UP").success) "Scroll up kar diya"
+                else "Scroll nahi kar paya"
+            }
+
+            CommandType.SCROLL_DOWN -> {
+                if (SmartAccessibilityEngine.execute("SCROLL_DOWN").success) "Scroll down kar diya"
+                else "Scroll nahi kar paya"
+            }
+
+            CommandType.NAVIGATE -> {
+                val action = command.args["action"] ?: ""
+                when (action) {
+                    "back" -> { SmartAccessibilityEngine.execute("BACK"); "Back kar diya" }
+                    "home" -> { SmartAccessibilityEngine.execute("HOME"); "Home aa gaya" }
+                    "notification" -> { SmartAccessibilityEngine.execute("NOTIFICATION"); "Notification khul gayi" }
+                    else -> ""
+                }
             }
 
             CommandType.WHATSAPP_CALL -> {

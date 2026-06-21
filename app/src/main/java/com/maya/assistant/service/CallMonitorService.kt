@@ -49,7 +49,7 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            tts?.language = Locale("hi", "IN")
+            tts?.language = Locale("bn", "BD")
             ttsReady = true
         }
     }

@@ -52,6 +52,24 @@ object SmartAccessibilityEngine {
             cmd.startsWith("VOLUME_DOWN", true) ->
                 volumeDown()
 
+            cmd.startsWith("SCREENSHOT", true) ->
+                takeScreenshot()
+
+            cmd.startsWith("SCROLL_UP", true) ->
+                scrollUp()
+
+            cmd.startsWith("SCROLL_DOWN", true) ->
+                scrollDown()
+
+            cmd.equals("BACK", true) ->
+                goBack()
+
+            cmd.equals("HOME", true) ->
+                goHome()
+
+            cmd.equals("NOTIFICATION", true) ->
+                openNotification()
+
             else ->
                 runSmartAutomation(cmd)
         }
@@ -312,5 +330,129 @@ object SmartAccessibilityEngine {
         )
 
         return true
+    }
+
+    // ============================
+    // SCREENSHOT
+    // ============================
+
+    private fun takeScreenshot(): Boolean {
+        return try {
+            val svc = service ?: return false
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                // Use MediaProjection API for Android 11+
+                // For now, try accessibility screenshot
+                val root = svc.rootInActiveWindow ?: return false
+                // Take screenshot via accessibility
+                takeScreenshotLegacy()
+            } else {
+                takeScreenshotLegacy()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Screenshot failed: ${e.message}")
+            false
+        }
+    }
+
+    private fun takeScreenshotLegacy(): Boolean {
+        return try {
+            val svc = service ?: return false
+            // Use global action for screenshot
+            svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT)
+        } catch (e: Exception) {
+            Log.e(TAG, "Legacy screenshot failed: ${e.message}")
+            false
+        }
+    }
+
+    // ============================
+    // SCROLL
+    // ============================
+
+    private fun scrollUp(): Boolean {
+        return try {
+            val svc = service ?: return false
+            val root = svc.rootInActiveWindow ?: return false
+            // Find a scrollable node and scroll up
+            val scrollable = findScrollableNode(root)
+            if (scrollable != null) {
+                scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+            } else {
+                // Fallback: gesture scroll up
+                val displayMetrics = svc.resources.displayMetrics
+                val x = displayMetrics.widthPixels / 2
+                val startY = displayMetrics.heightPixels * 3 / 4
+                val endY = displayMetrics.heightPixels / 4
+                ActionExecutor.swipe(svc, x, startY, x, endY, 300)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Scroll up failed: ${e.message}")
+            false
+        }
+    }
+
+    private fun scrollDown(): Boolean {
+        return try {
+            val svc = service ?: return false
+            val root = svc.rootInActiveWindow ?: return false
+            val scrollable = findScrollableNode(root)
+            if (scrollable != null) {
+                scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+            } else {
+                // Fallback: gesture scroll down
+                val displayMetrics = svc.resources.displayMetrics
+                val x = displayMetrics.widthPixels / 2
+                val startY = displayMetrics.heightPixels / 4
+                val endY = displayMetrics.heightPixels * 3 / 4
+                ActionExecutor.swipe(svc, x, startY, x, endY, 300)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Scroll down failed: ${e.message}")
+            false
+        }
+    }
+
+    private fun findScrollableNode(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        if (node.isScrollable) return node
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val result = findScrollableNode(child)
+            if (result != null) return result
+        }
+        return null
+    }
+
+    // ============================
+    // NAVIGATION
+    // ============================
+
+    private fun goBack(): Boolean {
+        return try {
+            val svc = service ?: return false
+            svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+        } catch (e: Exception) {
+            Log.e(TAG, "Back failed: ${e.message}")
+            false
+        }
+    }
+
+    private fun goHome(): Boolean {
+        return try {
+            val svc = service ?: return false
+            svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+        } catch (e: Exception) {
+            Log.e(TAG, "Home failed: ${e.message}")
+            false
+        }
+    }
+
+    private fun openNotification(): Boolean {
+        return try {
+            val svc = service ?: return false
+            svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_NOTIFICATIONS)
+        } catch (e: Exception) {
+            Log.e(TAG, "Notification failed: ${e.message}")
+            false
+        }
     }
 }
