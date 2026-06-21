@@ -457,7 +457,7 @@ object DynamicDecisionEngine {
                         if (captureMgr != null) {
                             val bitmap = captureMgr.captureFrame()
                             if (bitmap != null) {
-                                val ocrText = OCRProcessor.extractText(bitmap)
+                                val ocrText = OCRProcessor.extractTextSuspend(bitmap)
                                 if (ocrText.isNotBlank()) "স্ক্রিনে লেখা আছে (OCR):\n$ocrText"
                                 else "স্ক্রিনে কোনো লেখা পাওয়া যায়নি"
                             } else "Screen Capture চালু নেই — স্ক্রিন পড়তে পারি নাই"
@@ -469,7 +469,7 @@ object DynamicDecisionEngine {
                     if (captureMgr != null) {
                         val bitmap = captureMgr.captureFrame()
                         if (bitmap != null) {
-                            val ocrText = OCRProcessor.extractText(bitmap)
+                            val ocrText = OCRProcessor.extractTextSuspend(bitmap)
                             if (ocrText.isNotBlank()) "স্ক্রিনে লেখা আছে (OCR):\n$ocrText"
                             else "স্ক্রিনে কোনো লেখা পাওয়া যায়নি"
                         } else "Screen Capture চালু নেই"
