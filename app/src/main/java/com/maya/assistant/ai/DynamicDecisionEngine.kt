@@ -11,6 +11,7 @@ import com.maya.assistant.screenvision.OCRProcessor
 import com.maya.assistant.screenvision.ScreenCaptureManager
 import com.maya.assistant.screenvision.ScreenCaptureService
 import com.maya.assistant.screenvision.VisionDecisionEngine
+import com.maya.assistant.automation.UiTreeSerializer
 import com.maya.assistant.service.SmartAccessibilityEngine
 import com.maya.assistant.utils.Logger
 
@@ -254,6 +255,40 @@ object DynamicDecisionEngine {
                 val text = command.args["text"] ?: ""
                 if (SmartAccessibilityEngine.execute("TYPE_TEXT $text").success) "লিখে দিলাম: $text"
                 else "লিখতে পারি নাই"
+            }
+
+            CommandType.READ_SCREEN -> {
+                // ১. Try accessibility tree first
+                val service = SmartAccessibilityEngine.service
+                val root = service?.rootInActiveWindow
+                if (root != null) {
+                    val text = UiTreeSerializer.extractAllText(root)
+                    if (text.isNotBlank()) {
+                        "স্ক্রিনে আছে:\n$text"
+                    } else {
+                        // ২. OCR fallback
+                        val captureMgr = ScreenCaptureService.captureManager
+                        if (captureMgr != null) {
+                            val bitmap = captureMgr.captureFrame()
+                            if (bitmap != null) {
+                                val ocrText = OCRProcessor.extractText(bitmap)
+                                if (ocrText.isNotBlank()) "স্ক্রিনে লেখা আছে (OCR):\n$ocrText"
+                                else "স্ক্রিনে কোনো লেখা পাওয়া যায়নি"
+                            } else "Screen Capture চালু নেই — স্ক্রিন পড়তে পারি নাই"
+                        } else "Screen Vision বন্ধ আছে — Settings থেকে চালু করো"
+                    }
+                } else {
+                    // ৩. No accessibility — try OCR directly
+                    val captureMgr = ScreenCaptureService.captureManager
+                    if (captureMgr != null) {
+                        val bitmap = captureMgr.captureFrame()
+                        if (bitmap != null) {
+                            val ocrText = OCRProcessor.extractText(bitmap)
+                            if (ocrText.isNotBlank()) "স্ক্রিনে লেখা আছে (OCR):\n$ocrText"
+                            else "স্ক্রিনে কোনো লেখা পাওয়া যায়নি"
+                        } else "Screen Capture চালু নেই"
+                    } else "Accessibility Service বা Screen Vision চালু নেই"
+                }
             }
 
             else -> ""

@@ -126,7 +126,7 @@
 
         <!-- OVERLAY SERVICE -->
         <service
-            android:name=".service.MayaOverlayService"
+            android:name=".service.MyraOverlayService"
             android:exported="false"
             android:foregroundServiceType="microphone"/>
 

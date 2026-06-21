@@ -18,6 +18,7 @@ object IntentAnalyzer {
     private val FLASHLIGHT_ON = listOf("flashlight on", "torch on", "light on", "ফ্ল্যাশলাইট চালু", "टॉर्च चालূ", "شعلة على", "lampe allumée")
     private val FLASHLIGHT_OFF = listOf("flashlight off", "torch off", "light off", "ফ্ল্যাশলাইট বন্ধ", "टॉर्च बंद", "شعلة إيقاف", "lampe éteinte")
     private val SCREENSHOT_PATTERNS = listOf("screenshot", "screen shot", "capture screen", "স্ক্রিনশট", "स्क्रीनशॉट", "لقطة شاشة", "capture d'écran")
+    private val READ_SCREEN_PATTERNS = listOf("read screen", "screen read", "স্ক্রিন পড়ো", "স্ক্রিনে কী আছে", "what's on screen", "read the screen", "screen content", "স্ক্রিন কন্টেন্ট")
     private val SCROLL_UP_PATTERNS = listOf("scroll up", "upar scroll", "উপরে স্ক্রল", "ऊपर स्क्रॉल", "تمرير لأعلى", "défiler vers le haut")
     private val SCROLL_DOWN_PATTERNS = listOf("scroll down", "niche scroll", "নিচে স্ক্রল", "नीचे स्क्रॉल", "تمرير لأسفل", "défiler vers le bas")
     private val BACK_PATTERNS = listOf("back", "পেছনে", "पीछे", "رجوع", "retour")
@@ -50,6 +51,10 @@ object IntentAnalyzer {
             // Screenshot
             SCREENSHOT_PATTERNS.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.SCREENSHOT)
+
+            // Read screen
+            READ_SCREEN_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.READ_SCREEN)
 
             // Navigation
             BACK_PATTERNS.any { lower.contains(it) } ->

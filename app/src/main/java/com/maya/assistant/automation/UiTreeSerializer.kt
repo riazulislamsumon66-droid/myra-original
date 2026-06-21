@@ -146,4 +146,21 @@ object UiTreeSerializer {
             (rect.top + rect.bottom) / 2
         )
     }
+
+    /**
+     * Extract all text from accessibility tree (for screen reading)
+     */
+    fun extractAllText(root: AccessibilityNodeInfo?): String {
+        if (root == null) return ""
+        val sb = StringBuilder()
+        fun traverse(node: AccessibilityNodeInfo) {
+            node.text?.let { if (it.isNotBlank()) sb.appendLine(it) }
+            node.contentDescription?.let { if (it.isNotBlank()) sb.appendLine(it) }
+            for (i in 0 until node.childCount) {
+                node.getChild(i)?.let { traverse(it) }
+            }
+        }
+        traverse(root)
+        return sb.toString().trim()
+    }
 }
