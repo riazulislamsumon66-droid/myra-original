@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.Manifest
 import android.os.*
 import android.view.WindowManager
 import android.widget.*
