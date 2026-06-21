@@ -27,11 +27,20 @@ object AppLauncher {
     fun close(context: Context, appName: String): Boolean {
         try {
             val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-            // Try to kill the app by package name
             val packages = context.packageManager.getInstalledApplications(0)
             for (pkg in packages) {
-                if (pkg.loadLabel(context.packageManager).toString().lowercase().contains(appName.lowercase())) {
+                val label = pkg.loadLabel(context.packageManager).toString().lowercase()
+                if (label.contains(appName.lowercase()) || pkg.packageName.lowercase().contains(appName.lowercase())) {
+                    // Kill background processes
                     am.killBackgroundProcesses(pkg.packageName)
+                    // Also try to remove recent task
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                        am.appTasks.forEach { task ->
+                            if (task.taskInfo?.baseActivity?.packageName == pkg.packageName) {
+                                task.finishAndRemoveTask()
+                            }
+                        }
+                    }
                     Logger.d(TAG, "Closed: ${pkg.packageName}")
                     return true
                 }

@@ -32,88 +32,118 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
         const val ACTION_CALL_ACTIVE = "com.maya.assistant.CALL_ACTIVE"
         const val ACTION_CALL_ENDED = "com.maya.assistant.CALL_ENDED"
         const val ACTION_CALL_RINGING = "com.maya.assistant.CALL_RINGING"
-        private const val CHANNEL_ID = "myra_call_channel"
-        private const val TAG = "MYRA_CALL"
+        private const val CHANNEL_ID = "maya_call_channel"
+        private const val TAG = "MAYA_CALL"
+        private const val NOTIF_ID = 1001
     }
 
     override fun onCreate() {
         super.onCreate()
-
         createNotificationChannel()
         startForegroundService()
-
         tts = TextToSpeech(this, this)
-
         setupPhoneListener()
     }
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            tts?.language = Locale("bn", "BD")
-            ttsReady = true
+            val result = tts?.setLanguage(Locale("bn", "BD"))
+            ttsReady = (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED)
+            if (!ttsReady) {
+                // Fallback to English
+                tts?.setLanguage(Locale.ENGLISH)
+                ttsReady = true
+            }
         }
     }
 
     private fun setupPhoneListener() {
-        telephonyManager =
-            getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
-        phoneListener = object : PhoneStateListener() {
-            override fun onCallStateChanged(state: Int, number: String?) {
-                super.onCallStateChanged(state, number)
-
-                when (state) {
-
-                    TelephonyManager.CALL_STATE_RINGING -> {
-                        if (!announced) {
-                            announced = true
-                            handleIncomingCall(number)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Android 12+ — use TelephonyCallback
+            try {
+                telephonyManager?.registerTelephonyCallback(
+                    { runnable -> android.os.Handler(android.os.Looper.getMainLooper()).post(runnable) },
+                    object : android.telephony.TelephonyCallback(),
+                        android.telephony.TelephonyCallback.CallStateListener {
+                        override fun onCallStateChanged(state: Int) {
+                            handleCallState(state, null)
                         }
                     }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "TelephonyCallback failed, using legacy: ${e.message}")
+                setupLegacyPhoneListener()
+            }
+        } else {
+            setupLegacyPhoneListener()
+        }
+    }
 
-                    TelephonyManager.CALL_STATE_OFFHOOK -> {
-                        sendBroadcast(Intent(ACTION_CALL_ACTIVE))
-                    }
-
-                    TelephonyManager.CALL_STATE_IDLE -> {
-                        announced = false
-                        sendBroadcast(Intent(ACTION_CALL_ENDED))
-                    }
-                }
-
-                lastState = state
+    private fun setupLegacyPhoneListener() {
+        phoneListener = object : PhoneStateListener() {
+            @Suppress("DEPRECATION")
+            override fun onCallStateChanged(state: Int, number: String?) {
+                handleCallState(state, number)
             }
         }
+        @Suppress("DEPRECATION")
+        telephonyManager?.listen(phoneListener, PhoneStateListener.LISTEN_CALL_STATE)
+    }
 
-        telephonyManager?.listen(
-            phoneListener,
-            PhoneStateListener.LISTEN_CALL_STATE
-        )
+    private fun handleCallState(state: Int, number: String?) {
+        when (state) {
+            TelephonyManager.CALL_STATE_RINGING -> {
+                if (!announced) {
+                    announced = true
+                    handleIncomingCall(number)
+                }
+            }
+            TelephonyManager.CALL_STATE_OFFHOOK -> {
+                sendBroadcast(Intent(ACTION_CALL_ACTIVE))
+            }
+            TelephonyManager.CALL_STATE_IDLE -> {
+                announced = false
+                sendBroadcast(Intent(ACTION_CALL_ENDED))
+            }
+        }
+        lastState = state
     }
 
     private fun handleIncomingCall(number: String?) {
         val callerName = resolveCallerName(number)
+        Log.d(TAG, "Incoming: $callerName from $number")
 
-        Log.d(TAG, "Incoming: $callerName")
+        // Announce via TTS
+        if (ttsReady) {
+            val announceText = "কল আসছে: $callerName"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                tts?.speak(announceText, TextToSpeech.QUEUE_FLUSH, null, "call_announce")
+            } else {
+                @Suppress("DEPRECATION")
+                tts?.speak(announceText, TextToSpeech.QUEUE_FLUSH, null)
+            }
+        }
 
+        // Open CallAssistantActivity
         val intent = Intent(this, CallAssistantActivity::class.java).apply {
             putExtra("CALLER_NAME", callerName)
             putExtra("PHONE_NUMBER", number ?: "")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
-
         startActivity(intent)
     }
 
     private fun resolveCallerName(number: String?): String {
-        if (number.isNullOrEmpty()) return "Unknown Caller"
+        if (number.isNullOrEmpty()) return "অজানা নম্বর"
 
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.READ_CONTACTS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            return "Unknown Caller"
+            return "অজানা নম্বর"
         }
 
         return try {
@@ -130,34 +160,34 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
                 null
             )?.use { cursor ->
                 if (cursor.moveToFirst()) {
-                    cursor.getString(0) ?: "Unknown Caller"
+                    cursor.getString(0) ?: "অজানা নম্বর"
                 } else {
-                    "Unknown Caller"
+                    "অজানা নম্বর"
                 }
-            } ?: "Unknown Caller"
+            } ?: "অজানা নম্বর"
 
         } catch (e: Exception) {
-            Log.e(TAG, e.message ?: "")
-            "Unknown Caller"
+            Log.e(TAG, "Contact lookup error: ${e.message}")
+            "অজানা নম্বর"
         }
     }
 
     private fun startForegroundService() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("MAYA Running")
-            .setContentText("Call monitoring active")
+            .setContentTitle("MAYA Call Monitor")
+            .setContentText("কল মনিটরিং সক্রিয়")
             .setSmallIcon(R.mipmap.img)
             .setOngoing(true)
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(
-                1001,
+                NOTIF_ID,
                 notification,
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
             )
         } else {
-            startForeground(1001, notification)
+            startForeground(NOTIF_ID, notification)
         }
     }
 
@@ -168,33 +198,24 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
                 "MAYA Call Monitor",
                 NotificationManager.IMPORTANCE_LOW
             )
-
-            val manager =
-                getSystemService(NotificationManager::class.java)
-
+            val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
     }
 
-    override fun onStartCommand(
-        intent: Intent?,
-        flags: Int,
-        startId: Int
-    ): Int {
-        return START_STICKY
-    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        telephonyManager?.listen(
-            phoneListener,
-            PhoneStateListener.LISTEN_NONE
-        )
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // TelephonyCallback is unregistered automatically
+        } else {
+            @Suppress("DEPRECATION")
+            telephonyManager?.listen(phoneListener, PhoneStateListener.LISTEN_NONE)
+        }
         tts?.stop()
         tts?.shutdown()
-
         super.onDestroy()
     }
 }

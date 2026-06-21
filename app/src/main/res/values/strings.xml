@@ -13,4 +13,5 @@
     <string name="accessibility_disabled">Accessibility: Disabled ⚠️</string>
     <string name="long_press_stop">Hold to reconnect</string>
     <string name="Maya_full">M · A · Y · A</string>
+    <string name="accessibility_description">MAYA Accessibility Service — Screen reading, app control, call monitoring, and device automation</string>
 </resources>
