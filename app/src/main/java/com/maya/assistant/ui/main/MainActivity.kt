@@ -207,6 +207,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startVoiceService() {
+        // Check mic permission first — Android 14+ crashes without it
+        if (!PermissionUtils.hasMicPermission(this)) {
+            Logger.w(TAG, "RECORD_AUDIO not granted, voice service not started")
+            addBotMessage("⚠️ Microphone permission দরকার। Settings → Apps → MAYA → Permissions → Microphone → Allow")
+            return
+        }
         val apiKey = prefs().getString(Constants.KEY_API_KEY, "") ?: ""
         if (apiKey.isEmpty()) {
             addBotMessage("⚠️ API Key required. Please go to Settings → Enter Gemini API Key.")

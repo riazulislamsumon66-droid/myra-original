@@ -177,6 +177,14 @@ object IntentAnalyzer {
                     "message" to (parts.getOrNull(1) ?: "")
                 ))
             }
+            t.startsWith("SMS", true) -> {
+                val rest = t.removePrefix("SMS").trim()
+                val parts = rest.split(" ", limit = 2)
+                VoiceCommand(t, CommandType.SMS, mapOf(
+                    "name" to (parts.getOrNull(0) ?: ""),
+                    "message" to (parts.getOrNull(1) ?: "")
+                ))
+            }
             t.startsWith("YOUTUBE_PLAY", true) -> {
                 val q = t.removePrefix("YOUTUBE_PLAY").trim()
                 VoiceCommand(t, CommandType.YOUTUBE_PLAY, mapOf("query" to q))
