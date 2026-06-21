@@ -192,6 +192,18 @@ object IntentAnalyzer {
             t.equals("SCREENSHOT", true) -> VoiceCommand(t, CommandType.SCREENSHOT)
             t.equals("SCROLL_UP", true) -> VoiceCommand(t, CommandType.SCROLL_UP)
             t.equals("SCROLL_DOWN", true) -> VoiceCommand(t, CommandType.SCROLL_DOWN)
+            t.startsWith("CLICK", true) -> {
+                val target = t.removePrefix("CLICK").removePrefix(":").trim()
+                VoiceCommand(t, CommandType.CLICK, mapOf("target" to target))
+            }
+            t.startsWith("SEARCH", true) -> {
+                val query = t.removePrefix("SEARCH").removePrefix(":").trim()
+                VoiceCommand(t, CommandType.SEARCH, mapOf("query" to query))
+            }
+            t.startsWith("TYPE_TEXT", true) -> {
+                val text = t.removePrefix("TYPE_TEXT").removePrefix(":").trim()
+                VoiceCommand(t, CommandType.TYPE_TEXT, mapOf("text" to text))
+            }
             else -> null
         }
     }

@@ -1,8 +1,10 @@
 package com.maya.assistant.services
 
 import android.app.*
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -43,12 +45,29 @@ class ForegroundVoiceService : Service() {
         var isRunning = false
     }
 
+    private var powerButtonReceiver: BroadcastReceiver? = null
+
     override fun onCreate() {
         super.onCreate()
         instance = this
         isRunning = true
         startForeground(Constants.NOTIF_ID_VOICE, buildNotification())
         initComponents()
+        registerPowerButtonReceiver()
+    }
+
+    private fun registerPowerButtonReceiver() {
+        powerButtonReceiver = PowerButtonReceiver()
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(powerButtonReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(powerButtonReceiver, filter)
+        }
+        Logger.d(TAG, "PowerButtonReceiver registered dynamically")
     }
 
     private fun initComponents() {
@@ -177,6 +196,7 @@ CRITICAL RULES:
   SPOTIFY_PLAY <query> | FLASHLIGHT_ON | FLASHLIGHT_OFF
   VOLUME_UP | VOLUME_DOWN | SCREENSHOT | SCROLL_UP | SCROLL_DOWN
   BACK | HOME | NOTIFICATION | SMS <name> <message>
+  CLICK <text> | SEARCH <query> | TYPE_TEXT <text>
 - For conversation: Reply short and natural in user's preferred language
 - Address user as $userName
 - Be warm, witty, and human-like
@@ -204,7 +224,7 @@ CRITICAL RULES:
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val ch = NotificationChannel(
                 Constants.NOTIF_CHANNEL_VOICE,
-                "MYRA Voice Service",
+                "MAYA Voice Service",
                 NotificationManager.IMPORTANCE_LOW
             ).apply { setShowBadge(false) }
             getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
@@ -221,6 +241,11 @@ CRITICAL RULES:
         audioRecorder.stop()
         audioPlayer.release()
         geminiClient?.disconnect()
+        // Unregister power button receiver
+        powerButtonReceiver?.let {
+            try { unregisterReceiver(it) } catch (_: Exception) {}
+        }
+        powerButtonReceiver = null
         job.cancel()
         super.onDestroy()
     }

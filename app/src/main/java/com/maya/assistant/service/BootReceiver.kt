@@ -15,6 +15,12 @@ class BootReceiver : BroadcastReceiver() {
             if (apiKey.isNotEmpty()) {
                 ContextCompat.startForegroundService(context, Intent(context, ForegroundVoiceService::class.java))
             }
+            // Also start call monitoring on boot
+            try {
+                ContextCompat.startForegroundService(context, Intent(context, CallMonitorService::class.java))
+            } catch (e: Exception) {
+                android.util.Log.e("BOOT", "Failed to start CallMonitorService: ${e.message}")
+            }
         }
     }
 }

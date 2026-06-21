@@ -35,7 +35,11 @@ object DynamicDecisionEngine {
             CommandType.CLOSE_APP -> {
                 val app = command.args["app"] ?: ""
                 if (AppLauncher.close(context, app)) "বন্ধ করে দিলাম: $app"
-                else "বন্ধ করতে পারি নাই: $app"
+                else {
+                    // Fallback: try recents swipe gesture
+                    if (AppLauncher.closeViaRecents(context, app)) "বন্ধ করে দিলাম (recents): $app"
+                    else "বন্ধ করতে পারি নাই: $app"
+                }
             }
 
             CommandType.CALL -> {
@@ -218,6 +222,24 @@ object DynamicDecisionEngine {
                     "notification" -> { SmartAccessibilityEngine.execute("NOTIFICATION"); "নোটিফিকেশন খুললাম" }
                     else -> ""
                 }
+            }
+
+            CommandType.CLICK -> {
+                val target = command.args["target"] ?: ""
+                if (SmartAccessibilityEngine.execute("CLICK $target").success) "ক্লিক করলাম: $target"
+                else "ক্লিক করতে পারি নাই: $target"
+            }
+
+            CommandType.SEARCH -> {
+                val query = command.args["query"] ?: ""
+                if (SmartAccessibilityEngine.execute("SEARCH $query").success) "সার্চ করলাম: $query"
+                else "সার্চ করতে পারি নাই: $query"
+            }
+
+            CommandType.TYPE_TEXT -> {
+                val text = command.args["text"] ?: ""
+                if (SmartAccessibilityEngine.execute("TYPE_TEXT $text").success) "লিখে দিলাম: $text"
+                else "লিখতে পারি নাই"
             }
 
             else -> ""

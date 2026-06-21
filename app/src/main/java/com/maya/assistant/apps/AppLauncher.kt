@@ -81,4 +81,49 @@ object AppLauncher {
             return false
         }
     }
+
+    fun closeViaRecents(context: Context, appName: String): Boolean {
+        return try {
+            val svc = com.maya.assistant.service.SmartAccessibilityEngine.service
+            if (svc == null) {
+                Logger.w(TAG, "Accessibility service not available for recents swipe")
+                return false
+            }
+            // Step 1: Open recent apps (global action)
+            svc.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_RECENTS)
+            Thread.sleep(1500)
+            // Step 2: Find the app card in recents and swipe it away
+            val root = svc.rootInActiveWindow ?: return false
+            val appCard = findAppCardInRecents(root, appName)
+            if (appCard != null) {
+                // Swipe up to dismiss
+                val bounds = android.graphics.Rect()
+                appCard.getBoundsInScreen(bounds)
+                val centerX = bounds.centerX()
+                val centerY = bounds.centerY()
+                val endY = centerY - 800 // Swipe up
+                com.maya.assistant.automation.ActionExecutor.swipe(svc, centerX, centerY, centerX, Math.max(endY, 100), 300)
+                Logger.d(TAG, "Swiped away $appName from recents")
+                true
+            } else {
+                Logger.w(TAG, "App card not found in recents: $appName")
+                false
+            }
+        } catch (e: Exception) {
+            Logger.e(TAG, "Close via recents failed: ${e.message}")
+            false
+        }
+    }
+
+    private fun findAppCardInRecents(node: android.view.accessibility.AccessibilityNodeInfo, appName: String): android.view.accessibility.AccessibilityNodeInfo? {
+        if (node.text != null && node.text.toString().contains(appName, ignoreCase = true)) {
+            return node
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val result = findAppCardInRecents(child, appName)
+            if (result != null) return result
+        }
+        return null
+    }
 }

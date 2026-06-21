@@ -53,6 +53,11 @@ object SmartAccessibilityEngine {
                     cmd.removePrefix("SEARCH").trim()
                 )
 
+            cmd.startsWith("TYPE_TEXT", true) ->
+                typeText(
+                    cmd.removePrefix("TYPE_TEXT").trim()
+                )
+
             cmd.startsWith("VOLUME_UP", true) ->
                 volumeUp()
 
@@ -279,6 +284,37 @@ object SmartAccessibilityEngine {
             AccessibilityNodeInfo.ACTION_SET_TEXT,
             args
         )
+    }
+
+    private fun typeText(text: String): Boolean {
+        return try {
+            val svc = service ?: return false
+            val root = svc.rootInActiveWindow ?: return false
+            // Find the currently focused editable node
+            val editable = findFocusedEditableNode(root) ?: findEditableNode(root) ?: return false
+            val args = android.os.Bundle().apply {
+                putCharSequence(
+                    AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                    text
+                )
+            }
+            editable.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        } catch (e: Exception) {
+            Log.e(TAG, "Type text failed: ${e.message}")
+            false
+        }
+    }
+
+    private fun findFocusedEditableNode(
+        node: AccessibilityNodeInfo
+    ): AccessibilityNodeInfo? {
+        if (node.isFocused && node.isEditable) return node
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val result = findFocusedEditableNode(child)
+            if (result != null) return result
+        }
+        return null
     }
 
     private fun findEditableNode(

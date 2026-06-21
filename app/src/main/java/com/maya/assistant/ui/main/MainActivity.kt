@@ -83,8 +83,24 @@ class MainActivity : AppCompatActivity() {
         observeViewModel()
         observeVoiceState()
         startVoiceService()
+        startCallMonitorService()
         checkAccessibility()
         checkBatteryOptimization()
+    }
+
+    private fun startCallMonitorService() {
+        if (PermissionUtils.hasPermission(this, Manifest.permission.READ_PHONE_STATE)) {
+            try {
+                ContextCompat.startForegroundService(
+                    this, Intent(this, com.maya.assistant.service.CallMonitorService::class.java)
+                )
+                Logger.d(TAG, "CallMonitorService started")
+            } catch (e: Exception) {
+                Logger.e(TAG, "Failed to start CallMonitorService: ${e.message}")
+            }
+        } else {
+            Logger.w(TAG, "READ_PHONE_STATE not granted, CallMonitorService not started")
+        }
     }
 
     private fun checkBatteryOptimization() {
