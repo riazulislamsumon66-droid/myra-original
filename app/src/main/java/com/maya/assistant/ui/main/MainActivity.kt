@@ -84,6 +84,13 @@ class MainActivity : AppCompatActivity() {
         observeVoiceState()
         startVoiceService()
         checkAccessibility()
+        checkBatteryOptimization()
+    }
+
+    private fun checkBatteryOptimization() {
+        if (!PermissionUtils.isBatteryOptimizationIgnored(this)) {
+            addBotMessage("⚠️ ব্যাটারি অপটিমাইজেশন বন্ধ করো — অ্যাপ ব্যাকগ্রাউন্ডে চলতে পারবে না।")
+        }
     }
 
     private fun initViews() {
