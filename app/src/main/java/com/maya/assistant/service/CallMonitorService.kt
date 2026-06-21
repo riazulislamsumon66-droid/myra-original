@@ -89,8 +89,14 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
                 handleCallState(state, number)
             }
         }
-        @Suppress("DEPRECATION")
-        telephonyManager?.listen(phoneListener, PhoneStateListener.LISTEN_CALL_STATE)
+        try {
+            @Suppress("DEPRECATION")
+            telephonyManager?.listen(phoneListener, PhoneStateListener.LISTEN_CALL_STATE)
+        } catch (e: SecurityException) {
+            Log.e(TAG, "Permission denied for PhoneStateListener: ${e.message}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to setup legacy phone listener: ${e.message}")
+        }
     }
 
     private fun handleCallState(state: Int, number: String?) {
