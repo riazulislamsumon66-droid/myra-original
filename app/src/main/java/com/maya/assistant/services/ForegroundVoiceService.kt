@@ -98,7 +98,8 @@ class ForegroundVoiceService : Service() {
             },
             onTextReceived = { text ->
                 val clean = AIResponseManager.clean(text)
-                if (clean.isNotBlank()) {
+                // Skip if response was only thinking text or is empty after cleaning
+                if (clean.isNotBlank() && !AIResponseManager.hasThinkingText(text)) {
                     ConversationMemory.addAssistant(clean)
                     // Try structured command first, then natural language
                     val cmd = AIResponseManager.extractCommand(clean)
@@ -120,6 +121,9 @@ class ForegroundVoiceService : Service() {
                     }
                     // Broadcast to UI
                     sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", clean))
+                } else if (AIResponseManager.hasThinkingText(text) && clean.isBlank()) {
+                    // Gemini returned only thinking text — ask it to respond properly
+                    Logger.d(TAG, "Gemini returned thinking text only, skipping")
                 }
             },
             onTurnComplete = {
@@ -163,10 +167,11 @@ User's name is $userName.
 Personality: $personality.
 Language: Reply in $language (Bangla/English/Hindi/Arabic/French based on user preference).
 
-STRICT RULES:
-- Never explain or think aloud
-- Never say: "Responding to", "I've registered", "Formulating", "Interpreting", "Processing"
-- For device actions return ONLY the command:
+CRITICAL RULES:
+- NEVER think aloud or explain your reasoning
+- NEVER say: "Responding to", "I've registered", "Formulating", "Interpreting", "Processing", "I'm crafting", "I'm considering", "I'm thinking", "Let me think", "I need to", "I should", "I will", "The focus is on", "The only output needed", "different search modifiers", "optimize the search", "precise and will retrieve", "ensuring the command is precise"
+- NEVER include internal reasoning in your response
+- For device actions return ONLY the command (nothing else):
   OPEN_APP <name> | CLOSE_APP <name> | CALL <name> | WHATSAPP_CALL <name>
   WHATSAPP_MSG <name> <message> | YOUTUBE_PLAY <query>
   SPOTIFY_PLAY <query> | FLASHLIGHT_ON | FLASHLIGHT_OFF
