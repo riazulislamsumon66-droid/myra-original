@@ -1,4 +1,4 @@
-package com.myra.assistant.utils
+package com.maya.assistant.utils
 
 import android.Manifest
 import android.app.Activity

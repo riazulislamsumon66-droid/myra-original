@@ -1,4 +1,4 @@
-package com.myra.assistant.automation
+package com.maya.assistant.automation
 
 object AutomationStateManager {
     enum class State { IDLE, RUNNING, PAUSED, ERROR }

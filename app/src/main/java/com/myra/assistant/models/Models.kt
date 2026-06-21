@@ -1,4 +1,4 @@
-package com.myra.assistant.models
+package com.maya.assistant.models
 
 data class VoiceCommand(
     val raw: String,

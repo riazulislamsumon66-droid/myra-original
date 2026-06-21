@@ -1,7 +1,7 @@
-package com.myra.assistant.ai
+package com.maya.assistant.ai
 
-import com.myra.assistant.models.CommandType
-import com.myra.assistant.models.VoiceCommand
+import com.maya.assistant.models.CommandType
+import com.maya.assistant.models.VoiceCommand
 
 object IntentAnalyzer {
 

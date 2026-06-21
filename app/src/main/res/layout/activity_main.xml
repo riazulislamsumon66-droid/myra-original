@@ -130,13 +130,13 @@
         android:gravity="center">
 
         <!-- Orb Animation -->
-        <com.myra.assistant.ui.main.OrbAnimationView
+        <com.maya.assistant.ui.main.OrbAnimationView
             android:id="@+id/orbView"
             android:layout_width="280dp"
             android:layout_height="280dp"/>
 
         <!-- Waveform -->
-        <com.myra.assistant.ui.main.WaveformView
+        <com.maya.assistant.ui.main.WaveformView
             android:id="@+id/waveformView"
             android:layout_width="220dp"
             android:layout_height="44dp"

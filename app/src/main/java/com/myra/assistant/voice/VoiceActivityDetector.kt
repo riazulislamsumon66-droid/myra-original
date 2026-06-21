@@ -1,7 +1,7 @@
-package com.myra.assistant.voice
+package com.maya.assistant.voice
 
-import com.myra.assistant.utils.AudioUtils
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.utils.AudioUtils
+import com.maya.assistant.utils.Logger
 
 /**
  * Simple energy-based Voice Activity Detector

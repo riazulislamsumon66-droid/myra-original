@@ -1,6 +1,6 @@
-package com.myra.assistant.websocket
+package com.maya.assistant.websocket
 
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.utils.Logger
 
 /**
  * Manages WebSocket connection lifecycle with auto-reconnect.

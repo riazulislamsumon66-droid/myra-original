@@ -1,4 +1,4 @@
-package com.myra.assistant.automation
+package com.maya.assistant.automation
 
 import android.Manifest
 import android.content.Context

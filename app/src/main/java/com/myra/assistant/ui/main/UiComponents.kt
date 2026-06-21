@@ -1,4 +1,4 @@
-package com.myra.assistant.ui.main
+package com.maya.assistant.ui.main
 
 import android.animation.ValueAnimator
 import android.content.Context
@@ -10,7 +10,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.myra.assistant.R
+import com.maya.assistant.R
 import kotlin.math.sin
 import kotlin.math.abs
 
@@ -137,7 +137,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             UserMessageViewHolder(view)
         } else {
             val view = inflater.inflate(R.layout.item_chat_myra, parent, false)
-            MyraMessageViewHolder(view)
+            MayaMessageViewHolder(view)
         }
     }
 
@@ -145,7 +145,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         val msg = messages[position]
         when (holder) {
             is UserMessageViewHolder -> holder.bind(msg)
-            is MyraMessageViewHolder -> holder.bind(msg)
+            is MayaMessageViewHolder -> holder.bind(msg)
         }
         // Slide-in animation for newly added messages
         if (position == messages.size - 1) {
@@ -178,7 +178,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         }
     }
 
-    inner class MyraMessageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    inner class MayaMessageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val msgText: TextView = view.findViewById(R.id.msgText)
         private val timeText: TextView = view.findViewById(R.id.timeText)
 

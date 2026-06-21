@@ -1,7 +1,7 @@
-package com.myra.assistant.automation
+package com.maya.assistant.automation
 
-import com.myra.assistant.models.ActionModel
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.models.ActionModel
+import com.maya.assistant.utils.Logger
 import kotlinx.coroutines.delay
 
 object WorkflowManager {

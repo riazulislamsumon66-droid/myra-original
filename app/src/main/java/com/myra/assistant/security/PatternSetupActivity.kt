@@ -1,4 +1,4 @@
-package com.myra.assistant.security
+package com.maya.assistant.security
 
 import android.os.Bundle
 import android.os.Handler
@@ -8,7 +8,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.myra.assistant.R
+import com.maya.assistant.R
 import java.util.*
 
 class PatternSetupActivity : AppCompatActivity(), TextToSpeech.OnInitListener {

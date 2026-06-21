@@ -1,8 +1,8 @@
-package com.myra.assistant.service
+package com.maya.assistant.service
 
 import android.util.Log
-import com.myra.assistant.automation.ActionExecutor
-import com.myra.assistant.automation.UiTreeSerializer
+import com.maya.assistant.automation.ActionExecutor
+import com.maya.assistant.automation.UiTreeSerializer
 
 object ScreenVisionAnalyzer {
 

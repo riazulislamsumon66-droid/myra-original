@@ -1,4 +1,4 @@
-package com.myra.assistant.network
+package com.maya.assistant.network
 
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor

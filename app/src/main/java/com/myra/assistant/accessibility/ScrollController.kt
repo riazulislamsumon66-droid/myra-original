@@ -1,7 +1,7 @@
-package com.myra.assistant.accessibility
+package com.maya.assistant.accessibility
 
 import android.view.accessibility.AccessibilityNodeInfo
-import com.myra.assistant.service.SmartAccessibilityEngine
+import com.maya.assistant.service.SmartAccessibilityEngine
 
 object ScrollController {
     fun scrollDown() = scroll(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)

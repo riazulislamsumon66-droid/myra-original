@@ -1,9 +1,9 @@
-package com.myra.assistant.screenvision
+package com.maya.assistant.screenvision
 
 import android.view.accessibility.AccessibilityNodeInfo
-import com.myra.assistant.accessibility.NodeReader
-import com.myra.assistant.models.ScreenNodeModel
-import com.myra.assistant.service.SmartAccessibilityEngine
+import com.maya.assistant.accessibility.NodeReader
+import com.maya.assistant.models.ScreenNodeModel
+import com.maya.assistant.service.SmartAccessibilityEngine
 
 object ScreenHierarchyParser {
 

@@ -1,8 +1,8 @@
-package com.myra.assistant.screenvision
+package com.maya.assistant.screenvision
 
-import com.myra.assistant.accessibility.DynamicClickEngine
-import com.myra.assistant.accessibility.TypingController
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.accessibility.DynamicClickEngine
+import com.maya.assistant.accessibility.TypingController
+import com.maya.assistant.utils.Logger
 
 object VisionDecisionEngine {
     private val TAG = "VISION_DECISION"

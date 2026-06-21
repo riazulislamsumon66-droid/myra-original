@@ -1,11 +1,11 @@
-package com.myra.assistant.automation
+package com.maya.assistant.automation
 
-import com.myra.assistant.accessibility.DynamicClickEngine
-import com.myra.assistant.accessibility.ScrollController
-import com.myra.assistant.accessibility.TypingController
-import com.myra.assistant.models.ActionModel
-import com.myra.assistant.models.ActionType
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.accessibility.DynamicClickEngine
+import com.maya.assistant.accessibility.ScrollController
+import com.maya.assistant.accessibility.TypingController
+import com.maya.assistant.models.ActionModel
+import com.maya.assistant.models.ActionType
+import com.maya.assistant.utils.Logger
 
 object TaskExecutor {
     private val TAG = "TASK_EXEC"

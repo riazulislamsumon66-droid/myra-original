@@ -1,11 +1,11 @@
-package com.myra.assistant.service
+package com.maya.assistant.service
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
-import com.myra.assistant.services.ForegroundVoiceService
-import com.myra.assistant.utils.Constants
+import com.maya.assistant.services.ForegroundVoiceService
+import com.maya.assistant.utils.Constants
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

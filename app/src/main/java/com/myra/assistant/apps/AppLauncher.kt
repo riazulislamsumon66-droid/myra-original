@@ -1,8 +1,8 @@
-package com.myra.assistant.apps
+package com.maya.assistant.apps
 
 import android.content.Context
 import android.content.Intent
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.utils.Logger
 
 object AppLauncher {
     private val TAG = "LAUNCHER"

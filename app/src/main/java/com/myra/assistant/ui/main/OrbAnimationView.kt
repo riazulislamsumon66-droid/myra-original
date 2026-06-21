@@ -1,4 +1,4 @@
-package com.myra.assistant.ui.main
+package com.maya.assistant.ui.main
 
 import android.animation.ValueAnimator
 import android.content.Context

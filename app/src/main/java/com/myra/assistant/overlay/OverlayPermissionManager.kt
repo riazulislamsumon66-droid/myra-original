@@ -1,4 +1,4 @@
-package com.myra.assistant.overlay
+package com.maya.assistant.overlay
 
 import android.content.Context
 import android.content.Intent

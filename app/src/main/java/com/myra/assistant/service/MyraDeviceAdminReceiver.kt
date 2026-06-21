@@ -1,10 +1,10 @@
-package com.myra.assistant.service
+package com.maya.assistant.service
 
 import android.app.admin.DeviceAdminReceiver
 import android.content.Context
 import android.content.Intent
 
-class MyraDeviceAdminReceiver : DeviceAdminReceiver() {
+class MayaDeviceAdminReceiver : DeviceAdminReceiver() {
     override fun onEnabled(context: Context, intent: Intent) {
         super.onEnabled(context, intent)
     }

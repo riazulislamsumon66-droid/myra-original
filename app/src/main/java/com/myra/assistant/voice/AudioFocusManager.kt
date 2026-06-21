@@ -1,11 +1,11 @@
-package com.myra.assistant.voice
+package com.maya.assistant.voice
 
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.utils.Logger
 
 class AudioFocusManager(private val context: Context) {
     private val TAG = "AUDIO_FOCUS"

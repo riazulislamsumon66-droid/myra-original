@@ -28,7 +28,7 @@
         android:layout_marginTop="16dp"
         android:textAlignment="center"/>
 
-    <com.myra.assistant.security.PatternLockView
+    <com.maya.assistant.security.PatternLockView
         android:id="@+id/patternLockView"
         android:layout_width="300dp"
         android:layout_height="300dp"

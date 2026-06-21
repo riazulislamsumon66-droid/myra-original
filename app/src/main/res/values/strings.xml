@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">MYRA</string>
+    <string name="app_name">MAYA</string>
     <string name="app_tagline">AI COMPANION</string>
     <string name="system_ready">SYSTEM READY</string>
     <string name="listening">LISTENING…</string>
@@ -12,5 +12,5 @@
     <string name="accessibility_enabled">Accessibility: Active ✅</string>
     <string name="accessibility_disabled">Accessibility: Disabled ⚠️</string>
     <string name="long_press_stop">Hold to reconnect</string>
-    <string name="myra_full">M · Y · R · A</string>
+    <string name="Maya_full">M · A · Y · A</string>
 </resources>

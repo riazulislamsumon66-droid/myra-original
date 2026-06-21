@@ -1,7 +1,7 @@
-package com.myra.assistant.voice
+package com.maya.assistant.voice
 
 import androidx.lifecycle.MutableLiveData
-import com.myra.assistant.utils.Constants
+import com.maya.assistant.utils.Constants
 
 object VoiceStateManager {
 

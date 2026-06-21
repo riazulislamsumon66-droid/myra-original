@@ -1,4 +1,4 @@
-package com.myra.assistant.ui.main
+package com.maya.assistant.ui.main
 
 import android.app.ActivityManager
 import android.content.*
@@ -12,17 +12,17 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.myra.assistant.R
-import com.myra.assistant.security.BiometricManager
-import com.myra.assistant.service.AccessibilityHelperService
-import com.myra.assistant.services.ForegroundVoiceService
-import com.myra.assistant.ui.settings.SettingsActivity
-import com.myra.assistant.utils.Constants
-import com.myra.assistant.utils.Logger
-import com.myra.assistant.utils.PermissionUtils
-import com.myra.assistant.utils.prefs
-import com.myra.assistant.viewmodel.MainViewModel
-import com.myra.assistant.voice.VoiceStateManager
+import com.maya.assistant.R
+import com.maya.assistant.security.BiometricManager
+import com.maya.assistant.service.AccessibilityHelperService
+import com.maya.assistant.services.ForegroundVoiceService
+import com.maya.assistant.ui.settings.SettingsActivity
+import com.maya.assistant.utils.Constants
+import com.maya.assistant.utils.Logger
+import com.maya.assistant.utils.PermissionUtils
+import com.maya.assistant.utils.prefs
+import com.maya.assistant.viewmodel.MainViewModel
+import com.maya.assistant.voice.VoiceStateManager
 import java.text.SimpleDateFormat
 import java.util.*
 

@@ -1,11 +1,11 @@
-package com.myra.assistant.service
+package com.maya.assistant.service
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import com.myra.assistant.ui.main.MainActivity
+import com.maya.assistant.ui.main.MainActivity
 
 class PowerButtonReceiver : BroadcastReceiver() {
 
@@ -31,7 +31,7 @@ class PowerButtonReceiver : BroadcastReceiver() {
 
             if (pressCount >= 2) {
                 pressCount = 0
-                launchMyra(context)
+                launchMaya(context)
             }
 
         } else {
@@ -41,7 +41,7 @@ class PowerButtonReceiver : BroadcastReceiver() {
         lastPressTime = now
     }
 
-    private fun launchMyra(context: Context) {
+    private fun launchMaya(context: Context) {
         Log.d(TAG, "Double power press detected")
 
         val intent = Intent(context, MainActivity::class.java).apply {

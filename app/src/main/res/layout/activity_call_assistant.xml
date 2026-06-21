@@ -40,7 +40,7 @@
             android:textSize="18sp"
             android:layout_marginBottom="32dp"/>
 
-        <com.myra.assistant.ui.main.WaveformView
+        <com.maya.assistant.ui.main.WaveformView
             android:id="@+id/callWaveform"
             android:layout_width="match_parent"
             android:layout_height="60dp"

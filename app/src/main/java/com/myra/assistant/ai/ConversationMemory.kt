@@ -1,4 +1,4 @@
-package com.myra.assistant.ai
+package com.maya.assistant.ai
 
 data class Turn(val role: String, val text: String, val timestamp: Long = System.currentTimeMillis())
 

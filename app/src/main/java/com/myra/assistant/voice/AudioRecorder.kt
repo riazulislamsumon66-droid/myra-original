@@ -1,4 +1,4 @@
-package com.myra.assistant.voice
+package com.maya.assistant.voice
 
 import android.Manifest
 import android.content.Context
@@ -7,8 +7,8 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import androidx.core.content.ContextCompat
-import com.myra.assistant.utils.AudioUtils
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.utils.AudioUtils
+import com.maya.assistant.utils.Logger
 
 class AudioRecorder(
     private val context: Context,

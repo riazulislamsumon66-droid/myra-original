@@ -1,4 +1,4 @@
-package com.myra.assistant.accessibility
+package com.maya.assistant.accessibility
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription

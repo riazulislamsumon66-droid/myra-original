@@ -1,4 +1,4 @@
-package com.myra.assistant.services
+package com.maya.assistant.services
 
 import android.content.Context
 import android.content.Intent

@@ -1,6 +1,6 @@
-package com.myra.assistant.ai
+package com.maya.assistant.ai
 
-import com.myra.assistant.models.CommandType
+import com.maya.assistant.models.CommandType
 
 object CommandProcessor {
     fun process(input: String): String {

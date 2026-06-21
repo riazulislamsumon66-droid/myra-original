@@ -1,4 +1,4 @@
-package com.myra.assistant.network
+package com.maya.assistant.network
 
 import retrofit2.Response
 import retrofit2.http.Body

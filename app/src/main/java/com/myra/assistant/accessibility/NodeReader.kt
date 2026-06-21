@@ -1,8 +1,8 @@
-package com.myra.assistant.accessibility
+package com.maya.assistant.accessibility
 
 import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
-import com.myra.assistant.models.ScreenNodeModel
+import com.maya.assistant.models.ScreenNodeModel
 
 object NodeReader {
     fun readAll(root: AccessibilityNodeInfo?): List<ScreenNodeModel> {

@@ -1,4 +1,4 @@
-package com.myra.assistant.ui.settings
+package com.maya.assistant.ui.settings
 
 import android.Manifest
 import android.app.admin.DevicePolicyManager
@@ -17,10 +17,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.myra.assistant.R
-import com.myra.assistant.service.AccessibilityHelperService
-import com.myra.assistant.service.MyraDeviceAdminReceiver
-import com.myra.assistant.security.SecuritySettingsActivity
+import com.maya.assistant.R
+import com.maya.assistant.service.AccessibilityHelperService
+import com.maya.assistant.service.MayaDeviceAdminReceiver
+import com.maya.assistant.security.SecuritySettingsActivity
 
 
 class SettingsActivity : AppCompatActivity() {
@@ -76,7 +76,7 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
 
         devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        componentName = ComponentName(this, MyraDeviceAdminReceiver::class.java)
+        componentName = ComponentName(this, MayaDeviceAdminReceiver::class.java)
 
         initViews()
         loadPreferences()

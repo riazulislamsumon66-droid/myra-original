@@ -1,4 +1,4 @@
-package com.myra.assistant.ai
+package com.maya.assistant.ai
 
 object AIResponseManager {
 

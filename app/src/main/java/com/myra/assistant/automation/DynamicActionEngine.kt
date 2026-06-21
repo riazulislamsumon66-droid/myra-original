@@ -1,11 +1,11 @@
-package com.myra.assistant.automation
+package com.maya.assistant.automation
 
 import android.content.Context
-import com.myra.assistant.apps.AppLauncher
-import com.myra.assistant.models.ActionModel
-import com.myra.assistant.models.ActionType
-import com.myra.assistant.screenvision.VisionDecisionEngine
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.apps.AppLauncher
+import com.maya.assistant.models.ActionModel
+import com.maya.assistant.models.ActionType
+import com.maya.assistant.screenvision.VisionDecisionEngine
+import com.maya.assistant.utils.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

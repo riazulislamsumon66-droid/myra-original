@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Myra" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.Maya" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@color/myra_dark</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@color/myra_dark</item>
@@ -16,7 +16,7 @@
         <item name="colorControlHighlight">@color/myra_glow_cyan</item>
     </style>
 
-    <style name="Theme.Myra.Transparent" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.Maya.Transparent" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowNoTitle">true</item>
@@ -25,21 +25,21 @@
     </style>
 
     <!-- MYRA Custom Text Style -->
-    <style name="MyraTitle">
+    <style name="MayaTitle">
         <item name="android:fontFamily">sans-serif-black</item>
         <item name="android:letterSpacing">0.35</item>
         <item name="android:textColor">@color/myra_red</item>
         <item name="android:textSize">26sp</item>
     </style>
 
-    <style name="MyraSubtitle">
+    <style name="MayaSubtitle">
         <item name="android:fontFamily">monospace</item>
         <item name="android:letterSpacing">0.4</item>
         <item name="android:textColor">@color/myra_hint</item>
         <item name="android:textSize">9sp</item>
     </style>
 
-    <style name="MyraStatus">
+    <style name="MayaStatus">
         <item name="android:fontFamily">monospace</item>
         <item name="android:letterSpacing">0.15</item>
         <item name="android:textSize">11sp</item>

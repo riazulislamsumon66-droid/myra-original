@@ -1,11 +1,11 @@
-package com.myra.assistant.network
+package com.maya.assistant.network
 
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.utils.Logger
 
 class NetworkMonitor(context: Context) {
     private val TAG = "NET"

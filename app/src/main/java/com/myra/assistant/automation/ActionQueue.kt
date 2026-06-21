@@ -1,6 +1,6 @@
-package com.myra.assistant.automation
+package com.maya.assistant.automation
 
-import com.myra.assistant.models.ActionModel
+import com.maya.assistant.models.ActionModel
 import java.util.concurrent.ConcurrentLinkedQueue
 
 object ActionQueue {

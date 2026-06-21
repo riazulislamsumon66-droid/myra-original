@@ -1,4 +1,4 @@
-package com.myra.assistant.screenvision
+package com.maya.assistant.screenvision
 
 import android.content.Context
 import android.graphics.Bitmap

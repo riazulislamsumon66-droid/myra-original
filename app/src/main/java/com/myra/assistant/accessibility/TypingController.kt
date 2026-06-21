@@ -1,8 +1,8 @@
-package com.myra.assistant.accessibility
+package com.maya.assistant.accessibility
 
 import android.os.Bundle
 import android.view.accessibility.AccessibilityNodeInfo
-import com.myra.assistant.service.SmartAccessibilityEngine
+import com.maya.assistant.service.SmartAccessibilityEngine
 
 object TypingController {
     fun typeText(text: String): Boolean {

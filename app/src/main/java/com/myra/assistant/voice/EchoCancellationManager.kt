@@ -1,9 +1,9 @@
-package com.myra.assistant.voice
+package com.maya.assistant.voice
 
 import android.media.audiofx.AcousticEchoCanceler
 import android.media.audiofx.AutomaticGainControl
 import android.media.audiofx.NoiseSuppressor
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.utils.Logger
 
 object EchoCancellationManager {
     private val TAG = "ECHO"

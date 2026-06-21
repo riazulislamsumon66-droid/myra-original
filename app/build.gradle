@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace 'com.myra.assistant'
+    namespace 'com.maya.assistant'
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.myra.assistant"
+        applicationId "com.maya.assistant"
         minSdk 26
         targetSdk 35
         versionCode 2

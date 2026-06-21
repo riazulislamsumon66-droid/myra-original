@@ -1,7 +1,7 @@
-package com.myra.assistant.screenvision
+package com.maya.assistant.screenvision
 
 import android.graphics.Bitmap
-import com.myra.assistant.models.ScreenNodeModel
+import com.maya.assistant.models.ScreenNodeModel
 
 object VisualUIAnalyzer {
 

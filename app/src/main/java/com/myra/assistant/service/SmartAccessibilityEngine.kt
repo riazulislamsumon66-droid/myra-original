@@ -1,15 +1,15 @@
-﻿package com.myra.assistant.service
+﻿package com.maya.assistant.service
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.media.AudioManager
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
-import com.myra.assistant.accessibility.NodeFinder
-import com.myra.assistant.automation.AppDetector
-import com.myra.assistant.automation.SmartAutomationAgent
-import com.myra.assistant.automation.ActionExecutor
-import com.myra.assistant.service.ScreenVisionAnalyzer
+import com.maya.assistant.accessibility.NodeFinder
+import com.maya.assistant.automation.AppDetector
+import com.maya.assistant.automation.SmartAutomationAgent
+import com.maya.assistant.automation.ActionExecutor
+import com.maya.assistant.service.ScreenVisionAnalyzer
 
 object SmartAccessibilityEngine {
 

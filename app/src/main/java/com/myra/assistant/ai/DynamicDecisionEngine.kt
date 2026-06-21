@@ -1,11 +1,11 @@
-package com.myra.assistant.ai
+package com.maya.assistant.ai
 
 import android.content.Context
-import com.myra.assistant.apps.AppLauncher
-import com.myra.assistant.models.CommandType
-import com.myra.assistant.models.VoiceCommand
-import com.myra.assistant.service.SmartAccessibilityEngine
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.apps.AppLauncher
+import com.maya.assistant.models.CommandType
+import com.maya.assistant.models.VoiceCommand
+import com.maya.assistant.service.SmartAccessibilityEngine
+import com.maya.assistant.utils.Logger
 
 object DynamicDecisionEngine {
     private val TAG = "DECISION"

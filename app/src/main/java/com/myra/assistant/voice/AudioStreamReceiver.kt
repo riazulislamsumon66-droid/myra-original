@@ -1,4 +1,4 @@
-package com.myra.assistant.voice
+package com.maya.assistant.voice
 
 /**
  * Receives audio chunks from Gemini and routes to AudioPlayer

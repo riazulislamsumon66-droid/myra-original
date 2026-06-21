@@ -1,11 +1,11 @@
-package com.myra.assistant.voice
+package com.maya.assistant.voice
 
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Build
-import com.myra.assistant.utils.Constants
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.utils.Constants
+import com.maya.assistant.utils.Logger
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class AudioPlayer {

@@ -1,8 +1,8 @@
-package com.myra.assistant.websocket
+package com.maya.assistant.websocket
 
 import android.util.Base64
 import android.util.Log
-import com.myra.assistant.utils.Constants
+import com.maya.assistant.utils.Constants
 import okhttp3.*
 import okio.ByteString
 import org.json.JSONArray

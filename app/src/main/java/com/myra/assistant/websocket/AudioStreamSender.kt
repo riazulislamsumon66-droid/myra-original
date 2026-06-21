@@ -1,4 +1,4 @@
-package com.myra.assistant.websocket
+package com.maya.assistant.websocket
 
 /**
  * WebSocket-level audio stream sender

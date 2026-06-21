@@ -1,4 +1,4 @@
-package com.myra.assistant.service
+package com.maya.assistant.service
 
 import android.app.*
 import android.content.Context
@@ -13,10 +13,10 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
-import com.myra.assistant.R
-import com.myra.assistant.ui.main.MainActivity
+import com.maya.assistant.R
+import com.maya.assistant.ui.main.MainActivity
 
-class MyraOverlayService : Service() {
+class MayaOverlayService : Service() {
 
     companion object {
         var isRunning = false
@@ -91,7 +91,7 @@ class MyraOverlayService : Service() {
             closeBtn?.setOnClickListener { hideOverlay() }
 
             orbContainer?.setOnClickListener {
-                val intent = Intent(this@MyraOverlayService, MainActivity::class.java).apply {
+                val intent = Intent(this@MayaOverlayService, MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 }
                 startActivity(intent)

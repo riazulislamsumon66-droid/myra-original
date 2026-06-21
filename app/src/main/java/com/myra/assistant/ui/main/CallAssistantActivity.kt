@@ -1,4 +1,4 @@
-package com.myra.assistant.ui.main
+package com.maya.assistant.ui.main
 
 import android.Manifest
 import android.content.BroadcastReceiver
@@ -20,10 +20,10 @@ import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.myra.assistant.R
-import com.myra.assistant.ai.GeminiLiveClient
-import com.myra.assistant.service.CallMonitorService
-import com.myra.assistant.utils.LiveAudioManager
+import com.maya.assistant.R
+import com.maya.assistant.ai.GeminiLiveClient
+import com.maya.assistant.service.CallMonitorService
+import com.maya.assistant.utils.LiveAudioManager
 import java.util.Locale
 
 

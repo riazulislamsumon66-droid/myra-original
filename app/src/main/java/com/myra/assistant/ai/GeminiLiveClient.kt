@@ -1,4 +1,4 @@
-package com.myra.assistant.ai
+package com.maya.assistant.ai
 
 import android.util.Base64
 import android.util.Log

@@ -1,4 +1,4 @@
-package com.myra.assistant.security
+package com.maya.assistant.security
 
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -13,7 +13,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.myra.assistant.R
+import com.maya.assistant.R
 import kotlinx.coroutines.*
 
 class AppSelectionActivity : AppCompatActivity() {

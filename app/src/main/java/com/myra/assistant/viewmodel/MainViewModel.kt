@@ -1,12 +1,12 @@
-package com.myra.assistant.viewmodel
+package com.maya.assistant.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.myra.assistant.ai.DynamicDecisionEngine
-import com.myra.assistant.ai.IntentAnalyzer
-import com.myra.assistant.models.CommandType
+import com.maya.assistant.ai.DynamicDecisionEngine
+import com.maya.assistant.ai.IntentAnalyzer
+import com.maya.assistant.models.CommandType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 

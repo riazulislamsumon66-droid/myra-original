@@ -1,7 +1,7 @@
-package com.myra.assistant.apps
+package com.maya.assistant.apps
 
 import android.content.Context
-import com.myra.assistant.models.AppModel
+import com.maya.assistant.models.AppModel
 
 object PackageScanner {
     fun scanAll(context: Context): List<AppModel> = InstalledAppsManager.getAllApps(context)

@@ -1,4 +1,4 @@
-package com.myra.assistant.security
+package com.maya.assistant.security
 
 import android.content.Context
 import android.content.Intent
@@ -16,10 +16,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
-import com.myra.assistant.R
-import com.myra.assistant.ai.GeminiLiveClient
-import com.myra.assistant.utils.LiveAudioManager
-import com.myra.assistant.ui.main.MainActivity
+import com.maya.assistant.R
+import com.maya.assistant.ai.GeminiLiveClient
+import com.maya.assistant.utils.LiveAudioManager
+import com.maya.assistant.ui.main.MainActivity
 import java.util.Locale
 
 /**

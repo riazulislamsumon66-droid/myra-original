@@ -1,11 +1,11 @@
-package com.myra.assistant.overlay
+package com.maya.assistant.overlay
 
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 
 /**
- * Alias service — actual floating bubble is handled by MyraOverlayService.
+ * Alias service — actual floating bubble is handled by MayaOverlayService.
  * This exists for the project structure as specified in the prompt.
  */
 class FloatingBubbleService : Service() {

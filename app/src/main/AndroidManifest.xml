@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.myra.assistant">
+    package="com.maya.assistant">
 
     <uses-sdk
         android:minSdkVersion="26"
@@ -46,7 +46,7 @@
         android:label="MYRA"
         android:roundIcon="@mipmap/img"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Myra"
+        android:theme="@style/Theme.Maya"
         android:usesCleartextTraffic="true"
         android:networkSecurityConfig="@xml/network_security_config">
 
@@ -70,7 +70,7 @@
         <activity
             android:name=".security.AppLockActivity"
             android:exported="false"
-            android:theme="@style/Theme.Myra.Transparent"/>
+            android:theme="@style/Theme.Maya.Transparent"/>
 
         <!-- SETTINGS -->
         <activity
@@ -96,7 +96,7 @@
         <activity
             android:name=".ui.main.CallAssistantActivity"
             android:exported="false"
-            android:theme="@style/Theme.Myra.Transparent"/>
+            android:theme="@style/Theme.Maya.Transparent"/>
 
         <!-- ACCESSIBILITY SERVICE -->
         <service

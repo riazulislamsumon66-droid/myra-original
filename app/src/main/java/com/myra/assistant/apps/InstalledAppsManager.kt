@@ -1,11 +1,11 @@
-package com.myra.assistant.apps
+package com.maya.assistant.apps
 
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import com.myra.assistant.models.AppModel
-import com.myra.assistant.utils.Logger
+import com.maya.assistant.models.AppModel
+import com.maya.assistant.utils.Logger
 
 object InstalledAppsManager {
     private val TAG = "APPS"

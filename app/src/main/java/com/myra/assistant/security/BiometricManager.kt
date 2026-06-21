@@ -1,4 +1,4 @@
-package com.myra.assistant.security
+package com.maya.assistant.security
 
 import android.content.Context
 import android.content.SharedPreferences
