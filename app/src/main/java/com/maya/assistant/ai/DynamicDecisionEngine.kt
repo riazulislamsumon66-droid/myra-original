@@ -10,8 +10,17 @@ import com.maya.assistant.models.VoiceCommand
 import com.maya.assistant.service.SmartAccessibilityEngine
 import com.maya.assistant.utils.Logger
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import android.os.Handler
+import android.os.Looper
+import android.view.accessibility.AccessibilityNodeInfo
+
 object DynamicDecisionEngine {
     private val TAG = "DECISION"
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     suspend fun execute(context: Context, command: VoiceCommand): String {
         Logger.d(TAG, "Executing: ${command.type} - ${command.raw}")
@@ -88,12 +97,45 @@ object DynamicDecisionEngine {
             CommandType.YOUTUBE_PLAY -> {
                 val query = command.args["query"] ?: ""
                 try {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=${Uri.encode(query)}"))
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                    "YouTube এ খুঁজছি: $query"
+                    // Launch YouTube app with search query directly
+                    val ytSearchIntent = Intent(Intent.ACTION_VIEW).apply {
+                        data = Uri.parse("https://www.youtube.com/results?search_query=${Uri.encode(query)}")
+                        setPackage("com.google.android.youtube")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(ytSearchIntent)
+                    // Auto-click first result after delay using accessibility
+                    scope.launch {
+                        kotlinx.coroutines.delay(4000)
+                        try {
+                            val svc = SmartAccessibilityEngine.service
+                            if (svc != null) {
+                                val root = svc.rootInActiveWindow
+                                if (root != null) {
+                                    val videoNode = findFirstVideoResult(root)
+                                    if (videoNode != null) {
+                                        videoNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                        Logger.d(TAG, "Auto-clicked first YouTube result")
+                                    } else {
+                                        Logger.d(TAG, "No video result found in accessibility tree")
+                                    }
+                                }
+                            }
+                        } catch (ex: Exception) {
+                            Logger.e(TAG, "Auto-click failed: ${ex.message}")
+                        }
+                    }
+                    "YouTube এ চালাচ্ছি: $query"
                 } catch (e: Exception) {
-                    "YouTube খুলতে সমস্যা"
+                    // Fallback: open in browser
+                    try {
+                        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=${Uri.encode(query)}"))
+                        browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(browserIntent)
+                        "YouTube ওয়েব এ খুঁজছি: $query"
+                    } catch (e2: Exception) {
+                        "YouTube খুলতে সমস্যা"
+                    }
                 }
             }
 
@@ -213,5 +255,23 @@ object DynamicDecisionEngine {
         } catch (e: Exception) {
             Logger.e(TAG, "Flashlight error: ${e.message}")
         }
+    }
+
+    private fun findFirstVideoResult(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        // YouTube search results: look for clickable nodes with video-like text patterns
+        if (node.isClickable && node.text != null) {
+            val text = node.text.toString()
+            // Video titles are typically longer than 10 chars and clickable
+            if (text.length > 10 && !text.startsWith("http")) {
+                return node
+            }
+        }
+        // Recurse into children
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val result = findFirstVideoResult(child)
+            if (result != null) return result
+        }
+        return null
     }
 }
