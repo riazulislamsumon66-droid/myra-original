@@ -19,6 +19,7 @@ import com.maya.assistant.service.PowerButtonReceiver
 import com.maya.assistant.utils.Constants
 import com.maya.assistant.utils.Logger
 import com.maya.assistant.utils.prefs
+import com.maya.assistant.security.SecurePrefs
 import com.maya.assistant.voice.AudioFocusManager
 import com.maya.assistant.voice.AudioPlayer
 import com.maya.assistant.voice.AudioRecorder
@@ -99,9 +100,19 @@ class ForegroundVoiceService : Service() {
             }
         }
 
-        val apiKey = prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+        val apiKey = SecurePrefs.getApiKey(this@ForegroundVoiceService)
         if (apiKey.isNotEmpty()) {
             connectGemini(apiKey)
+        } else {
+            // Fallback: try plain text prefs for backward compatibility
+            val plainKey = prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+            if (plainKey.isNotEmpty()) {
+                connectGemini(plainKey)
+                // Migrate to encrypted storage
+                SecurePrefs.saveApiKey(this@ForegroundVoiceService, plainKey)
+            } else {
+                Logger.w(TAG, "No API key found — voice features disabled")
+            }
         }
     }
 
@@ -174,10 +185,15 @@ class ForegroundVoiceService : Service() {
     }
 
     fun reconnectGemini() {
-        val apiKey = prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+        val apiKey = SecurePrefs.getApiKey(this@ForegroundVoiceService)
         if (apiKey.isNotEmpty()) {
-            geminiClient?.disconnect()
             connectGemini(apiKey)
+        } else {
+            val plainKey = prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+            if (plainKey.isNotEmpty()) {
+                connectGemini(plainKey)
+                SecurePrefs.saveApiKey(this@ForegroundVoiceService, plainKey)
+            }
         }
     }
 
