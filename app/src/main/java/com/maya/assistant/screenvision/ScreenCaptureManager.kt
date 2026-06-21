@@ -19,7 +19,7 @@ class ScreenCaptureManager(private val context: Context) {
         mediaProjection = projection
         imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
         virtualDisplay = projection.createVirtualDisplay(
-            "MYRA_Screen", width, height, dpi,
+            "MAYA_Screen", width, height, dpi,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
             imageReader!!.surface, null, null
         )

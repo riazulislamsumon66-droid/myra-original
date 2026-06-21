@@ -611,7 +611,7 @@
                     android:id="@+id/callAnnounceStatusText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="📢 Call aane pe MYRA naam bolegi"
+                    android:text="📢 Call aane pe MAYA caller ka naam bolegi"
                     android:textColor="#00E676"
                     android:textSize="12sp"
                     android:layout_marginTop="6dp"/>

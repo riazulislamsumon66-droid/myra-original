@@ -7,7 +7,7 @@ object Constants {
     const val GEMINI_MODEL_FALLBACK_1 = "models/gemini-2.0-flash-live-001"
     const val GEMINI_MODEL_FALLBACK_2 = "models/gemini-2.5-flash"
     val GEMINI_FALLBACK_MODELS = listOf(GEMINI_MODEL_FALLBACK_1, GEMINI_MODEL_FALLBACK_2)
-    const val GEMINI_WS_BASE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent"
+    const val GEMINI_WS_BASE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
     const val GEMINI_VOICE = "Aoede"
 
     // Prefs

@@ -9,7 +9,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 
 object ActionExecutor {
 
-    private const val TAG = "MYRA_ACTION"
+    private const val TAG = "MAYA_ACTION"
 
     /**
      * Click element by text (smart matching)

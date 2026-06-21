@@ -18,9 +18,9 @@ import javax.crypto.spec.GCMParameterSpec
  */
 object SecurityManager {
 
-    private const val TAG = "MYRA_SECURITY"
+    private const val TAG = "MAYA_SECURITY"
     private const val KEYSTORE_PROVIDER = "AndroidKeyStore"
-    private const val KEY_ALIAS = "MYRA_MASTER_KEY"
+    private const val KEY_ALIAS = "MAYA_MASTER_KEY"
     private const val AES_MODE = "AES/GCM/NoPadding"
     private const val GCM_TAG_LENGTH = 128
 

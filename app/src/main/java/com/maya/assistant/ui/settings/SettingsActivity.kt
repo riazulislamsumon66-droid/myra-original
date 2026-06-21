@@ -21,6 +21,7 @@ import com.maya.assistant.R
 import com.maya.assistant.service.AccessibilityHelperService
 import com.maya.assistant.service.MayaDeviceAdminReceiver
 import com.maya.assistant.security.SecuritySettingsActivity
+import com.maya.assistant.security.SecurePrefs
 
 
 class SettingsActivity : AppCompatActivity() {
@@ -113,8 +114,8 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun loadPreferences() {
         val prefs = getSharedPreferences("myra_prefs", Context.MODE_PRIVATE)
-        apiKeyInput.setText(prefs.getString("api_key", ""))
-        ttsApiKeyInput.setText(prefs.getString("tts_api_key", ""))
+        apiKeyInput.setText(SecurePrefs.getApiKey(this))
+        ttsApiKeyInput.setText(SecurePrefs.getTtsApiKey(this))
         userNameInput.setText(prefs.getString("user_name", "Sir"))
         primeNameInput.setText(prefs.getString("prime_name", ""))
         primeNumberInput.setText(prefs.getString("prime_number", ""))
@@ -318,8 +319,8 @@ class SettingsActivity : AppCompatActivity() {
     private fun savePreferences() {
         val prefs = getSharedPreferences("myra_prefs", Context.MODE_PRIVATE).edit()
 
-        prefs.putString("api_key", apiKeyInput.text.toString().trim())
-        prefs.putString("tts_api_key", ttsApiKeyInput.text.toString().trim())
+        SecurePrefs.saveApiKey(this, apiKeyInput.text.toString().trim())
+        SecurePrefs.saveTtsApiKey(this, ttsApiKeyInput.text.toString().trim())
         prefs.putString("user_name", userNameInput.text.toString().trim())
         prefs.putString("prime_name", primeNameInput.text.toString().trim())
         prefs.putString("prime_number", primeNumberInput.text.toString().trim())

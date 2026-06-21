@@ -21,7 +21,7 @@ import java.util.concurrent.Executor
  */
 object BiometricManager {
 
-    private const val TAG = "MYRA_BIOMETRIC"
+    private const val TAG = "MAYA_BIOMETRIC"
     private const val SESSION_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
     private const val PREFS_NAME = "myra_security"
     private const val KEY_LAST_AUTH = "last_auth_time"
@@ -102,7 +102,7 @@ object BiometricManager {
 
         // Create PromptInfo using the builder
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("MYRA Security")
+            .setTitle("MAYA Security")
             .setSubtitle("Verify your identity")
             .setDescription("Place your finger on the sensor")
             .setNegativeButtonText("Use PIN")

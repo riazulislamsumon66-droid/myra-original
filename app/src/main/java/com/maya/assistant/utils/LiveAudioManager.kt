@@ -12,7 +12,7 @@ import java.io.FileOutputStream
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class LiveAudioManager(private val context: Context) {
-    private val TAG = "MYRA_AUDIO"
+    private val TAG = "MAYA_AUDIO"
 
     // Gemini Live API sends 24kHz, 16-bit PCM mono audio
     private val SAMPLE_RATE = 24000

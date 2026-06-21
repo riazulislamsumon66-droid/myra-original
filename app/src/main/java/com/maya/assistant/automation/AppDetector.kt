@@ -8,7 +8,7 @@ import android.util.Log
 
 object AppDetector {
 
-    private const val TAG = "MYRA_APP_DETECTOR"
+    private const val TAG = "MAYA_APP_DETECTOR"
 
     data class InstalledApp(
         val packageName: String,

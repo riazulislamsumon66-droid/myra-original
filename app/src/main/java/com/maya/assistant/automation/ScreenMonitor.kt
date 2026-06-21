@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 
 object ScreenMonitor {
 
-    private const val TAG = "MYRA_SCREEN_MONITOR"
+    private const val TAG = "MAYA_SCREEN_MONITOR"
 
     private var lastUiTree: String = ""
     private var lastPackage: String = ""

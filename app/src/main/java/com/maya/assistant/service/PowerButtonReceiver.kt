@@ -13,7 +13,7 @@ class PowerButtonReceiver : BroadcastReceiver() {
         private var pressCount = 0
         private var lastPressTime = 0L
         private const val DOUBLE_PRESS_WINDOW = 700L
-        private const val TAG = "MYRA_POWER"
+        private const val TAG = "MAYA_POWER"
     }
 
     override fun onReceive(context: Context, intent: Intent) {

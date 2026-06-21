@@ -56,7 +56,7 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var liveAudioManager: LiveAudioManager
     private var isLiveConnected = false
 
-    private val TAG = "MYRA_CALL_UI"
+    private val TAG = "MAYA_CALL_UI"
 
     // Broadcast receiver: call cut hone par finish
     private val callStateReceiver = object : BroadcastReceiver() {
@@ -145,7 +145,7 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         waveformView   = findViewById<WaveformView?>(R.id.callWaveform)
 
         callerNameText.text = callerName
-        statusText.text = "MYRA preparing..."
+        statusText.text = "MAYA preparing..."
     }
 
     override fun onInit(status: Int) {

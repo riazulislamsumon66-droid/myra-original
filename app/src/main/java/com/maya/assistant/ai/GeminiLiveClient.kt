@@ -13,7 +13,7 @@ class GeminiLiveClient(
     private val systemPrompt: String,
     private val callback: LiveListener
 ) {
-    private val TAG = "MYRA_LIVE"
+    private val TAG = "MAYA_LIVE"
     private var isSetupComplete = false
     private var webSocket: WebSocket? = null
 
@@ -23,8 +23,8 @@ class GeminiLiveClient(
         .pingInterval(20, TimeUnit.SECONDS) // Connection ko zinda rakhne ke liye
         .build()
 
-    // Aapka original model name
-    private val URL = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=$apiKey"
+    // Primary endpoint (v1beta - stable)
+    private val URL = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=$apiKey"
 
     interface LiveListener {
         fun onAudioReceived(data: ByteArray)

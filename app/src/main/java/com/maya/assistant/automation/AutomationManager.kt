@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 
 object AutomationManager {
 
-    private const val TAG = "MYRA_AUTOMATION_MGR"
+    private const val TAG = "MAYA_AUTOMATION_MGR"
 
     private var scope: CoroutineScope? = null
     private var service: AccessibilityService? = null

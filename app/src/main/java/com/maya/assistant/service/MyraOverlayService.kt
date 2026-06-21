@@ -142,7 +142,7 @@ class MayaOverlayService : Service() {
                 "MAYA Assistant",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "MYRA is running in background"
+                description = "MAYA is running in background"
                 setShowBadge(false)
             }
             val manager = getSystemService(NotificationManager::class.java)

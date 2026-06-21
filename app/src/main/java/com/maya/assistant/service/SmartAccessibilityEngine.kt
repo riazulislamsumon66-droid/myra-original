@@ -13,7 +13,7 @@ import com.maya.assistant.service.ScreenVisionAnalyzer
 
 object SmartAccessibilityEngine {
 
-    private const val TAG = "MYRA_SMART"
+    private const val TAG = "MAYA_SMART"
 
     var service: AccessibilityService? = null
 

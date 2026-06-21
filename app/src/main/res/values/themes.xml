@@ -24,7 +24,7 @@
         <item name="android:windowContentOverlay">@null</item>
     </style>
 
-    <!-- MYRA Custom Text Style -->
+    <!-- MAYA Custom Text Style -->
     <style name="MayaTitle">
         <item name="android:fontFamily">sans-serif-black</item>
         <item name="android:letterSpacing">0.35</item>

@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     activity_app_lock.xml
-    MYRA Lock Screen — PIN | Pattern | Voice tabs
-    Background: dark purple gradient to match MYRA theme
--->
+    MAYA Lock Screen — PIN | Pattern | Voice tabs
+    Background: dark purple gradient to match MAYA theme
+    <!-- Top: MAYA logo / title -->
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#0D0D1A">
 
-    <!-- Top: MYRA logo / title -->
+    <!-- Top: MAYA logo / title -->
     <LinearLayout
         android:id="@+id/headerLayout"
         android:layout_width="match_parent"
@@ -23,7 +23,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔐 MYRA"
+            android:text="🔐 MAYA"
             android:textColor="#E91E8C"
             android:textSize="28sp"
             android:textStyle="bold"/>

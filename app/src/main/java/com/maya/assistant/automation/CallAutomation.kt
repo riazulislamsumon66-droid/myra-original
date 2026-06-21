@@ -10,7 +10,7 @@ import androidx.core.content.ContextCompat
 
 object CallAutomation {
 
-    private const val TAG = "MYRA_CALL"
+    private const val TAG = "MAYA_CALL"
 
     fun makeCall(
         context: Context,

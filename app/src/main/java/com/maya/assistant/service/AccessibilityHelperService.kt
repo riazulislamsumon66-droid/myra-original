@@ -13,7 +13,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 class AccessibilityHelperService : AccessibilityService() {
 
     companion object {
-        private const val TAG = "MYRA_ACCESS"
+        private const val TAG = "MAYA_ACCESS"
 
         var instance: AccessibilityHelperService? = null
         var currentRoot: AccessibilityNodeInfo? = null
@@ -87,7 +87,7 @@ class AccessibilityHelperService : AccessibilityService() {
         currentRoot = rootInActiveWindow
 
         Log.d(TAG, "==============================")
-        Log.d(TAG, "MYRA ACCESSIBILITY CONNECTED")
+        Log.d(TAG, "MAYA ACCESSIBILITY CONNECTED")
         Log.d(TAG, "==============================")
     }
 

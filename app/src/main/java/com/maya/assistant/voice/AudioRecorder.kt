@@ -54,7 +54,7 @@ class AudioRecorder(
                     }
                 }
             }.also {
-                it.name = "MYRA_RecordThread"
+                it.name = "MAYA_RecordThread"
                 it.isDaemon = true
                 it.start()
             }

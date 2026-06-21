@@ -8,7 +8,7 @@ import android.util.Log
  */
 object PatternManager {
 
-    private const val TAG = "MYRA_PATTERN"
+    private const val TAG = "MAYA_PATTERN"
     private const val PREFS_NAME = "myra_security_prefs"
     private const val KEY_PATTERN      = "unlock_pattern"
     private const val KEY_PATTERN_ON   = "pattern_lock_enabled"

@@ -8,7 +8,7 @@ import org.json.JSONObject
 
 object UiTreeSerializer {
 
-    private const val TAG = "MYRA_UI_TREE"
+    private const val TAG = "MAYA_UI_TREE"
 
     private fun normalize(text: String): String {
         return text

@@ -5,7 +5,7 @@ import android.util.Log
 
 object SmartAutomationAgent {
 
-    private const val TAG = "MYRA_AGENT"
+    private const val TAG = "MAYA_AGENT"
 
     fun run(
         service: AccessibilityService,

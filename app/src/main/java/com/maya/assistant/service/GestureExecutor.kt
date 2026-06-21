@@ -7,7 +7,7 @@ import android.util.Log
 
 object GestureExecutor {
 
-    private const val TAG = "MYRA_GESTURE"
+    private const val TAG = "MAYA_GESTURE"
 
     fun tap(
         service: AccessibilityService,

@@ -291,7 +291,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             tabFinger.visibility = View.VISIBLE
         } else {
             tabFinger.visibility = View.GONE
-            Log.d("MYRA_LOCK", "Biometric not available: $canAuth")
+            Log.d("MAYA_LOCK", "Biometric not available: $canAuth")
         }
     }
 
@@ -317,7 +317,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         })
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("MYRA Unlock")
+            .setTitle("MAYA Unlock")
             .setSubtitle("Confirm your identity")
             .apply {
                 if (SecurityManager.isDeviceLockEnabled(this@AppLockActivity) || allowDeviceCredential) {
@@ -459,7 +459,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             override fun onTextReceived(text: String) {}
             override fun onConnected() { 
                 isGeminiConnected = true 
-                Log.d("MYRA_LOCK", "Gemini WebSocket Connected ✅")
+                Log.d("MAYA_LOCK", "Gemini WebSocket Connected ✅")
                 runOnUiThread {
                     val mode = getSharedPreferences("myra_prefs", MODE_PRIVATE).getString("personality_mode", "gf") ?: "gf"
                     val greeting = if (mode == "gf") "Pehle unlock karo jaan, phir use karne dungi." else "Please unlock to continue."
@@ -469,7 +469,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             override fun onTurnComplete() {}
             override fun onError(msg: String) { 
                 isGeminiConnected = false 
-                Log.e("MYRA_LOCK", "Gemini WebSocket Error: $msg")
+                Log.e("MAYA_LOCK", "Gemini WebSocket Error: $msg")
             }
         })
         geminiClient?.start()

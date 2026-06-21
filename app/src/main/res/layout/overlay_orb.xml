@@ -12,7 +12,7 @@
         android:layout_margin="5dp"
         android:background="@android:color/transparent">
 
-        <!-- Response glow ring — animates when MYRA is responding -->
+        <!-- Response glow ring — animates when MAYA is responding -->
         <View
             android:id="@+id/responseGlowRing"
             android:layout_width="match_parent"

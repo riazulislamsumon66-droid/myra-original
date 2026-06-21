@@ -6,7 +6,7 @@ import com.maya.assistant.automation.UiTreeSerializer
 
 object ScreenVisionAnalyzer {
 
-    private const val TAG = "MYRA_VISION"
+    private const val TAG = "MAYA_VISION"
 
     data class ScreenPoint(
         val x: Int,

@@ -3,7 +3,7 @@ package com.maya.assistant.utils
 import android.util.Log
 
 object Logger {
-    private const val TAG_PREFIX = "MYRA_"
+    private const val TAG_PREFIX = "MAYA_"
 
     fun d(tag: String, msg: String) = Log.d(TAG_PREFIX + tag, msg)
     fun e(tag: String, msg: String, t: Throwable? = null) {

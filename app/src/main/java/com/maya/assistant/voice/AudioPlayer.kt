@@ -89,7 +89,7 @@ class AudioPlayer {
                 }
             }
         }.also {
-            it.name = "MYRA_PlayThread"
+            it.name = "MAYA_PlayThread"
             it.isDaemon = true
             it.start()
         }
