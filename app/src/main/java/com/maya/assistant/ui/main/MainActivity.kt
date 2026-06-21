@@ -1,5 +1,6 @@
 package com.maya.assistant.ui.main
 
+import android.app.Activity
 import android.app.ActivityManager
 import android.content.*
 import android.content.pm.PackageManager
@@ -59,6 +60,25 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val PERM_CODE = 100
+    }
+
+    // MediaProjection consent launcher
+    private val screenCaptureLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            com.maya.assistant.screenvision.ScreenCaptureService.start(
+                this, result.resultCode, result.data!!
+            )
+            addBotMessage("✅ Screen Vision (OCR) চালু হয়েছে!")
+        } else {
+            addBotMessage("⚠️ Screen Vision পারমিশন দেওয়া হয়নি।")
+        }
+    }
+
+    fun requestScreenCapture() {
+        val mpm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
+        screenCaptureLauncher.launch(mpm.createScreenCaptureIntent())
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -45,6 +45,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var grantPermissionsBtn: Button
     private lateinit var setDefaultAssistantBtn: Button
     private lateinit var permissionsStatusText: TextView
+    private lateinit var screenVisionSwitch: Switch
+    private lateinit var screenVisionStatusText: TextView
 
     private lateinit var devicePolicyManager: DevicePolicyManager
     private lateinit var componentName: ComponentName
@@ -99,12 +101,14 @@ class SettingsActivity : AppCompatActivity() {
         adminStatusText = findViewById(R.id.adminStatusText)
         pickContactBtn = findViewById(R.id.pickContactBtn)
 
-        // NEW views — add these to your XML layout
+        // NEW views
         callAnnounceSwitch = findViewById(R.id.callAnnounceSwitch)
         callAnnounceStatusText = findViewById(R.id.callAnnounceStatusText)
         grantPermissionsBtn = findViewById(R.id.grantPermissionsBtn)
         setDefaultAssistantBtn = findViewById(R.id.setDefaultAssistantBtn)
         permissionsStatusText = findViewById(R.id.permissionsStatusText)
+        screenVisionSwitch = findViewById(R.id.screenVisionSwitch)
+        screenVisionStatusText = findViewById(R.id.screenVisionStatusText)
     }
 
     private fun loadPreferences() {
@@ -132,6 +136,11 @@ class SettingsActivity : AppCompatActivity() {
         val announceEnabled = prefs.getBoolean("call_announce_enabled", true)
         callAnnounceSwitch.isChecked = announceEnabled
         updateCallAnnounceStatus(announceEnabled)
+
+        // Screen vision (default OFF — user must opt-in)
+        val screenVisionEnabled = prefs.getBoolean("screen_vision_enabled", false)
+        screenVisionSwitch.isChecked = screenVisionEnabled
+        updateScreenVisionStatus(screenVisionEnabled)
     }
 
     private fun setupListeners() {
@@ -166,6 +175,24 @@ class SettingsActivity : AppCompatActivity() {
         // NEW: Call announce switch
         callAnnounceSwitch.setOnCheckedChangeListener { _, isChecked ->
             updateCallAnnounceStatus(isChecked)
+        }
+
+        // NEW: Screen vision switch
+        screenVisionSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                // Check if we have screen capture permission
+                if (com.maya.assistant.screenvision.ScreenCaptureService.isRunning()) {
+                    updateScreenVisionStatus(true)
+                } else {
+                    // Need to request permission — delegate to MainActivity
+                    screenVisionSwitch.isChecked = false
+                    Toast.makeText(this, "প্রথমে MainActivity তে গিয়ে Screen Vision enable করো", Toast.LENGTH_LONG).show()
+                }
+            } else {
+                // Stop screen capture
+                com.maya.assistant.screenvision.ScreenCaptureService.stop(this)
+                updateScreenVisionStatus(false)
+            }
         }
 
         // NEW: Grant permissions button
@@ -250,6 +277,17 @@ class SettingsActivity : AppCompatActivity() {
         )
     }
 
+    private fun updateScreenVisionStatus(enabled: Boolean) {
+        screenVisionStatusText.text = if (enabled) {
+            "✅ Screen Vision চালু আছে — OCR fallback active"
+        } else {
+            "❌ Screen Vision বন্ধ আছে"
+        }
+        screenVisionStatusText.setTextColor(
+            if (enabled) 0xFF00E676.toInt() else 0xFFFF1744.toInt()
+        )
+    }
+
     private fun updatePermissionsStatus() {
         val missing = allPermissions.count {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
@@ -301,6 +339,7 @@ class SettingsActivity : AppCompatActivity() {
 
         prefs.putBoolean("live_mode_enabled", liveModeSwitch.isChecked)
         prefs.putBoolean("call_announce_enabled", callAnnounceSwitch.isChecked)
+        prefs.putBoolean("screen_vision_enabled", screenVisionSwitch.isChecked)
 
         prefs.apply()
         Toast.makeText(this, "Settings Saved! MAYA updated. ✅", Toast.LENGTH_SHORT).show()

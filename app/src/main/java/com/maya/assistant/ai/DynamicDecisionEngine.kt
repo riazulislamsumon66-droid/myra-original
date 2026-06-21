@@ -7,6 +7,10 @@ import android.provider.ContactsContract
 import com.maya.assistant.apps.AppLauncher
 import com.maya.assistant.models.CommandType
 import com.maya.assistant.models.VoiceCommand
+import com.maya.assistant.screenvision.OCRProcessor
+import com.maya.assistant.screenvision.ScreenCaptureManager
+import com.maya.assistant.screenvision.ScreenCaptureService
+import com.maya.assistant.screenvision.VisionDecisionEngine
 import com.maya.assistant.service.SmartAccessibilityEngine
 import com.maya.assistant.utils.Logger
 
@@ -229,8 +233,15 @@ object DynamicDecisionEngine {
 
             CommandType.CLICK -> {
                 val target = command.args["target"] ?: ""
-                if (SmartAccessibilityEngine.execute("CLICK $target").success) "ক্লিক করলাম: $target"
-                else "ক্লিক করতে পারি নাই: $target"
+                val clicked = SmartAccessibilityEngine.execute("CLICK $target").success
+                if (clicked) {
+                    "ক্লিক করলাম: $target"
+                } else {
+                    // OCR fallback: capture screen and find text position
+                    val ocrResult = tryOcrClick(target)
+                    if (ocrResult) "ক্লিক করলাম (OCR): $target"
+                    else "ক্লিক করতে পারি নাই: $target"
+                }
             }
 
             CommandType.SEARCH -> {
@@ -306,5 +317,18 @@ object DynamicDecisionEngine {
             child.recycle()
         }
         return null
+    }
+
+    /** OCR fallback: capture screen frame, run OCR, find target text, click by coordinates */
+    private fun tryOcrClick(target: String): Boolean {
+        return try {
+            val captureMgr = ScreenCaptureService.captureManager ?: return false
+            val bitmap = captureMgr.captureFrame() ?: return false
+            // Use VisionDecisionEngine which parses screen hierarchy and finds clickable targets
+            VisionDecisionEngine.executeVisualAction(target)
+        } catch (e: Exception) {
+            Logger.e(TAG, "OCR click failed: ${e.message}")
+            false
+        }
     }
 }
