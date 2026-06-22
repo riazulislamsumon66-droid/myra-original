@@ -71,7 +71,7 @@ class CharacterOverlayView @JvmOverloads constructor(
 
     private val blinkAnim = ValueAnimator.ofFloat(1f, 0f, 1f).apply {
         duration = 200; repeatCount = ValueAnimator.INFINITE
-        setRepeatDelay(3500)
+        interpolator = LinearInterpolator()
         addUpdateListener { eyeBlink = it.animatedValue as Float; invalidate() }
     }
 
