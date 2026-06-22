@@ -1,5 +1,6 @@
 package com.maya.assistant.ui.character
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
