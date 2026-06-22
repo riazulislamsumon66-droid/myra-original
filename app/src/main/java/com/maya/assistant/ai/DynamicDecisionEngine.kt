@@ -20,6 +20,7 @@ import com.maya.assistant.screenvision.VisionDecisionEngine
 import com.maya.assistant.automation.UiTreeSerializer
 import com.maya.assistant.service.SmartAccessibilityEngine
 import com.maya.assistant.utils.Logger
+import com.maya.assistant.utils.CommandLogger
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +34,38 @@ object DynamicDecisionEngine {
     private val TAG = "DECISION"
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
+    /** Phrases that indicate failure inside MAYA's own Bangla result strings.
+     *  Used to classify success/failure for logging, since branches return
+     *  human-readable text rather than a structured result type. */
+    private val FAILURE_MARKERS = listOf(
+        "সমস্যা", "পাই নাই", "পারি নাই", "পারলাম না", "বন্ধ আছে",
+        "নেই", "যায়নি", "করতে পারি নাই"
+    )
+
     suspend fun execute(context: Context, command: VoiceCommand): String {
+        val entry = CommandLogger.start(
+            commandType = command.type.name,
+            rawText = command.raw,
+            args = command.args
+        )
+        return try {
+            val result = executeInternal(context, command)
+            val looksLikeFailure = FAILURE_MARKERS.any { result.contains(it) }
+            if (looksLikeFailure) {
+                CommandLogger.failure(entry, result)
+            } else {
+                CommandLogger.success(entry, result)
+            }
+            result
+        } catch (e: Exception) {
+            val msg = "${command.type} চালাতে সমস্যা: ${e.message}"
+            Logger.e(TAG, "Unhandled exception executing ${command.type}: ${e.message}", e)
+            CommandLogger.failure(entry, e.message ?: e.javaClass.simpleName, e)
+            msg
+        }
+    }
+
+    private suspend fun executeInternal(context: Context, command: VoiceCommand): String {
         Logger.d(TAG, "Executing: ${command.type} - ${command.raw}")
 
         return when (command.type) {

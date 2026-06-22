@@ -2,6 +2,7 @@ package com.maya.assistant
 
 import android.app.Application
 import android.os.Build
+import com.maya.assistant.utils.CommandLogger
 import com.maya.assistant.utils.Logger
 import java.io.File
 import java.io.PrintWriter
@@ -27,6 +28,7 @@ class MayaApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CommandLogger.init(this)
         installCrashHandler()
     }
 
