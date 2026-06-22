@@ -71,7 +71,7 @@ class CharacterOverlayView @JvmOverloads constructor(
 
     private val blinkAnim = ValueAnimator.ofFloat(1f, 0f, 1f).apply {
         duration = 200; repeatCount = ValueAnimator.INFINITE
-        repeatDelay(3500)
+        setRepeatDelay(3500)
         addUpdateListener { eyeBlink = it.animatedValue as Float; invalidate() }
     }
 
@@ -529,15 +529,5 @@ class CharacterOverlayView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         cancelAllAnims()
         super.onDetachedFromWindow()
-    }
-}
-
-// Extension to add repeat delay
-private fun ValueAnimator.repeatDelay(delayMs: Long) {
-    val totalDuration = duration + delayMs
-    val originalDuration = duration
-    duration = totalDuration
-    addUpdateListener {
-        // only animate during original duration portion
     }
 }

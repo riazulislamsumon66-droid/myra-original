@@ -8,7 +8,6 @@ import android.os.Build
 import android.os.IBinder
 import android.view.*
 import android.view.animation.DecelerateInterpolator
-import android.widget.FrameLayout
 import androidx.core.app.NotificationCompat
 import com.maya.assistant.R
 import com.maya.assistant.ui.character.CharacterOverlayView
