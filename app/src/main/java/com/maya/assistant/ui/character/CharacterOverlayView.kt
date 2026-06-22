@@ -88,7 +88,7 @@ class CharacterOverlayView @JvmOverloads constructor(
         if (state == newState) return
         state = newState
         when (sourceType) {
-            SourceType.CANVAS -> fallbackCanvasView.setState(newState)
+            SourceType.CANVAS -> fallbackCanvasView.setState(CharacterCanvasView.CharState.valueOf(newState.name))
             SourceType.SPRITE_SHEET -> updateSpriteState(newState)
             SourceType.GIF -> updateGifState(newState)
             SourceType.LOTTIE -> updateLottieState(newState)
@@ -98,7 +98,7 @@ class CharacterOverlayView @JvmOverloads constructor(
     fun setMode(newMode: CharMode) {
         mode = newMode
         applyModeColors()
-        fallbackCanvasView.setMode(newMode)
+        fallbackCanvasView.setMode(CharacterCanvasView.CharMode.valueOf(newMode.name))
     }
 
     fun setAmplitude(amp: Float) {
@@ -179,7 +179,7 @@ class CharacterOverlayView @JvmOverloads constructor(
         sourceType = SourceType.CANVAS
         characterImageView.visibility = GONE
         fallbackCanvasView.visibility = VISIBLE
-        fallbackCanvasView.setState(state)
+        fallbackCanvasView.setState(CharacterCanvasView.CharState.valueOf(state.name))
     }
 
     // ── GIF Animation ─────────────────────────────────────────
