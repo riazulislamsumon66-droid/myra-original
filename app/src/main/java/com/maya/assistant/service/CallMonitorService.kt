@@ -14,6 +14,7 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import android.provider.CallLog
 import com.maya.assistant.R
 import com.maya.assistant.ui.main.CallAssistantActivity
 import java.util.*
@@ -69,7 +70,11 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
                     object : android.telephony.TelephonyCallback(),
                         android.telephony.TelephonyCallback.CallStateListener {
                         override fun onCallStateChanged(state: Int) {
-                            handleCallState(state, null)
+                            // Android 12+: number not in callback, fetch from call log
+                            val number = if (state == TelephonyManager.CALL_STATE_RINGING) {
+                                getLastIncomingNumber()
+                            } else null
+                            handleCallState(state, number)
                         }
                     }
                 )
@@ -215,6 +220,30 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+
+    /**
+     * Android 12+ এ TelephonyCallback এ phone number আসে না।
+     * Call log থেকে সর্বশেষ incoming number পড়ে।
+     */
+    private fun getLastIncomingNumber(): String? {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG)
+            != PackageManager.PERMISSION_GRANTED) return null
+        return try {
+            contentResolver.query(
+                CallLog.Calls.CONTENT_URI,
+                arrayOf(CallLog.Calls.NUMBER, CallLog.Calls.TYPE),
+                "${CallLog.Calls.TYPE} = ${CallLog.Calls.INCOMING_TYPE}",
+                null,
+                "${CallLog.Calls.DATE} DESC"
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "getLastIncomingNumber error: ${e.message}")
+            null
+        }
+    }
 
     override fun onDestroy() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

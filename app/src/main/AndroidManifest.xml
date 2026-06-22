@@ -130,7 +130,13 @@
             android:exported="false"
             android:foregroundServiceType="microphone"/>
 
-        <!-- MAYA CHARACTER SERVICE -->
+        <!-- SCREEN CAPTURE SERVICE (OCR / Screen Vision) -->
+        <service
+            android:name=".screenvision.ScreenCaptureService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection"/>
+
+        <!-- CHARACTER OVERLAY SERVICE -->
         <service
             android:name=".service.MayaCharacterService"
             android:exported="false"
@@ -139,12 +145,6 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="character_overlay"/>
         </service>
-
-        <!-- SCREEN CAPTURE SERVICE (OCR / Screen Vision) -->
-        <service
-            android:name=".screenvision.ScreenCaptureService"
-            android:exported="false"
-            android:foregroundServiceType="mediaProjection"/>
 
         <!-- DEVICE ADMIN -->
         <receiver

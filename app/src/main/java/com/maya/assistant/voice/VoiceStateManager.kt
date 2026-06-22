@@ -51,33 +51,37 @@ object VoiceStateManager {
     fun isListening() = state.value == Constants.STATE_LISTENING
 
     // ── Character Notifications ──────────────────────────────────────
-    private fun safeNotify(ctx: Context, action: String, extraState: String? = null, extraMode: String? = null) {
-        try {
-            Intent(ctx, MayaCharacterService::class.java).apply {
-                this.action = action
-                extraState?.let { putExtra(MayaCharacterService.EXTRA_STATE, it) }
-                extraMode?.let { putExtra(MayaCharacterService.EXTRA_MODE, it) }
-            }.also { ctx.startService(it) }
-        } catch (e: Exception) {
-            // Service not ready, skip notification
-        }
-    }
-    
     fun notifyCharacterListening(ctx: Context) {
-        safeNotify(ctx, MayaCharacterService.ACTION_SET_STATE, MayaCharacterService.Companion.State.LISTENING.name)
-        safeNotify(ctx, MayaCharacterService.ACTION_WAKE)
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_SET_STATE
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.LISTENING.name)
+        }.also { ctx.startService(it) }
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_WAKE
+        }.also { ctx.startService(it) }
     }
 
     fun notifyCharacterTalking(ctx: Context) {
-        safeNotify(ctx, MayaCharacterService.ACTION_SET_STATE, MayaCharacterService.Companion.State.TALKING.name)
-        safeNotify(ctx, MayaCharacterService.ACTION_WAKE)
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_SET_STATE
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.TALKING.name)
+        }.also { ctx.startService(it) }
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_WAKE
+        }.also { ctx.startService(it) }
     }
 
     fun notifyCharacterThinking(ctx: Context) {
-        safeNotify(ctx, MayaCharacterService.ACTION_SET_STATE, MayaCharacterService.Companion.State.THINKING.name)
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_SET_STATE
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.THINKING.name)
+        }.also { ctx.startService(it) }
     }
 
     fun notifyCharacterIdle(ctx: Context) {
-        safeNotify(ctx, MayaCharacterService.ACTION_SET_STATE, MayaCharacterService.Companion.State.IDLE.name)
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_SET_STATE
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.IDLE.name)
+        }.also { ctx.startService(it) }
     }
 }

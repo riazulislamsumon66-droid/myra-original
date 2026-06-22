@@ -54,16 +54,7 @@ class ScreenCaptureService : Service() {
 
         // Create notification channel & start foreground
         createNotificationChannel()
-        // Android 14+ requires 3-argument startForeground with service type
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIF_ID,
-                buildNotification(),
-                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-            )
-        } else {
-            startForeground(NOTIF_ID, buildNotification())
-        }
+        startForeground(NOTIF_ID, buildNotification())
 
         // Get MediaProjection
         val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
