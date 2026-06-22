@@ -132,6 +132,20 @@ class MainActivity : AppCompatActivity() {
                 action = MayaCharacterService.ACTION_SET_MODE
                 putExtra(MayaCharacterService.EXTRA_MODE, mode)
             }.also { startService(it) }
+        } else {
+            // Request overlay permission
+            try {
+                val intent = Intent(
+                    android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    android.net.Uri.parse("package:$packageName")
+                )
+                startActivity(intent)
+            } catch (_: Exception) {
+                // Fallback: open app settings
+                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    android.net.Uri.parse("package:$packageName"))
+                startActivity(intent)
+            }
         }
     }
 

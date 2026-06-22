@@ -30,6 +30,17 @@ class BootReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 android.util.Log.e("BOOT", "Failed to start CallMonitorService: ${e.message}")
             }
+            // Start character overlay on boot
+            try {
+                if (android.provider.Settings.canDrawOverlays(context)) {
+                    val charIntent = Intent(context, MayaCharacterService::class.java).apply {
+                        action = MayaCharacterService.ACTION_SHOW
+                    }
+                    ContextCompat.startForegroundService(context, charIntent)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("BOOT", "Failed to start MayaCharacterService: ${e.message}")
+            }
         }
     }
 }
