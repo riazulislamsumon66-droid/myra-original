@@ -123,10 +123,10 @@ class MainActivity : AppCompatActivity() {
             // Set character mode from personality
             val prefs = getSharedPreferences("myra_prefs", MODE_PRIVATE)
             val mode = when (prefs.getString("personality_mode", "gf")) {
-                "gf" -> MayaCharacterService.Mode.GF.name
-                "professional" -> MayaCharacterService.Mode.PROFESSIONAL.name
-                "friend" -> MayaCharacterService.Mode.FRIEND.name
-                else -> MayaCharacterService.Mode.DEFAULT.name
+                "gf" -> "GF"
+                "professional" -> "PROFESSIONAL"
+                "friend" -> "FRIEND"
+                else -> "DEFAULT"
             }
             Intent(this, MayaCharacterService::class.java).apply {
                 action = MayaCharacterService.ACTION_SET_MODE
