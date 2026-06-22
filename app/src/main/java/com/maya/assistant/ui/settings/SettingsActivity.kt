@@ -113,7 +113,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun loadPreferences() {
-        val prefs = getSharedPreferences("myra_prefs", Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE)
         apiKeyInput.setText(SecurePrefs.getApiKey(this))
         ttsApiKeyInput.setText(SecurePrefs.getTtsApiKey(this))
         userNameInput.setText(prefs.getString("user_name", "Sir"))
@@ -317,7 +317,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun savePreferences() {
-        val prefs = getSharedPreferences("myra_prefs", Context.MODE_PRIVATE).edit()
+        val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE).edit()
 
         SecurePrefs.saveApiKey(this, apiKeyInput.text.toString().trim())
         SecurePrefs.saveTtsApiKey(this, ttsApiKeyInput.text.toString().trim())

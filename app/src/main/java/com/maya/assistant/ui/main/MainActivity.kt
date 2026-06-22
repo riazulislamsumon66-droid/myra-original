@@ -121,7 +121,7 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.startForegroundService(this, intent)
             
             // Set character mode from personality
-            val prefs = getSharedPreferences("myra_prefs", MODE_PRIVATE)
+            val prefs = getSharedPreferences("maya_prefs", MODE_PRIVATE)
             val mode = when (prefs.getString("personality_mode", "gf")) {
                 "gf" -> "GF"
                 "professional" -> "PROFESSIONAL"

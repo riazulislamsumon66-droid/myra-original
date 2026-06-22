@@ -1,4 +1,4 @@
-# 🤖 MYRA AI Assistant — Complete Setup Guide
+# 🤖 MAYA AI Assistant — Complete Setup Guide
 
 ## ⚡ Quick Start (5 Steps)
 
@@ -9,7 +9,7 @@
 
 ### Step 2: Import Project
 1. Open Android Studio
-2. **File → Open** → Select the `MYRA` folder
+2. **File → Open** → Select the `MAYA` folder
 3. Wait for Gradle sync to complete (~2-3 minutes)
 4. If Gradle sync fails: **File → Invalidate Caches → Restart**
 
@@ -66,7 +66,7 @@ Create these vector drawable files in `app/src/main/res/drawable/`:
 </vector>
 ```
 
-**ic_myra_notif.xml** (notification icon - simple circle)
+**ic_maya_notif.xml** (notification icon - simple circle)
 ```xml
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
@@ -93,22 +93,22 @@ APK location: `app/build/outputs/apk/debug/app-debug.apk`
 ## 📱 First Launch Setup
 
 ### 1. Grant API Key
-- Open MYRA app → tap ⚙️ Settings
+- Open MAYA app → tap ⚙️ Settings
 - Enter your **Gemini API Key** from https://aistudio.google.com/app/apikey
 - Enter your name
 
 ### 2. Enable Accessibility (REQUIRED for app control)
 - Settings → Accessibility Status card → tap it
-- Find **MYRA** in the list → Enable it
+- Find **MAYA** in the list → Enable it
 - Come back → green checkmark ✅ should appear
 
 ### 3. Enable Overlay Permission
-- Settings → Apps → MYRA → Display over other apps → Allow
+- Settings → Apps → MAYA → Display over other apps → Allow
 
 ### 4. Set Prime Contact
 - Settings → Prime Contact section
 - Enter close friend's name + phone number
-- Say: "MYRA, call my close friend" → it calls them instantly!
+- Say: "MAYA, call my close friend" → it calls them instantly!
 
 ### 5. Set Personality
 - GF Mode 💖 = Hinglish, emotional, caring
@@ -120,7 +120,7 @@ APK location: `app/build/outputs/apk/debug/app-debug.apk`
 ## 🎤 How to Use
 
 ### Voice Commands
-| Say this | MYRA does this |
+| Say this | MAYA does this |
 |----------|----------------|
 | "YouTube kholo" | Opens YouTube |
 | "WhatsApp band karo" | Closes WhatsApp |
@@ -131,25 +131,25 @@ APK location: `app/build/outputs/apk/debug/app-debug.apk`
 | "Mujhe yaad dilao kal 5 baje meeting" | (AI reminder reply) |
 
 ### Overlay Trigger
-- **Double press power button** → MYRA orb appears on screen
-- Tap orb → opens MYRA app
+- **Double press power button** → MAYA orb appears on screen
+- Tap orb → opens MAYA app
 - Drag orb anywhere on screen
 
 ### Incoming Call Handling
 1. Someone calls
-2. MYRA automatically says: *"Sir, [Name] ka call aa raha hai... uthau ya reject karu?"*
+2. MAYA automatically says: *"Sir, [Name] ka call aa raha hai... uthau ya reject karu?"*
 3. Say **"Uthao"** → call accepted
 4. Say **"Reject karo"** → call rejected
-5. MYRA goes back to sleep after call decision
+5. MAYA goes back to sleep after call decision
 
 ---
 
 ## 🏗️ Project Structure
 
 ```
-MYRA/
+MAYA/
 ├── app/src/main/
-│   ├── java/com/myra/assistant/
+│   ├── java/com/maya/assistant/
 │   │   ├── ai/
 │   │   │   ├── GeminiClient.kt       ← Gemini REST API (NO WebSocket)
 │   │   │   └── CommandParser.kt      ← Voice → Device command parser
@@ -158,7 +158,7 @@ MYRA/
 │   │   ├── service/
 │   │   │   ├── AccessibilityHelperService.kt  ← App open/close/UI
 │   │   │   ├── CallMonitorService.kt          ← Incoming call detection
-│   │   │   ├── MyraOverlayService.kt          ← Floating orb overlay
+│   │   │   ├── MayaOverlayService.kt          ← Floating orb overlay
 │   │   │   ├── PowerButtonReceiver.kt         ← Double power = overlay
 │   │   │   └── BootReceiver.kt               ← Auto-start on reboot
 │   │   ├── ui/
@@ -187,7 +187,7 @@ MYRA/
 |---------|-----|
 | Gradle sync fails | File → Invalidate Caches → Restart |
 | "Missing resource" error | Add the icon XML files from Step 3 above |
-| Mic not working | Grant RECORD_AUDIO permission in phone Settings → Apps → MYRA |
+| Mic not working | Grant RECORD_AUDIO permission in phone Settings → Apps → MAYA |
 | App control not working | Enable Accessibility Service (Step 2) |
 | Overlay not showing | Allow "Display over other apps" permission |
 | API not responding | Check internet, verify API key in Settings |
@@ -200,7 +200,7 @@ MYRA/
 1. Go to https://aistudio.google.com/app/apikey
 2. Click **Create API Key**
 3. Copy the key (starts with `AIza...`)
-4. Paste in MYRA Settings → API Key field
+4. Paste in MAYA Settings → API Key field
 
 **Free tier**: 15 requests/minute, 1 million tokens/day — plenty for personal use!
 
@@ -213,9 +213,9 @@ MYRA/
 - ✅ **⭐ Prime Contact** — One-command call/message your special person
 - ✅ **Incoming Call AI** — Auto announces caller, accepts/rejects by voice
 - ✅ **Animated Orb** — Reacts to voice in real-time (speaking/thinking/listening)
-- ✅ **Red Screen Effect** — Screen tints red when MYRA is active
+- ✅ **Red Screen Effect** — Screen tints red when MAYA is active
 - ✅ **Overlay Orb** — Floats on home screen like Google Assistant
-- ✅ **Power Button Trigger** — Double press → MYRA activates
+- ✅ **Power Button Trigger** — Double press → MAYA activates
 - ✅ **App Control** — Open/close any app via Accessibility Service
 - ✅ **System Control** — Volume, flashlight, WiFi, Bluetooth
 - ✅ **Call & SMS** — Make calls, send SMS, WhatsApp messages
@@ -225,4 +225,4 @@ MYRA/
 
 ---
 
-*Built with ❤️ — MYRA v1.0*
+*Built with ❤️ — MAYA v1.0*

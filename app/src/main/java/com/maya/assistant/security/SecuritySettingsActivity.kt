@@ -23,7 +23,7 @@ import com.maya.assistant.utils.LiveAudioManager
 import java.util.Locale
 
 /**
- * SecuritySettingsActivity — MYRA Security Configuration
+ * SecuritySettingsActivity — MAYA Security Configuration
  */
 class SecuritySettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
@@ -250,7 +250,7 @@ class SecuritySettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListene
     }
 
     private fun showVoiceSetupDialog() {
-            val prefs = getSharedPreferences("myra_prefs", Context.MODE_PRIVATE)
+            val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE)
             val currentPhrase = prefs.getString("voice_passphrase", "") ?: ""
         
             val dialogView = layoutInflater.inflate(R.layout.dialog_voice_passphrase, null)
@@ -308,11 +308,11 @@ class SecuritySettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListene
     private fun initGemini() {
         // Try encrypted prefs first, then plain text fallback
         val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
-            getSharedPreferences("myra_prefs", Context.MODE_PRIVATE).getString("api_key", "") ?: ""
+            getSharedPreferences("maya_prefs", Context.MODE_PRIVATE).getString("api_key", "") ?: ""
         }
         if (apiKey.isEmpty()) return
 
-        geminiClient = GeminiLiveClient(apiKey, "You are MYRA's security voice. Keep responses very short and professional.", object : GeminiLiveClient.LiveListener {
+        geminiClient = GeminiLiveClient(apiKey, "You are MAYA's security voice. Keep responses very short and professional.", object : GeminiLiveClient.LiveListener {
             override fun onAudioReceived(data: ByteArray) {
                 liveAudioManager?.playChunk(data)
             }

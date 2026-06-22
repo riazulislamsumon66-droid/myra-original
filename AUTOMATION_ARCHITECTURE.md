@@ -1,4 +1,4 @@
-# MYRA Automation System - Dynamic Architecture
+# MAYA Automation System - Dynamic Architecture
 
 ## Overview
 This document explains the modernized automation system that eliminates hardcoded values and implements dynamic, intelligent UI detection and app management.
@@ -130,7 +130,7 @@ User Command → SmartAutomationAgent
 ## Usage in Your Accessibility Service
 
 ```kotlin
-// In MyraAccessibilityService or similar
+// In MayaAccessibilityService or similar
 override fun onCreate() {
     super.onCreate()
     

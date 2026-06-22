@@ -128,7 +128,7 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
         Log.d(TAG, "Incoming: $callerName from $number")
 
         // Announce via TTS (check user preference)
-        val announceOn = getSharedPreferences("myra_prefs", MODE_PRIVATE)
+        val announceOn = getSharedPreferences("maya_prefs", MODE_PRIVATE)
             .getBoolean("call_announce_enabled", true)
         if (ttsReady && announceOn) {
             val announceText = "কল আসছে: $callerName"

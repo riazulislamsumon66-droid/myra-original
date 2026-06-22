@@ -11,7 +11,7 @@ object Constants {
     const val GEMINI_VOICE = "Aoede"
 
     // Prefs
-    const val PREFS_NAME = "myra_prefs"
+    const val PREFS_NAME = "maya_prefs"
     const val KEY_API_KEY = "api_key"
     const val KEY_USER_NAME = "user_name"
     const val KEY_PERSONALITY = "personality_mode"
@@ -24,8 +24,8 @@ object Constants {
     const val KEY_LANGUAGE = "language"
 
     // Notifications
-    const val NOTIF_CHANNEL_OVERLAY = "myra_overlay_channel"
-    const val NOTIF_CHANNEL_VOICE = "myra_voice_channel"
+    const val NOTIF_CHANNEL_OVERLAY = "maya_overlay_channel"
+    const val NOTIF_CHANNEL_VOICE = "maya_voice_channel"
     const val NOTIF_ID_OVERLAY = 1001
     const val NOTIF_ID_VOICE = 1002
 

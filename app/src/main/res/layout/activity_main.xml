@@ -3,7 +3,7 @@
     android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/myra_dark">
+    android:background="@color/maya_dark">
 
     <!-- Ambient background gradient -->
     <View
@@ -16,7 +16,7 @@
         android:id="@+id/redOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/myra_red"
+        android:background="@color/maya_red"
         android:alpha="0"
         android:clickable="false"/>
 
@@ -43,7 +43,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="100%"
-                android:textColor="@color/myra_red_soft"
+                android:textColor="@color/maya_red_soft"
                 android:textSize="12sp"
                 android:fontFamily="monospace"
                 android:drawableStart="@drawable/ic_battery"
@@ -54,7 +54,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="--MB"
-                android:textColor="@color/myra_hint"
+                android:textColor="@color/maya_hint"
                 android:textSize="10sp"
                 android:fontFamily="monospace"
                 android:layout_marginTop="2dp"/>
@@ -73,11 +73,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/Maya_full"
-                android:textColor="@color/myra_red"
+                android:textColor="@color/maya_red"
                 android:textSize="22sp"
                 android:letterSpacing="0.35"
                 android:fontFamily="sans-serif-black"
-                android:shadowColor="@color/myra_red"
+                android:shadowColor="@color/maya_red"
                 android:shadowDx="0"
                 android:shadowDy="0"
                 android:shadowRadius="12"/>
@@ -86,7 +86,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/app_tagline"
-                android:textColor="@color/myra_hint"
+                android:textColor="@color/maya_hint"
                 android:textSize="8sp"
                 android:letterSpacing="0.5"
                 android:fontFamily="monospace"
@@ -106,7 +106,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="00:00"
-                android:textColor="@color/myra_red_soft"
+                android:textColor="@color/maya_red_soft"
                 android:textSize="14sp"
                 android:fontFamily="monospace"/>
 
@@ -116,7 +116,7 @@
                 android:layout_height="32dp"
                 android:src="@drawable/ic_settings"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:tint="@color/myra_hint"
+                android:tint="@color/maya_hint"
                 android:layout_marginTop="4dp"
                 android:contentDescription="Settings"/>
         </LinearLayout>
@@ -148,13 +148,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/system_ready"
-            android:textColor="@color/myra_red"
+            android:textColor="@color/maya_red"
             android:textSize="11sp"
             android:layout_marginTop="12dp"
             android:fontFamily="monospace"
             android:letterSpacing="0.15"
             android:alpha="0.85"
-            android:shadowColor="@color/myra_red"
+            android:shadowColor="@color/maya_red"
             android:shadowDx="0"
             android:shadowDy="0"
             android:shadowRadius="8"/>
@@ -210,7 +210,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/long_press_stop"
-            android:textColor="@color/myra_hint"
+            android:textColor="@color/maya_hint"
             android:textSize="10sp"
             android:layout_gravity="center"
             android:layout_marginTop="6dp"

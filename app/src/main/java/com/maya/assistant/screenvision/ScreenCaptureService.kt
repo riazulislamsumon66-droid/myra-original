@@ -97,7 +97,7 @@ class ScreenCaptureService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("MAYA Screen Vision")
             .setContentText("Screen analysis active 🔍")
-            .setSmallIcon(R.drawable.ic_myra_notif)
+            .setSmallIcon(R.drawable.ic_maya_notif)
             .setContentIntent(pi)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)

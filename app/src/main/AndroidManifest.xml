@@ -42,6 +42,7 @@
     <uses-feature android:name="android.hardware.camera.flash" android:required="false"/>
 
     <application
+        android:name=".MayaApplication"
         android:allowBackup="false"
         android:icon="@mipmap/img"
         android:label="MAYA"
@@ -126,7 +127,7 @@
 
         <!-- OVERLAY SERVICE -->
         <service
-            android:name=".service.MyraOverlayService"
+            android:name=".service.MayaOverlayService"
             android:exported="false"
             android:foregroundServiceType="microphone"/>
 

@@ -23,7 +23,7 @@ import com.maya.assistant.ui.main.MainActivity
 import java.util.Locale
 
 /**
- * AppLockActivity — MYRA Complete Lock Screen
+ * AppLockActivity — MAYA Complete Lock Screen
  */
 class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
@@ -123,7 +123,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             // Fallback in case WebSocket doesn't connect quickly
             handler.postDelayed({ 
                 if (!isGeminiConnected) {
-                    val mode = getSharedPreferences("myra_prefs", MODE_PRIVATE).getString("personality_mode", "gf") ?: "gf"
+                    val mode = getSharedPreferences("maya_prefs", MODE_PRIVATE).getString("personality_mode", "gf") ?: "gf"
                     val greeting = if (mode == "gf") "Pehle unlock karo jaan, phir use karne dungi." else "Please unlock to continue."
                     speak(greeting, true) 
                 }
@@ -338,7 +338,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         speechRecognizer?.destroy()
         
         // Get saved voice language (default to Seychellois Creole for your request)
-        val prefs = getSharedPreferences("myra_prefs", MODE_PRIVATE)
+        val prefs = getSharedPreferences("maya_prefs", MODE_PRIVATE)
         val voiceLang = prefs.getString("voice_language", "crs") ?: "crs"
         
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
@@ -379,7 +379,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun onSuccess() {
         isUnlockedThisSession = true
-        val prefs = getSharedPreferences("myra_prefs", MODE_PRIVATE)
+        val prefs = getSharedPreferences("maya_prefs", MODE_PRIVATE)
         val name  = prefs.getString("user_name", "Jaan") ?: "Jaan"
         val mode  = prefs.getString("personality_mode", "gf") ?: "gf"
         val msg = when (mode) {
@@ -419,7 +419,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun speakWrong(attempts: Int, lockedOut: Boolean, type: String) {
-        val mode = getSharedPreferences("myra_prefs", MODE_PRIVATE)
+        val mode = getSharedPreferences("maya_prefs", MODE_PRIVATE)
             .getString("personality_mode", "gf") ?: "gf"
         val rem = 3 - attempts
         val msg = when {
@@ -451,16 +451,16 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun initGemini() {
         // Try encrypted prefs first, then plain text fallback
         val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
-            getSharedPreferences("myra_prefs", Context.MODE_PRIVATE).getString("api_key", "") ?: ""
+            getSharedPreferences("maya_prefs", Context.MODE_PRIVATE).getString("api_key", "") ?: ""
         }
         if (apiKey.isEmpty()) return
 
-        val prefs = getSharedPreferences("myra_prefs", Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE)
         val personality = prefs.getString("personality_mode", "gf") ?: "gf"
         val systemPrompt = when(personality) {
-            "gf" -> "You are MYRA, the user's caring and emotional girlfriend. Keep security responses short, sweet, and in Hinglish. Use words like 'jaan', 'babu' occasionally but keep it professional for security."
-            "professional" -> "You are MYRA, a professional security assistant. Keep responses very short, formal and in English."
-            else -> "You are MYRA, a friendly assistant. Keep responses short and balanced."
+            "gf" -> "You are MAYA, the user's caring and emotional girlfriend. Keep security responses short, sweet, and in Hinglish. Use words like 'jaan', 'babu' occasionally but keep it professional for security."
+            "professional" -> "You are MAYA, a professional security assistant. Keep responses very short, formal and in English."
+            else -> "You are MAYA, a friendly assistant. Keep responses short and balanced."
         }
 
         geminiClient = GeminiLiveClient(apiKey, systemPrompt, object : GeminiLiveClient.LiveListener {
@@ -470,7 +470,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 isGeminiConnected = true 
                 Log.d("MAYA_LOCK", "Gemini WebSocket Connected ✅")
                 runOnUiThread {
-                    val mode = getSharedPreferences("myra_prefs", MODE_PRIVATE).getString("personality_mode", "gf") ?: "gf"
+                    val mode = getSharedPreferences("maya_prefs", MODE_PRIVATE).getString("personality_mode", "gf") ?: "gf"
                     val greeting = if (mode == "gf") "Pehle unlock karo jaan, phir use karne dungi." else "Please unlock to continue."
                     speak(greeting, true)
                 }

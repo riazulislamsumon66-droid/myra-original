@@ -133,7 +133,7 @@ class LiveAudioManager(private val context: Context) {
     fun playMp3Data(mp3Data: ByteArray) {
         try {
             // Write to temp file and play
-            val tempFile = File.createTempFile("myra_audio", ".mp3", context.cacheDir)
+            val tempFile = File.createTempFile("maya_audio", ".mp3", context.cacheDir)
             FileOutputStream(tempFile).use { it.write(mp3Data) }
 
             MediaPlayer().apply {

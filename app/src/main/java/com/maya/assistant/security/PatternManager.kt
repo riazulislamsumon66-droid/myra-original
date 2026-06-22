@@ -9,7 +9,7 @@ import android.util.Log
 object PatternManager {
 
     private const val TAG = "MAYA_PATTERN"
-    private const val PREFS_NAME = "myra_security_prefs"
+    private const val PREFS_NAME = "maya_security_prefs"
     private const val KEY_PATTERN      = "unlock_pattern"
     private const val KEY_PATTERN_ON   = "pattern_lock_enabled"
     private const val KEY_WRONG_COUNT  = "pattern_wrong_count"

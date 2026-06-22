@@ -110,7 +110,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
         const val VIEW_USER = 0
-        const val VIEW_MYRA = 1
+        const val VIEW_MAYA = 1
     }
 
     fun addMessage(message: ChatMessage) {
@@ -128,7 +128,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     }
 
     override fun getItemViewType(position: Int) =
-        if (messages[position].isUser) VIEW_USER else VIEW_MYRA
+        if (messages[position].isUser) VIEW_USER else VIEW_MAYA
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -136,7 +136,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             val view = inflater.inflate(R.layout.item_chat_user, parent, false)
             UserMessageViewHolder(view)
         } else {
-            val view = inflater.inflate(R.layout.item_chat_myra, parent, false)
+            val view = inflater.inflate(R.layout.item_chat_maya, parent, false)
             MayaMessageViewHolder(view)
         }
     }

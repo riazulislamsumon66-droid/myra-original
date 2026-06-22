@@ -24,7 +24,7 @@ object SecurityManager {
     private const val AES_MODE = "AES/GCM/NoPadding"
     private const val GCM_TAG_LENGTH = 128
 
-    private const val PREFS_NAME = "myra_security_prefs"
+    private const val PREFS_NAME = "maya_security_prefs"
     private const val KEY_PIN_HASH       = "pin_hash"
     private const val KEY_VOICE_PHRASE   = "voice_passphrase"
     private const val KEY_APP_LOCK_ON    = "app_lock_enabled"

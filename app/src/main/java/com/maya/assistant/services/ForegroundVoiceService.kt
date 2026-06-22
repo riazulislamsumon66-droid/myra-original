@@ -249,7 +249,7 @@ CRITICAL RULES:
         return NotificationCompat.Builder(this, Constants.NOTIF_CHANNEL_VOICE)
             .setContentTitle("MAYA is listening ❤️")
             .setContentText("Always ready for you")
-            .setSmallIcon(R.drawable.ic_myra_notif)
+            .setSmallIcon(R.drawable.ic_maya_notif)
             .setContentIntent(pi)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)

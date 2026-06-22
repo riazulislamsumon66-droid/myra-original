@@ -236,7 +236,7 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun setupGeminiLive() {
         // Try encrypted prefs first, then plain text fallback
         val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
-            getSharedPreferences("myra_prefs", MODE_PRIVATE).getString("api_key", "") ?: ""
+            getSharedPreferences("maya_prefs", MODE_PRIVATE).getString("api_key", "") ?: ""
         }
         if (apiKey.isEmpty()) {
             Log.e(TAG, "No API key found")
@@ -246,7 +246,7 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val callType = if (isWhatsAppCall) "WhatsApp call" else "phone call"
 
         val prompt = """
-            You are MYRA, a caring AI assistant for $userName. Personality: $personality.
+            You are MAYA, a caring AI assistant for $userName. Personality: $personality.
 
             SITUATION: Incoming $callType from $callerName.
             
@@ -766,7 +766,7 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         str.all { it.isDigit() || it == '+' || it == '-' || it == ' ' }
 
     private fun getPrefsValue(key: String, default: String): String {
-        return getSharedPreferences("myra_prefs", Context.MODE_PRIVATE)
+        return getSharedPreferences("maya_prefs", Context.MODE_PRIVATE)
             .getString(key, default) ?: default
     }
 

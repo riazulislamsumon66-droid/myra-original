@@ -12,7 +12,7 @@ import androidx.biometric.BiometricManager
 import java.util.concurrent.Executor
 
 /**
- * BiometricManager - Fingerprint authentication for MYRA
+ * BiometricManager - Fingerprint authentication for MAYA
  * Requirements:
  * 1. ✅ Fingerprint auth on launch
  * 2. ✅ Block automation until success
@@ -23,7 +23,7 @@ object BiometricManager {
 
     private const val TAG = "MAYA_BIOMETRIC"
     private const val SESSION_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
-    private const val PREFS_NAME = "myra_security"
+    private const val PREFS_NAME = "maya_security"
     private const val KEY_LAST_AUTH = "last_auth_time"
     private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
     private const val KEY_PIN_SET = "pin_set"

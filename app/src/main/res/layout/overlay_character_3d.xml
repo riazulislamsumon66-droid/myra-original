@@ -23,7 +23,7 @@
         android:layout_height="80dp"
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginBottom="8dp"
-        android:background="@drawable/bg_myra_dot"
+        android:background="@drawable/bg_maya_dot"
         android:alpha="0.3" />
 
 </FrameLayout>
