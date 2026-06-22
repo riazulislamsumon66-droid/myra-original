@@ -304,11 +304,11 @@ class VoiceIdentifier(private val context: Context) {
 
         // 6. Spectral energy in bands
         val bandEnergies = computeBandEnergies(floatData, SAMPLE_RATE)
-        features.addAll(bandEnergies)
+        features.addAll(bandEnergies.toList())
 
         // 7. MFCC-like coefficients (simplified)
         val mfcc = computeSimplifiedMFCC(floatData, SAMPLE_RATE)
-        features.addAll(mfcc)
+        features.addAll(mfcc.toList())
 
         return features.toFloatArray()
     }
