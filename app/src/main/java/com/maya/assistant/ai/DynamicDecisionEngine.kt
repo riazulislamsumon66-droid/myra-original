@@ -86,19 +86,29 @@ object DynamicDecisionEngine {
             }
 
             CommandType.CALL -> {
-                val name = command.args["name"] ?: ""
-                val number = findContactNumber(context, name)
-                if (number.isNotEmpty()) {
-                    val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number"))
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    try {
-                        context.startActivity(intent)
-                        "কল করছি: $name"
-                    } catch (e: Exception) {
-                        "কল করতে সমস্যা: ${e.message}"
-                    }
+                var name = command.args["name"] ?: ""
+                // Clean filler words from contact name
+                val nameFillers = listOf("call", "কল", "phone", "ফোন", "dial", "করো", "karo", "koro", "কে", "ke", "to", "the", "a ", "an ")
+                for (f in nameFillers) {
+                    name = name.replace(f, "", ignoreCase = true)
+                }
+                name = name.trim().replace(Regex("\\s+"), " ")
+                if (name.isEmpty()) {
+                    "কন্টাক্ট নাম বলো"
                 } else {
-                    "কন্টাক্ট পাই নাই: $name"
+                    val number = findContactNumber(context, name)
+                    if (number.isNotEmpty()) {
+                        val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number"))
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        try {
+                            context.startActivity(intent)
+                            "কল করছি: $name"
+                        } catch (e: Exception) {
+                            "কল করতে সমস্যা: ${e.message}"
+                        }
+                    } else {
+                        "কন্টাক্ট পাই নাই: $name"
+                    }
                 }
             }
 
@@ -143,19 +153,15 @@ object DynamicDecisionEngine {
 
             CommandType.YOUTUBE_PLAY -> {
                 var query = command.args["query"] ?: ""
-                // Clean filler words from query (Gemini sometimes includes extra words)
-                val fillers = listOf(
-                    "youtube এ", "youtube-এ", "youtube te", "ইউটিউবে", "ইউটিউব",
-                    "play করো", "চালাও", "চালো", "দেখাও", "play karo",
-                    "একটা", "একটি", "ekta", "একটা", "a", "the",
-                    "hindi", "bangla", "song", "গান", "video", "music",
-                    "দাও", "show", "search", "find"
-                )
-                for (f in fillers) {
-                    query = query.replace(f, "", ignoreCase = true)
+                query = cleanMusicQuery(query)
+                if (query.isEmpty()) query = command.raw.replace("YOUTUBE_PLAY", "", ignoreCase = true).trim()
+                // Final safety: if query still contains command-like words, use raw text
+                val dangerousWords = listOf("youtube", "play", "চালাও", "চালো", "play karo", "play koro")
+                for (dw in dangerousWords) {
+                    query = query.replace(dw, "", ignoreCase = true)
                 }
                 query = query.trim().replace(Regex("\\s+"), " ")
-                if (query.isEmpty()) query = command.raw.replace("YOUTUBE_PLAY", "", ignoreCase = true).trim()
+                if (query.isEmpty()) query = "music"
                 try {
                     // Launch YouTube app with search query directly
                     val ytSearchIntent = Intent(Intent.ACTION_VIEW).apply {

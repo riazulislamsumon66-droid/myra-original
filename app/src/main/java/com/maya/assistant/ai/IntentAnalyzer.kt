@@ -160,7 +160,7 @@ object IntentAnalyzer {
 
             // Call — use contains() not startsWith() to catch "Rahim কে call করো"
             CALL_PATTERNS.any { lower.contains(it) } -> {
-                val name = extractAfter(lower, CALL_PATTERNS)
+                val name = extractCallName(lower)
                 VoiceCommand(text, CommandType.CALL, mapOf("name" to name))
             }
 
@@ -287,6 +287,41 @@ object IntentAnalyzer {
             val idx = text.indexOf(p)
             if (idx != -1) {
                 return text.substring(idx + p.length).trim()
+            }
+        }
+        return ""
+    }
+
+    /**
+     * Extract contact name from call command.
+     * Handles: "Rahim কে call করো", "call Rahim", "call my friend Rahim"
+     */
+    private fun extractCallName(text: String): String {
+        // Strategy: find the call keyword, then extract name from either side
+        val callWords = listOf("call karo", "call koro", "কল করো", "কল করো", "ফোন করো", "call")
+        
+        for (cw in callWords) {
+            val idx = text.indexOf(cw)
+            if (idx != -1) {
+                // Try text BEFORE the call word (Bangla pattern: "Rahim কে call করো")
+                val before = text.substring(0, idx).trim()
+                // Remove trailing particles like "কে", "ke"
+                val cleanedBefore = before
+                    .replace(Regex("\\s+কে$"), "")
+                    .replace(Regex("\\s+ke$"), "")
+                    .replace(Regex("\\s+to$"), "")
+                    .trim()
+                if (cleanedBefore.isNotEmpty() && cleanedBefore.length < 40) {
+                    return cleanedBefore
+                }
+                // Try text AFTER the call word (English pattern: "call Rahim")
+                val after = text.substring(idx + cw.length).trim()
+                if (after.isNotEmpty() && after.length < 40) {
+                    // Remove leading "to", "the"
+                    return after
+                        .replace(Regex("^(to|the|a|an)\\s+"), "")
+                        .trim()
+                }
             }
         }
         return ""

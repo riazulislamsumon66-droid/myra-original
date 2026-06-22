@@ -41,9 +41,19 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        // Check required permissions before starting foreground
+        if (!hasCallPermissions()) {
+            Log.e(TAG, "Missing FOREGROUND_SERVICE_PHONE_CALL or MANAGE_OWN_CALLS permission — stopping service")
+            stopSelf()
+            return
+        }
         startForegroundService()
         tts = TextToSpeech(this, this)
         setupPhoneListener()
+    }
+
+    private fun hasCallPermissions(): Boolean {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.MANAGE_OWN_CALLS) == PackageManager.PERMISSION_GRANTED
     }
 
     override fun onInit(status: Int) {
