@@ -66,7 +66,16 @@ class MayaCharacterService : Service() {
         super.onCreate()
         isRunning = true
         createNotificationChannel()
-        startForeground(NOTIF_ID, buildNotification())
+        // Android 14+ requires 3-argument startForeground with service type
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIF_ID,
+                buildNotification(),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIF_ID, buildNotification())
+        }
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
     }
 

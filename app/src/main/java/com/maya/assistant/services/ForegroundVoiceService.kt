@@ -53,7 +53,16 @@ class ForegroundVoiceService : Service() {
         super.onCreate()
         instance = this
         isRunning = true
-        startForeground(Constants.NOTIF_ID_VOICE, buildNotification())
+        // Android 14+ requires 3-argument startForeground with service type
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                Constants.NOTIF_ID_VOICE,
+                buildNotification(),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            )
+        } else {
+            startForeground(Constants.NOTIF_ID_VOICE, buildNotification())
+        }
         initComponents()
         registerPowerButtonReceiver()
     }
