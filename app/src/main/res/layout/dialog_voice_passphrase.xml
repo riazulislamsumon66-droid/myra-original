@@ -6,28 +6,62 @@
     android:padding="24dp"
     android:gravity="center_horizontal">
 
-    <TextView
-        android:id="@+id/recordStatusText"
-        android:layout_width="wrap_content"
+    <EditText
+        android:id="@+id/voicePassphraseInput"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tap to start recording"
+        android:hint="Enter voice passphrase (min 3 chars)"
+        android:inputType="text"
         android:textSize="16sp"
-        android:layout_marginBottom="24dp"/>
-
-    <Button
-        android:id="@+id/recordPassphraseBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Record Phrase"
-        android:textAllCaps="false"/>
+        android:layout_marginBottom="16dp"/>
 
     <TextView
-        android:id="@+id/passphrasePreviewText"
+        android:id="@+id/voiceErrorText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text=""
-        android:textStyle="italic"
+        android:textColor="#FF4444"
+        android:textSize="14sp"
         android:visibility="gone"
-        android:layout_marginTop="24dp"/>
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select Language:"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp"/>
+
+    <RadioGroup
+        android:id="@+id/voiceLanguageGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/langHindi"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hindi (hi-IN)"
+            android:checked="true"/>
+
+        <RadioButton
+            android:id="@+id/langEnglish"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="English (en-US)"/>
+
+        <RadioButton
+            android:id="@+id/langCreole"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Seychellois Creole (crs)"/>
+
+        <RadioButton
+            android:id="@+id/langBengali"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Bengali (bn-IN)"/>
+
+    </RadioGroup>
 
 </LinearLayout>

@@ -336,6 +336,11 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         voiceStatusText.text = "🎙️ Listening for passphrase..."
         voiceBtn.setImageResource(R.drawable.ic_mic_on)
         speechRecognizer?.destroy()
+        
+        // Get saved voice language (default to Seychellois Creole for your request)
+        val prefs = getSharedPreferences("myra_prefs", MODE_PRIVATE)
+        val voiceLang = prefs.getString("voice_language", "crs") ?: "crs"
+        
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         speechRecognizer?.setRecognitionListener(object : RecognitionListener {
             override fun onResults(results: Bundle?) {
@@ -366,7 +371,8 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         })
         speechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, voiceLang)
+            putExtra(RecognizerIntent.EXTRA_SUPPORTED_LANGUAGES, arrayListOf("hi-IN", "en-US", "en-IN", "bn-IN", "ta-IN", "te-IN", "mr-IN", "gu-IN", "kn-IN", "ml-IN", "pa-IN", "ur-IN", "crs"))
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
         })
     }

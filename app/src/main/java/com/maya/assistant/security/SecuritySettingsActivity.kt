@@ -250,8 +250,60 @@ class SecuritySettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListene
     }
 
     private fun showVoiceSetupDialog() {
-        // ... (rest of the voice setup logic)
-    }
+            val prefs = getSharedPreferences("myra_prefs", Context.MODE_PRIVATE)
+            val currentPhrase = prefs.getString("voice_passphrase", "") ?: ""
+        
+            val dialogView = layoutInflater.inflate(R.layout.dialog_voice_passphrase, null)
+            val phraseInput = dialogView.findViewById<EditText>(R.id.voicePassphraseInput)
+            val errorText = dialogView.findViewById<TextView>(R.id.voiceErrorText)
+            val langGroup = dialogView.findViewById<RadioGroup>(R.id.voiceLanguageGroup)
+        
+            // Pre-fill existing phrase
+            if (currentPhrase.isNotEmpty()) {
+                phraseInput.setText(currentPhrase)
+            }
+        
+            // Set current language selection
+            val currentLang = prefs.getString("voice_language", "hi-IN") ?: "hi-IN"
+            when (currentLang) {
+                "hi-IN" -> langGroup.check(R.id.langHindi)
+                "en-US" -> langGroup.check(R.id.langEnglish)
+                "crs" -> langGroup.check(R.id.langCreole)
+                "bn-IN" -> langGroup.check(R.id.langBengali)
+            }
+        
+            val dialog = AlertDialog.Builder(this)
+                .setTitle("Set Voice Passphrase")
+                .setView(dialogView)
+                .setPositiveButton("Save", null)
+                .setNegativeButton("Cancel", null)
+                .create()
+        
+            dialog.setOnShowListener {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                    val phrase = phraseInput.text.toString().trim()
+                    if (phrase.length < 3) {
+                        errorText.text = "Passphrase must be at least 3 characters"
+                        errorText.visibility = View.VISIBLE
+                        return@setOnClickListener
+                    }
+                
+                    val selectedLang = when (langGroup.checkedRadioButtonId) {
+                        R.id.langHindi -> "hi-IN"
+                        R.id.langEnglish -> "en-US"
+                        R.id.langCreole -> "crs"
+                        R.id.langBengali -> "bn-IN"
+                        else -> "hi-IN"
+                    }
+                
+                    prefs.edit().putString("voice_passphrase", phrase).putString("voice_language", selectedLang).apply()
+                    loadCurrentStatus()
+                    speak("Voice passphrase set ho gaya!", true)
+                    dialog.dismiss()
+                }
+            }
+            dialog.show()
+        }
 
     private fun initGemini() {
         // Try encrypted prefs first, then plain text fallback
