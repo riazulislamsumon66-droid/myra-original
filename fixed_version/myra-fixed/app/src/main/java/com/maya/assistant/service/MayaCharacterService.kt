@@ -277,7 +277,7 @@ class MayaCharacterService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("MAYA ✨")
             .setContentText("Character active")
-            .setSmallIcon(R.drawable.ic_myra_notif)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pi)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_MIN)

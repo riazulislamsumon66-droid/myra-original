@@ -1,0 +1,86 @@
+name: Build Debug APK
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Cache Gradle
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: myra-debug-apk
+        path: app/build/outputs/apk/debug/app-debug.apk
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download APK
+      uses: actions/download-artifact@v4
+      with:
+        name: myra-debug-apk
+        path: apk
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: apk/app-debug.apk
+        tag_name: v8.0.0
+        name: MAYA Assistant v8.0.0
+        body: |
+          ## 📱 MAYA AI Voice Assistant v8.0.0
+          
+          ### ✅ Features
+          - Screen Reading (READ_SCREEN)
+          - Battery Check (BATTERY_CHECK)
+          - Settings Control (WIFI_ON, BLUETOOTH_ON, etc.)
+          - IMO/Messenger/Telegram Calls
+          - MUSIC_PLAY command
+          
+          ### 🔧 Fixes
+          - API key encrypted storage
+          - Gemini Live endpoint v1beta
+          - CALL command pattern
+          - YouTube/Spotify query cleaning
+          - WhatsApp call accessibility flow
+          - Alpha dependencies → stable
+          
+          **Install Tip**: Same package (com.maya.assistant) — uninstall লাগবে না, update হবে!
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

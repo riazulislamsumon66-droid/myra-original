@@ -1,0 +1,87 @@
+package com.maya.assistant.voice
+
+import android.content.Context
+import android.content.Intent
+import androidx.lifecycle.MutableLiveData
+import com.maya.assistant.utils.Constants
+import com.maya.assistant.service.MayaCharacterService
+
+object VoiceStateManager {
+
+    val state = MutableLiveData(Constants.STATE_IDLE)
+    val statusMessage = MutableLiveData("SYSTEM READY")
+    val amplitude = MutableLiveData(0f)
+    val isMicMuted = MutableLiveData(false)
+
+    fun setListening() {
+        state.postValue(Constants.STATE_LISTENING)
+        statusMessage.postValue("LISTENING...")
+        isMicMuted.postValue(false)
+    }
+
+    fun setThinking() {
+        state.postValue(Constants.STATE_THINKING)
+        statusMessage.postValue("THINKING...")
+    }
+
+    fun setSpeaking() {
+        state.postValue(Constants.STATE_SPEAKING)
+        statusMessage.postValue("SPEAKING...")
+        isMicMuted.postValue(true)
+    }
+
+    fun setIdle() {
+        state.postValue(Constants.STATE_IDLE)
+        statusMessage.postValue("SYSTEM READY")
+        isMicMuted.postValue(false)
+        amplitude.postValue(0f)
+    }
+
+    fun setError(msg: String) {
+        state.postValue(Constants.STATE_IDLE)
+        statusMessage.postValue(msg)
+    }
+
+    fun updateAmplitude(rms: Float) {
+        amplitude.postValue(rms.coerceIn(0f, 1f))
+    }
+
+    fun isAiSpeaking() = state.value == Constants.STATE_SPEAKING
+
+    fun isListening() = state.value == Constants.STATE_LISTENING
+
+    // ── Character Notifications ──────────────────────────────────────
+    fun notifyCharacterListening(ctx: Context) {
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_SET_STATE
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.LISTENING.name)
+        }.also { ctx.startService(it) }
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_WAKE
+        }.also { ctx.startService(it) }
+    }
+
+    fun notifyCharacterTalking(ctx: Context) {
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_SET_STATE
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.TALKING.name)
+        }.also { ctx.startService(it) }
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_WAKE
+        }.also { ctx.startService(it) }
+    }
+
+    fun notifyCharacterThinking(ctx: Context) {
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_SET_STATE
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.THINKING.name)
+        }.also { ctx.startService(it) }
+    }
+
+    fun notifyCharacterIdle(ctx: Context) {
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_SET_STATE
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.IDLE.name)
+        }.also { ctx.startService(it) }
+    }
+}
