@@ -26,20 +26,15 @@ class CallReceiver : BroadcastReceiver() {
             TelephonyManager.EXTRA_STATE_RINGING -> {
                 // Incoming call ringing
                 Log.d(TAG, "Incoming call from: $number")
-                // Start CallMonitorService to handle the call — only if we have permission
-                if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.MANAGE_OWN_CALLS)
-                    == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                    val serviceIntent = Intent(context, CallMonitorService::class.java).apply {
-                        putExtra("CALL_STATE", "RINGING")
-                        putExtra("PHONE_NUMBER", number ?: "")
-                    }
-                    try {
-                        context.startForegroundService(serviceIntent)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to start CallMonitorService: ${e.message}")
-                    }
-                } else {
-                    Log.w(TAG, "MANAGE_OWN_CALLS not granted, cannot start CallMonitorService")
+                // Start CallMonitorService to handle the call
+                val serviceIntent = Intent(context, CallMonitorService::class.java).apply {
+                    putExtra("CALL_STATE", "RINGING")
+                    putExtra("PHONE_NUMBER", number ?: "")
+                }
+                try {
+                    context.startForegroundService(serviceIntent)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to start CallMonitorService: ${e.message}")
                 }
             }
             TelephonyManager.EXTRA_STATE_OFFHOOK -> {

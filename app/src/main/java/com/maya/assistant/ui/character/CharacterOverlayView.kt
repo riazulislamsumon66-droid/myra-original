@@ -3,54 +3,330 @@ package com.maya.assistant.ui.character
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
+import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.*
+import android.widget.FrameLayout
+import android.widget.ImageView
+import androidx.core.content.ContextCompat
+import com.maya.assistant.R
 import kotlin.math.*
 
 /**
- * CharacterOverlayView — 3D-feel animated character.
+ * CharacterOverlayView — 2D animated character overlay.
  *
- * Rendering approach: Custom Canvas 3D-style drawing + Lottie JSON animation.
- * - Idle: soft breathing + floating bob
- * - Talking: mouth opens/closes with voice rhythm
- * - Listening: ears/eyes animated, leaning forward
- * - Sleeping: eyes close, zzz particles float
- * - Happy: jump + sparkle particles
- * - Thinking: eye movement, finger to chin pose
+ * Supports three animation sources (in priority order):
+ * 1. GIF (android.graphics.Movie) — for simple animated GIFs
+ * 2. Lottie JSON — via LottieAnimationView (if lottie dependency added)
+ * 3. Sprite Sheet — grid-based frame animation from a single bitmap
+ * 4. Fallback: Custom Canvas drawing (original implementation)
  *
- * For real 3D (GLB model): swap this with SceneView implementation
- * after adding: implementation("io.github.sceneview:sceneview:2.2.1")
+ * States: IDLE, LISTENING, TALKING, SLEEPING, HAPPY, THINKING
  */
 class CharacterOverlayView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : View(context, attrs, defStyleAttr) {
+) : FrameLayout(context, attrs, defStyleAttr) {
 
     // ── Enums ─────────────────────────────────────────────────
     enum class CharState { IDLE, LISTENING, TALKING, SLEEPING, HAPPY, THINKING }
     enum class CharMode { DEFAULT, GF, PROFESSIONAL, FRIEND }
 
+    // ── Animation Source Type ─────────────────────────────────
+    enum class SourceType { GIF, LOTTIE, SPRITE_SHEET, CANVAS }
+
     // ── State ─────────────────────────────────────────────────
     private var state = CharState.IDLE
     private var mode = CharMode.DEFAULT
     private var amplitude = 0f
+    private var sourceType = SourceType.CANVAS
 
-    // ── Animation values ──────────────────────────────────────
+    // ── Image Views for asset-based rendering ──────────────────
+    private val characterImageView: ImageView
+    private val fallbackCanvasView: CharacterCanvasView
+
+    // ── Sprite Sheet ──────────────────────────────────────────
+    private var spriteSheet: Bitmap? = null
+    private var spriteRows = 1
+    private var spriteCols = 1
+    private var currentFrame = 0
+    private var frameCount = 1
+
+    // ── GIF ───────────────────────────────────────────────────
+    private var gifMovie: android.graphics.Movie? = null
+    private var gifStartTime = 0L
+
+    // ── Resize ────────────────────────────────────────────────
+    private var baseWidth = 160
+    private var baseHeight = 200
+    private var currentScale = 1f
+
+    init {
+        // Character image view (for GIF/Sprite/Lottie)
+        characterImageView = ImageView(context).apply {
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+        }
+        addView(characterImageView)
+
+        // Fallback canvas view (original drawing)
+        fallbackCanvasView = CharacterCanvasView(context).apply {
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+            visibility = GONE
+        }
+        addView(fallbackCanvasView)
+
+        setBackgroundColor(Color.TRANSPARENT)
+        applyModeColors()
+    }
+
+    // ── Public API ────────────────────────────────────────────
+
+    fun setState(newState: CharState) {
+        if (state == newState) return
+        state = newState
+        when (sourceType) {
+            SourceType.CANVAS -> fallbackCanvasView.setState(newState)
+            SourceType.SPRITE_SHEET -> updateSpriteState(newState)
+            SourceType.GIF -> updateGifState(newState)
+            SourceType.LOTTIE -> updateLottieState(newState)
+        }
+    }
+
+    fun setMode(newMode: CharMode) {
+        mode = newMode
+        applyModeColors()
+        fallbackCanvasView.setMode(newMode)
+    }
+
+    fun setAmplitude(amp: Float) {
+        amplitude = amp.coerceIn(0f, 1f)
+        fallbackCanvasView.setAmplitude(amp)
+    }
+
+    fun setScale(scale: Float) {
+        currentScale = scale.coerceIn(0.5f, 3f)
+        val w = (baseWidth * currentScale).toInt()
+        val h = (baseHeight * currentScale).toInt()
+        layoutParams = layoutParams.apply {
+            width = w
+            height = h
+        }
+        characterImageView.layoutParams = LayoutParams(w, h)
+        fallbackCanvasView.layoutParams = LayoutParams(w, h)
+    }
+
+    fun getScale(): Float = currentScale
+
+    // ── Asset Loading ─────────────────────────────────────────
+
+    /**
+     * Load character from GIF file path
+     */
+    fun loadGif(assetPath: String) {
+        try {
+            sourceType = SourceType.GIF
+            val inputStream = context.assets.open(assetPath)
+            gifMovie = android.graphics.Movie.decodeStream(inputStream)
+            inputStream.close()
+            characterImageView.visibility = VISIBLE
+            fallbackCanvasView.visibility = GONE
+            startGifAnimation()
+        } catch (e: Exception) {
+            // Fallback to canvas
+            sourceType = SourceType.CANVAS
+            characterImageView.visibility = GONE
+            fallbackCanvasView.visibility = VISIBLE
+        }
+    }
+
+    /**
+     * Load character from sprite sheet bitmap
+     * @param bitmap The sprite sheet image
+     * @param rows Number of rows (states)
+     * @param cols Number of columns (frames per state)
+     */
+    fun loadSpriteSheet(bitmap: Bitmap, rows: Int, cols: Int) {
+        sourceType = SourceType.SPRITE_SHEET
+        spriteSheet = bitmap
+        spriteRows = rows
+        spriteCols = cols
+        frameCount = cols
+        characterImageView.visibility = VISIBLE
+        fallbackCanvasView.visibility = GONE
+        updateSpriteState(state)
+    }
+
+    /**
+     * Load character from drawable resource (static image per state)
+     */
+    fun loadDrawableForState(state: CharState, resId: Int) {
+        // Store drawable for state, use when state changes
+        stateDrawables[state] = ContextCompat.getDrawable(context, resId)
+        if (this.state == state) {
+            characterImageView.setImageDrawable(stateDrawables[state])
+        }
+    }
+
+    private val stateDrawables = mutableMapOf<CharState, Drawable?>()
+
+    /**
+     * Switch to canvas fallback mode
+     */
+    fun useCanvasFallback() {
+        sourceType = SourceType.CANVAS
+        characterImageView.visibility = GONE
+        fallbackCanvasView.visibility = VISIBLE
+        fallbackCanvasView.setState(state)
+    }
+
+    // ── GIF Animation ─────────────────────────────────────────
+
+    private var gifAnimRunnable: Runnable? = null
+
+    private fun startGifAnimation() {
+        gifStartTime = System.currentTimeMillis()
+        gifAnimRunnable = object : Runnable {
+            override fun run() {
+                val movie = gifMovie ?: return
+                val now = System.currentTimeMillis()
+                val duration = movie.duration().coerceAtLeast(100)
+                val frameTime = ((now - gifStartTime) % duration).toInt()
+                movie.setTime(frameTime)
+                // Draw current frame
+                val bitmap = Bitmap.createBitmap(
+                    movie.width().coerceAtLeast(1),
+                    movie.height().coerceAtLeast(1),
+                    Bitmap.Config.ARGB_8888
+                )
+                val canvas = Canvas(bitmap)
+                movie.draw(canvas, 0f, 0f)
+                characterImageView.setImageBitmap(bitmap)
+                postDelayed(this, 50) // ~20fps
+            }
+        }
+        post(gifAnimRunnable!!)
+    }
+
+    private fun updateGifState(newState: CharState) {
+        // For GIF: load different GIF file per state
+        // e.g., "character/idle.gif", "character/listening.gif"
+        stopGifAnimation()
+        startGifAnimation()
+    }
+
+    private fun stopGifAnimation() {
+        gifAnimRunnable?.let { removeCallbacks(it) }
+        gifAnimRunnable = null
+    }
+
+    // ── Sprite Sheet Animation ────────────────────────────────
+
+    private fun updateSpriteState(newState: CharState) {
+        val sheet = spriteSheet ?: return
+        val stateRow = when (newState) {
+            CharState.IDLE -> 0
+            CharState.LISTENING -> 1
+            CharState.TALKING -> 2
+            CharState.SLEEPING -> if (spriteRows > 3) 3 else 0
+            CharState.HAPPY -> if (spriteRows > 4) 4 else 0
+            CharState.THINKING -> if (spriteRows > 5) 5 else 0
+        }.coerceAtMost(spriteRows - 1)
+
+        val frameWidth = sheet.width / spriteCols
+        val frameHeight = sheet.height / spriteRows
+
+        // Show first frame of the state row
+        val x = 0
+        val y = stateRow * frameHeight
+        val frameBitmap = Bitmap.createBitmap(sheet, x, y, frameWidth, frameHeight)
+        characterImageView.setImageBitmap(frameBitmap)
+
+        // Animate through columns
+        startSpriteAnimation(stateRow, frameWidth, frameHeight)
+    }
+
+    private var spriteAnimRunnable: Runnable? = null
+
+    private fun startSpriteAnimation(row: Int, frameWidth: Int, frameHeight: Int) {
+        spriteAnimRunnable?.let { removeCallbacks(it) }
+        currentFrame = 0
+        spriteAnimRunnable = object : Runnable {
+            override fun run() {
+                val sheet = spriteSheet ?: return
+                val x = currentFrame * frameWidth
+                val y = row * frameHeight
+                if (x + frameWidth <= sheet.width && y + frameHeight <= sheet.height) {
+                    val frameBitmap = Bitmap.createBitmap(sheet, x, y, frameWidth, frameHeight)
+                    characterImageView.setImageBitmap(frameBitmap)
+                }
+                currentFrame = (currentFrame + 1) % spriteCols
+                postDelayed(this, 100) // 10fps
+            }
+        }
+        post(spriteAnimRunnable!!)
+    }
+
+    // ── Lottie (placeholder — requires lottie dependency) ────
+
+    private fun updateLottieState(newState: CharState) {
+        // If lottie is added: LottieAnimationView.setAnimation("idle.json")
+        // For now, fallback to canvas
+        useCanvasFallback()
+    }
+
+    // ── Mode Colors ───────────────────────────────────────────
+
+    private fun applyModeColors() {
+        // Mode-based visual adjustments
+        when (mode) {
+            CharMode.GF -> { /* Cute mode */ }
+            CharMode.PROFESSIONAL -> { /* Professional mode */ }
+            CharMode.FRIEND -> { /* Friendly mode */ }
+            CharMode.DEFAULT -> { /* Default */ }
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        stopGifAnimation()
+        spriteAnimRunnable?.let { removeCallbacks(it) }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CharacterCanvasView — Original Canvas-based drawing (fallback)
+// ═══════════════════════════════════════════════════════════════
+
+class CharacterCanvasView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0
+) : View(context, attrs, defStyleAttr) {
+
+    enum class CharState { IDLE, LISTENING, TALKING, SLEEPING, HAPPY, THINKING }
+    enum class CharMode { DEFAULT, GF, PROFESSIONAL, FRIEND }
+
+    private var state = CharState.IDLE
+    private var mode = CharMode.DEFAULT
+    private var amplitude = 0f
+
+    // Animation values
     private var breatheScale = 1f
     private var floatOffset = 0f
     private var mouthOpen = 0f
-    private var eyeBlink = 1f      // 1 = open, 0 = closed
+    private var eyeBlink = 1f
     private var blushAlpha = 0f
     private var zzzOffset = 0f
     private var jumpOffset = 0f
     private var thinkAngle = 0f
     private var sparkleAlpha = 0f
-    private var leanAngle = 0f     // forward lean when listening
-    private var eyeGaze = 0f       // side-eye for thinking
+    private var leanAngle = 0f
+    private var eyeGaze = 0f
 
-    // ── Animators ─────────────────────────────────────────────
+    // Animators
     private val breatheAnim = ValueAnimator.ofFloat(1f, 1.04f, 1f).apply {
         duration = 3000; repeatCount = ValueAnimator.INFINITE
         interpolator = AccelerateDecelerateInterpolator()
@@ -69,19 +345,16 @@ class CharacterOverlayView @JvmOverloads constructor(
         addUpdateListener { mouthOpen = it.animatedValue as Float; invalidate() }
     }
 
-    // Blink: fast close + reopen, with 4s pause handled via startDelay loop
     private val blinkAnim = ValueAnimator.ofFloat(1f, 0f, 1f).apply {
-        duration = 250
-        repeatCount = ValueAnimator.INFINITE
+        duration = 4000; repeatCount = ValueAnimator.INFINITE
         repeatMode = ValueAnimator.RESTART
-        interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+        interpolator = AccelerateDecelerateInterpolator()
         addUpdateListener {
             val f = it.animatedFraction
-            // Only animate during first 15% of cycle; rest = eyes open
             eyeBlink = if (f < 0.15f) it.animatedValue as Float else 1f
             invalidate()
         }
-    }.also { it.duration = 4000 } // 4s per full cycle = blink every 4s
+    }
 
     private val zzzAnim = ValueAnimator.ofFloat(0f, 1f).apply {
         duration = 2000; repeatCount = ValueAnimator.INFINITE
@@ -112,7 +385,7 @@ class CharacterOverlayView @JvmOverloads constructor(
         addUpdateListener { leanAngle = it.animatedValue as Float; invalidate() }
     }
 
-    // ── Paints ────────────────────────────────────────────────
+    // Paints
     private val skinPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val hairPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val eyePaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -131,44 +404,27 @@ class CharacterOverlayView @JvmOverloads constructor(
     }
 
     init {
-        setLayerType(LAYER_TYPE_SOFTWARE, null) // for BlurMaskFilter
+        setLayerType(LAYER_TYPE_SOFTWARE, null)
         applyModeColors()
         startIdleAnims()
     }
-
-    // ── Public API ────────────────────────────────────────────
 
     fun setState(newState: CharState) {
         cancelAllAnims()
         state = newState
         when (newState) {
-            CharState.IDLE -> {
-                startIdleAnims()
-            }
-            CharState.LISTENING -> {
-                startIdleAnims()
-                leanAnim.start()
-            }
-            CharState.TALKING -> {
-                startIdleAnims()
-                mouthAnim.start()
-            }
+            CharState.IDLE -> startIdleAnims()
+            CharState.LISTENING -> { startIdleAnims(); leanAnim.start() }
+            CharState.TALKING -> { startIdleAnims(); mouthAnim.start() }
             CharState.SLEEPING -> {
                 floatAnim.apply { duration = 4000 }.start()
                 zzzAnim.start()
-                // eyes will draw as closed in onDraw
             }
             CharState.HAPPY -> {
-                startIdleAnims()
-                jumpAnim.start()
-                sparkleAnim.start()
-                blushAlpha = 200f
-                invalidate()
+                startIdleAnims(); jumpAnim.start(); sparkleAnim.start()
+                blushAlpha = 200f; invalidate()
             }
-            CharState.THINKING -> {
-                startIdleAnims()
-                thinkAnim.start()
-            }
+            CharState.THINKING -> { startIdleAnims(); thinkAnim.start() }
         }
     }
 
@@ -183,62 +439,38 @@ class CharacterOverlayView @JvmOverloads constructor(
         if (state == CharState.TALKING) invalidate()
     }
 
-    // ── Drawing ───────────────────────────────────────────────
-
     override fun onDraw(canvas: Canvas) {
         val cx = width / 2f
         val cy = height / 2f
-
         val totalOffset = floatOffset + jumpOffset
 
         canvas.save()
         canvas.translate(cx, cy + totalOffset)
-
-        // Lean for listening
         if (leanAngle != 0f) canvas.rotate(leanAngle)
-
-        // Breathing scale
         canvas.scale(breatheScale, breatheScale)
 
         val scale = minOf(width, height) / 180f
 
-        // Drop shadow under feet
         canvas.drawOval(RectF(-30f * scale, 70f * scale, 30f * scale, 78f * scale), shadowPaint)
-
-        // Draw body parts bottom-to-top for overlap
         drawBody(canvas, scale)
         drawArms(canvas, scale)
         drawHead(canvas, scale)
         drawHair(canvas, scale)
         drawFace(canvas, scale)
 
-        // Sparkles for happy state
-        if (state == CharState.HAPPY && sparkleAlpha > 0) {
-            drawSparkles(canvas, scale)
-        }
-
-        // Zzz for sleeping state
-        if (state == CharState.SLEEPING) {
-            drawZzz(canvas, scale)
-        }
-
-        // Mode badge (small icon)
+        if (state == CharState.HAPPY && sparkleAlpha > 0) drawSparkles(canvas, scale)
+        if (state == CharState.SLEEPING) drawZzz(canvas, scale)
         drawModeBadge(canvas, scale)
 
         canvas.restore()
     }
 
     private fun drawBody(canvas: Canvas, s: Float) {
-        // Torso
         val torsoRect = RectF(-22f * s, 18f * s, 22f * s, 65f * s)
         canvas.drawRoundRect(torsoRect, 10f * s, 10f * s, clothPaint)
-
-        // Legs
         val legPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = clothPaint.color }
         canvas.drawRoundRect(RectF(-18f * s, 55f * s, -6f * s, 78f * s), 5f * s, 5f * s, legPaint)
         canvas.drawRoundRect(RectF(6f * s, 55f * s, 18f * s, 78f * s), 5f * s, 5f * s, legPaint)
-
-        // Shoes
         val shoePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#2C2C2C") }
         canvas.drawRoundRect(RectF(-20f * s, 72f * s, -4f * s, 80f * s), 4f * s, 4f * s, shoePaint)
         canvas.drawRoundRect(RectF(4f * s, 72f * s, 20f * s, 80f * s), 4f * s, 4f * s, shoePaint)
@@ -246,13 +478,10 @@ class CharacterOverlayView @JvmOverloads constructor(
 
     private fun drawArms(canvas: Canvas, s: Float) {
         val armPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = skinPaint.color }
-
         if (state == CharState.THINKING) {
-            // Right arm up with finger to chin
             canvas.drawRoundRect(RectF(22f * s, 20f * s, 34f * s, 50f * s), 5f * s, 5f * s, armPaint)
             canvas.drawCircle(28f * s, 15f * s, 6f * s, armPaint)
         } else {
-            // Normal arms down (slight sway with float)
             val armSway = sin(floatOffset / 8f) * 3f * s
             canvas.drawRoundRect(RectF(-32f * s, 20f * s + armSway, -22f * s, 55f * s), 5f * s, 5f * s, clothPaint)
             canvas.drawRoundRect(RectF(22f * s, 20f * s - armSway, 32f * s, 55f * s), 5f * s, 5f * s, clothPaint)
@@ -260,15 +489,11 @@ class CharacterOverlayView @JvmOverloads constructor(
     }
 
     private fun drawHead(canvas: Canvas, s: Float) {
-        // Neck
         canvas.drawRoundRect(RectF(-8f * s, 10f * s, 8f * s, 22f * s), 4f * s, 4f * s, skinPaint)
-
-        // Head — 3D sphere effect with gradient
         val headShader = RadialGradient(
             -5f * s, -15f * s, 28f * s,
             intArrayOf(Color.parseColor("#FFE0C8"), skinPaint.color),
-            floatArrayOf(0f, 1f),
-            Shader.TileMode.CLAMP
+            floatArrayOf(0f, 1f), Shader.TileMode.CLAMP
         )
         skinPaint.shader = headShader
         canvas.drawCircle(0f, 0f, 28f * s, skinPaint)
@@ -276,33 +501,25 @@ class CharacterOverlayView @JvmOverloads constructor(
     }
 
     private fun drawHair(canvas: Canvas, s: Float) {
-        // Top hair
         canvas.drawCircle(0f, -22f * s, 30f * s, hairPaint)
-        // Hair sides
         canvas.drawCircle(-20f * s, -5f * s, 14f * s, hairPaint)
         canvas.drawCircle(20f * s, -5f * s, 14f * s, hairPaint)
-
-        // Mode-based hair accessory
         when (mode) {
             CharMode.GF -> {
-                // Hair bow (cute)
                 val bowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#FF4FC3F7") }
                 canvas.drawOval(RectF(-26f * s, -38f * s, -10f * s, -28f * s), bowPaint)
                 canvas.drawOval(RectF(-6f * s, -38f * s, 10f * s, -28f * s), bowPaint)
                 canvas.drawCircle(-8f * s, -33f * s, 4f * s, bowPaint)
             }
             CharMode.PROFESSIONAL -> {
-                // Glasses
                 val glassPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = Color.parseColor("#333333")
-                    style = Paint.Style.STROKE
-                    strokeWidth = 2f * s
+                    color = Color.parseColor("#333333"); style = Paint.Style.STROKE; strokeWidth = 2f * s
                 }
                 canvas.drawCircle(-10f * s, 2f * s, 8f * s, glassPaint)
                 canvas.drawCircle(10f * s, 2f * s, 8f * s, glassPaint)
                 canvas.drawLine(-2f * s, 2f * s, 2f * s, 2f * s, glassPaint)
             }
-            else -> {} // no accessory
+            else -> {}
         }
     }
 
@@ -314,37 +531,24 @@ class CharacterOverlayView @JvmOverloads constructor(
 
     private fun drawEyes(canvas: Canvas, s: Float) {
         val eyePositions = listOf(-10f * s to 2f * s, 10f * s to 2f * s)
-
         eyePositions.forEach { (ex, ey) ->
             if (state == CharState.SLEEPING) {
-                // Closed eyes — curved line
                 val path = Path().apply {
                     moveTo(ex - 7f * s, ey)
                     quadTo(ex, ey + 5f * s, ex + 7f * s, ey)
                 }
                 val sleepEyePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = Color.parseColor("#333333")
-                    style = Paint.Style.STROKE
-                    strokeWidth = 2.5f * s
-                    strokeCap = Paint.Cap.ROUND
+                    color = Color.parseColor("#333333"); style = Paint.Style.STROKE
+                    strokeWidth = 2.5f * s; strokeCap = Paint.Cap.ROUND
                 }
                 canvas.drawPath(path, sleepEyePaint)
             } else {
-                // White of eye
                 canvas.drawCircle(ex, ey, 8f * s * eyeBlink, eyePaint)
-
-                // Pupil (shifts for thinking / listening)
                 val gazeX = if (state == CharState.THINKING) eyeGaze * 0.3f * s else 0f
                 val gazeY = if (state == CharState.LISTENING) -2f * s else 0f
                 canvas.drawCircle(ex + gazeX, ey + gazeY, 5f * s * eyeBlink, pupilPaint)
-
-                // Shine
-                canvas.drawCircle(
-                    ex + gazeX - 2f * s, ey + gazeY - 2f * s,
-                    1.5f * s, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
-                )
-
-                // Happy state — star eyes
+                canvas.drawCircle(ex + gazeX - 2f * s, ey + gazeY - 2f * s, 1.5f * s,
+                    Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE })
                 if (state == CharState.HAPPY) {
                     val starPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#FFD700") }
                     drawStar(canvas, ex, ey, 5f * s, starPaint)
@@ -356,14 +560,12 @@ class CharacterOverlayView @JvmOverloads constructor(
     private fun drawMouth(canvas: Canvas, s: Float) {
         val mouthY = 14f * s
         val mouthWidth = 10f * s
-
         mouthPaint.color = Color.parseColor("#C2185B")
         mouthPaint.strokeWidth = 2.5f * s
         mouthPaint.strokeCap = Paint.Cap.ROUND
 
         when (state) {
             CharState.TALKING -> {
-                // Open mouth with amplitude
                 val openAmt = (mouthOpen + amplitude * 0.5f).coerceIn(0f, 1f)
                 val path = Path().apply {
                     moveTo(-mouthWidth, mouthY)
@@ -371,32 +573,20 @@ class CharacterOverlayView @JvmOverloads constructor(
                 }
                 mouthPaint.style = Paint.Style.STROKE
                 canvas.drawPath(path, mouthPaint)
-                if (openAmt > 0.3f) {
-                    // Teeth
-                    mouthPaint.style = Paint.Style.FILL
-                    mouthPaint.color = Color.WHITE
-                    canvas.drawRoundRect(
-                        RectF(-6f * s, mouthY, 6f * s, mouthY + 4f * s * openAmt),
-                        2f * s, 2f * s, mouthPaint
-                    )
-                }
             }
             CharState.HAPPY -> {
-                // Big smile with teeth
+                mouthPaint.style = Paint.Style.STROKE
                 val smilePath = Path().apply {
                     moveTo(-mouthWidth, mouthY)
                     quadTo(0f, mouthY + 12f * s, mouthWidth, mouthY)
                 }
-                mouthPaint.style = Paint.Style.STROKE
                 canvas.drawPath(smilePath, mouthPaint)
             }
             CharState.SLEEPING -> {
-                // Small O mouth
                 mouthPaint.style = Paint.Style.STROKE
                 canvas.drawOval(RectF(-4f * s, mouthY, 4f * s, mouthY + 5f * s), mouthPaint)
             }
             CharState.THINKING -> {
-                // Side smirk
                 mouthPaint.style = Paint.Style.STROKE
                 val smirkPath = Path().apply {
                     moveTo(-mouthWidth, mouthY)
@@ -405,7 +595,6 @@ class CharacterOverlayView @JvmOverloads constructor(
                 canvas.drawPath(smirkPath, mouthPaint)
             }
             else -> {
-                // Neutral smile
                 mouthPaint.style = Paint.Style.STROKE
                 val defaultPath = Path().apply {
                     moveTo(-mouthWidth, mouthY)
@@ -424,7 +613,6 @@ class CharacterOverlayView @JvmOverloads constructor(
             else -> 0
         }
         if (alpha <= 0) return
-
         blushPaint.color = Color.argb(alpha, 255, 100, 130)
         canvas.drawOval(RectF(-22f * s, 8f * s, -10f * s, 14f * s), blushPaint)
         canvas.drawOval(RectF(10f * s, 8f * s, 22f * s, 14f * s), blushPaint)
@@ -449,15 +637,8 @@ class CharacterOverlayView @JvmOverloads constructor(
         val sparkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.argb((sparkleAlpha * 255).toInt(), 255, 215, 0)
         }
-        val positions = listOf(
-            -35f * s to -30f * s,
-            35f * s to -30f * s,
-            -40f * s to 10f * s,
-            40f * s to 5f * s
-        )
-        positions.forEach { (x, y) ->
-            drawStar(canvas, x, y, 5f * s * sparkleAlpha, sparkPaint)
-        }
+        val positions = listOf(-35f * s to -30f * s, 35f * s to -30f * s, -40f * s to 10f * s, 40f * s to 5f * s)
+        positions.forEach { (x, y) -> drawStar(canvas, x, y, 5f * s * sparkleAlpha, sparkPaint) }
     }
 
     private fun drawModeBadge(canvas: Canvas, s: Float) {
@@ -484,37 +665,27 @@ class CharacterOverlayView @JvmOverloads constructor(
         canvas.drawPath(path, paint)
     }
 
-    // ── Colors by mode ────────────────────────────────────────
-
     private fun applyModeColors() {
-        skinPaint.color = Color.parseColor("#FFDAB9")   // peach skin
-
+        skinPaint.color = Color.parseColor("#FFDAB9")
         hairPaint.color = when (mode) {
-            CharMode.GF -> Color.parseColor("#1A1A2E")          // dark + cute
-            CharMode.PROFESSIONAL -> Color.parseColor("#2C1810") // dark brown
-            CharMode.FRIEND -> Color.parseColor("#8B4513")       // warm brown
+            CharMode.GF -> Color.parseColor("#1A1A2E")
+            CharMode.PROFESSIONAL -> Color.parseColor("#2C1810")
+            CharMode.FRIEND -> Color.parseColor("#8B4513")
             CharMode.DEFAULT -> Color.parseColor("#1A1A2E")
         }
-
         clothPaint.color = when (mode) {
-            CharMode.GF -> Color.parseColor("#FF4FC3F7")         // sky blue dress
-            CharMode.PROFESSIONAL -> Color.parseColor("#1A237E") // navy suit
-            CharMode.FRIEND -> Color.parseColor("#E91E63")       // casual pink
-            CharMode.DEFAULT -> Color.parseColor("#6200EE")      // purple
+            CharMode.GF -> Color.parseColor("#FF4FC3F7")
+            CharMode.PROFESSIONAL -> Color.parseColor("#37474F")
+            CharMode.FRIEND -> Color.parseColor("#FF7043")
+            CharMode.DEFAULT -> Color.parseColor("#5C6BC0")
         }
-
         eyePaint.color = Color.WHITE
-        pupilPaint.color = when (mode) {
-            CharMode.PROFESSIONAL -> Color.parseColor("#1A237E")
-            else -> Color.parseColor("#1A1A2E")
-        }
+        pupilPaint.color = Color.parseColor("#1A1A2E")
     }
-
-    // ── Anim helpers ──────────────────────────────────────────
 
     private fun startIdleAnims() {
         breatheAnim.start()
-        floatAnim.apply { duration = 2200 }.start()
+        floatAnim.start()
         blinkAnim.start()
     }
 
@@ -528,16 +699,5 @@ class CharacterOverlayView @JvmOverloads constructor(
         sparkleAnim.cancel()
         thinkAnim.cancel()
         leanAnim.cancel()
-        blushAlpha = 0f
-        jumpOffset = 0f
-        leanAngle = 0f
-        eyeGaze = 0f
-    }
-
-    override fun onDetachedFromWindow() {
-        cancelAllAnims()
-        super.onDetachedFromWindow()
     }
 }
-
-// blink timing handled via animated fraction in blinkAnim

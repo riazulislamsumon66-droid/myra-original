@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     overlay_character_3d.xml
-    Floating 3D character overlay — always above all other apps.
-    Place in: app/src/main/res/layout/
+    Floating 2D character overlay — always above all other apps.
+    Supports GIF, Lottie, Sprite Sheet, or Canvas fallback.
 -->
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -10,7 +10,7 @@
     android:layout_height="200dp"
     android:background="@android:color/transparent">
 
-    <!-- 3D Character Canvas View -->
+    <!-- 2D Character View (GIF/Sprite/Canvas) -->
     <com.maya.assistant.ui.character.CharacterOverlayView
         android:id="@+id/characterOverlayView"
         android:layout_width="match_parent"

@@ -255,13 +255,13 @@ object DynamicDecisionEngine {
             }
 
             CommandType.FLASHLIGHT_ON -> {
-                toggleFlashlight(context, true)
-                "ফ্ল্যাশলাইট চালু করে দিলাম"
+                if (toggleFlashlight(context, true)) "ফ্ল্যাশলাইট চালু করে দিলাম"
+                else "ফ্ল্যাশলাইট চালু করতে পারি নাই — Camera permission দরকার"
             }
 
             CommandType.FLASHLIGHT_OFF -> {
-                toggleFlashlight(context, false)
-                "ফ্ল্যাশলাইট বন্ধ করে দিলাম"
+                if (toggleFlashlight(context, false)) "ফ্ল্যাশলাইট বন্ধ করে দিলাম"
+                else "ফ্ল্যাশলাইট বন্ধ করতে পারি নাই"
             }
 
             CommandType.SCREENSHOT -> {
@@ -540,15 +540,39 @@ object DynamicDecisionEngine {
         return ""
     }
 
-    private fun toggleFlashlight(context: Context, on: Boolean) {
+    private fun toggleFlashlight(context: Context, on: Boolean): Boolean {
+        // Check CAMERA permission first
+        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA)
+            != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            Logger.e(TAG, "CAMERA permission not granted for flashlight")
+            return false
+        }
         try {
             val cm = context.getSystemService(Context.CAMERA_SERVICE) as android.hardware.camera2.CameraManager
-            val cameraId = cm.cameraIdList.firstOrNull() ?: return
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                cm.setTorchMode(cameraId, on)
+            // Find the actual rear/torch-capable camera — not just the first one
+            // Samsung S21 Ultra has multiple cameras; first ID may not support torch
+            var torchCameraId: String? = null
+            for (id in cm.cameraIdList) {
+                val chars = cm.getCameraCharacteristics(id)
+                val hasFlash = chars.get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE)
+                if (hasFlash == true) {
+                    torchCameraId = id
+                    break
+                }
             }
+            if (torchCameraId == null) {
+                Logger.e(TAG, "No torch-capable camera found")
+                return false
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                cm.setTorchMode(torchCameraId, on)
+                Logger.d(TAG, "Flashlight ${if (on) "ON" else "OFF"} — camera: $torchCameraId")
+                return true
+            }
+            return false
         } catch (e: Exception) {
             Logger.e(TAG, "Flashlight error: ${e.message}")
+            return false
         }
     }
 
@@ -598,10 +622,8 @@ object DynamicDecisionEngine {
             "youtube এ", "youtube-এ", "youtube te", "ইউটিউবে", "ইউটিউব",
             "spotify এ", "spotify-এ", "spotify te",
             "play করো", "চালাও", "চালো", "দেখাও", "play karo", "play koro",
-            "একটা", "একটি", "ekta", "a ", "the ",
-            "hindi", "bangla", "song", "গান", "video", "music",
-            "দাও", "show", "search", "find", "bajao", "বাজাও",
-            "gaana", "gaan", "gana"
+            "একটা", "একটি", "ekta",
+            "দাও", "show", "search", "find", "bajao", "বাজাও"
         )
         for (f in fillers) {
             result = result.replace(f, "", ignoreCase = true)

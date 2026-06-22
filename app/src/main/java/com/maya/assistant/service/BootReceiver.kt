@@ -25,16 +25,10 @@ class BootReceiver : BroadcastReceiver() {
                 }
             }
             // Also start call monitoring on boot
-            if (android.Manifest.permission.MANAGE_OWN_CALLS.let {
-                    androidx.core.content.ContextCompat.checkSelfPermission(context, it)
-                } == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                try {
-                    ContextCompat.startForegroundService(context, Intent(context, CallMonitorService::class.java))
-                } catch (e: Exception) {
-                    android.util.Log.e("BOOT", "Failed to start CallMonitorService: ${e.message}")
-                }
-            } else {
-                android.util.Log.w("BOOT", "MANAGE_OWN_CALLS not granted, CallMonitorService not started")
+            try {
+                ContextCompat.startForegroundService(context, Intent(context, CallMonitorService::class.java))
+            } catch (e: Exception) {
+                android.util.Log.e("BOOT", "Failed to start CallMonitorService: ${e.message}")
             }
         }
     }

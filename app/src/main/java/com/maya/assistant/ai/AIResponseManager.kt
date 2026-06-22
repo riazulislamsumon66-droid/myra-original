@@ -37,7 +37,17 @@ object AIResponseManager {
         "precise and will retrieve",
         "ensuring the command is precise",
         "crafting the",
-        "considering different"
+        "considering different",
+        "Observing Bangla Display",
+        "I'm currently focused on",
+        "I lack a specific command",
+        "my response will be",
+        "as best as I can manage",
+        "sifting through comments",
+        "subjective evaluation",
+        "complex understanding that I don't possess",
+        "framing a clear and polite response",
+        "outlines these limitations"
     )
 
     // Patterns that indicate Gemini is thinking instead of responding
@@ -53,6 +63,10 @@ object AIResponseManager {
         "I'm analyzing",
         "I'm evaluating",
         "I'm determining",
+        "I'm currently focused on",
+        "I lack a specific command",
+        "my response will be",
+        "as best as I can",
         "Let me consider",
         "Let me analyze",
         "Let me think",
@@ -68,7 +82,13 @@ object AIResponseManager {
         "precise and will retrieve",
         "ensuring the command is precise",
         "crafting the",
-        "considering different"
+        "considering different",
+        "Observing Bangla Display",
+        "sifting through comments",
+        "subjective evaluation",
+        "complex understanding that I don't possess",
+        "framing a clear and polite response",
+        "outlines these limitations"
     )
 
     fun clean(raw: String): String {
@@ -117,8 +137,17 @@ object AIResponseManager {
     }
 
     fun hasThinkingText(text: String): Boolean {
-        return THINKING_PATTERNS.any { pattern ->
-            text.contains(pattern, ignoreCase = true)
-        }
+        // Check for known thinking patterns
+        if (THINKING_PATTERNS.any { pattern -> text.contains(pattern, ignoreCase = true) }) return true
+        // Check if text starts with "I'm" or "I've" — strong indicator of thinking leak
+        val firstLine = text.trim().lines().firstOrNull()?.trim() ?: return false
+        if (firstLine.startsWith("I'm ", ignoreCase = true)) return true
+        if (firstLine.startsWith("I've ", ignoreCase = true)) return true
+        if (firstLine.startsWith("Let me ", ignoreCase = true)) return true
+        if (firstLine.startsWith("The focus ", ignoreCase = true)) return true
+        if (firstLine.startsWith("Observing ", ignoreCase = true)) return true
+        // Check if text is too long for a command response (thinking traces are verbose)
+        if (text.length > 200 && !text.contains("\n")) return true
+        return false
     }
 }
