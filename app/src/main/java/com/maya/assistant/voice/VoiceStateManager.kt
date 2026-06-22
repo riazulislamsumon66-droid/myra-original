@@ -54,7 +54,7 @@ object VoiceStateManager {
     fun notifyCharacterListening(ctx: Context) {
         Intent(ctx, MayaCharacterService::class.java).apply {
             action = MayaCharacterService.ACTION_SET_STATE
-            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.State.LISTENING.name)
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.LISTENING.name)
         }.also { ctx.startService(it) }
         Intent(ctx, MayaCharacterService::class.java).apply {
             action = MayaCharacterService.ACTION_WAKE
@@ -64,7 +64,7 @@ object VoiceStateManager {
     fun notifyCharacterTalking(ctx: Context) {
         Intent(ctx, MayaCharacterService::class.java).apply {
             action = MayaCharacterService.ACTION_SET_STATE
-            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.State.TALKING.name)
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.TALKING.name)
         }.also { ctx.startService(it) }
         Intent(ctx, MayaCharacterService::class.java).apply {
             action = MayaCharacterService.ACTION_WAKE
@@ -74,14 +74,14 @@ object VoiceStateManager {
     fun notifyCharacterThinking(ctx: Context) {
         Intent(ctx, MayaCharacterService::class.java).apply {
             action = MayaCharacterService.ACTION_SET_STATE
-            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.State.THINKING.name)
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.THINKING.name)
         }.also { ctx.startService(it) }
     }
 
     fun notifyCharacterIdle(ctx: Context) {
         Intent(ctx, MayaCharacterService::class.java).apply {
             action = MayaCharacterService.ACTION_SET_STATE
-            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.State.IDLE.name)
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.IDLE.name)
         }.also { ctx.startService(it) }
     }
 }
