@@ -78,17 +78,21 @@ class ForegroundVoiceService : Service() {
 
         audioPlayer.onPlaybackStarted = {
             VoiceStateManager.setSpeaking()
+            VoiceStateManager.notifyCharacterTalking(this)
         }
         audioPlayer.onPlaybackFinished = {
             VoiceStateManager.setListening()
+            VoiceStateManager.notifyCharacterIdle(this)
         }
 
         vad = VoiceActivityDetector(
             onSpeechStart = {
                 VoiceStateManager.setListening()
+                VoiceStateManager.notifyCharacterListening(this)
             },
             onSpeechEnd = {
                 VoiceStateManager.setThinking()
+                VoiceStateManager.notifyCharacterThinking(this)
             }
         )
 
@@ -122,6 +126,7 @@ class ForegroundVoiceService : Service() {
             systemPrompt = buildSystemPrompt(),
             onConnected = {
                 VoiceStateManager.setListening()
+                VoiceStateManager.notifyCharacterListening(this)
                 audioRecorder.start()
             },
             onAudioReceived = { data ->
@@ -181,6 +186,7 @@ class ForegroundVoiceService : Service() {
     fun sendTextToGemini(text: String) {
         ConversationMemory.addUser(text)
         VoiceStateManager.setThinking()
+        VoiceStateManager.notifyCharacterThinking(this)
         geminiClient?.sendTextMessage(text)
     }
 

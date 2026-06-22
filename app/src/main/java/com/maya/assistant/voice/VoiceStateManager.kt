@@ -1,7 +1,10 @@
 package com.maya.assistant.voice
 
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.MutableLiveData
 import com.maya.assistant.utils.Constants
+import com.maya.assistant.service.MayaCharacterService
 
 object VoiceStateManager {
 
@@ -46,4 +49,39 @@ object VoiceStateManager {
     fun isAiSpeaking() = state.value == Constants.STATE_SPEAKING
 
     fun isListening() = state.value == Constants.STATE_LISTENING
+
+    // ── Character Notifications ──────────────────────────────────────
+    fun notifyCharacterListening(ctx: Context) {
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_SET_STATE
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.State.LISTENING.name)
+        }.also { ctx.startService(it) }
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_WAKE
+        }.also { ctx.startService(it) }
+    }
+
+    fun notifyCharacterTalking(ctx: Context) {
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_SET_STATE
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.State.TALKING.name)
+        }.also { ctx.startService(it) }
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_WAKE
+        }.also { ctx.startService(it) }
+    }
+
+    fun notifyCharacterThinking(ctx: Context) {
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_SET_STATE
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.State.THINKING.name)
+        }.also { ctx.startService(it) }
+    }
+
+    fun notifyCharacterIdle(ctx: Context) {
+        Intent(ctx, MayaCharacterService::class.java).apply {
+            action = MayaCharacterService.ACTION_SET_STATE
+            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.State.IDLE.name)
+        }.also { ctx.startService(it) }
+    }
 }

@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.maya.assistant.R
 import com.maya.assistant.security.BiometricManager
 import com.maya.assistant.security.SecurePrefs
+import com.maya.assistant.service.MayaCharacterService
 import com.maya.assistant.service.AccessibilityHelperService
 import com.maya.assistant.services.ForegroundVoiceService
 import com.maya.assistant.ui.settings.SettingsActivity
@@ -107,8 +108,31 @@ class MainActivity : AppCompatActivity() {
         observeVoiceState()
         startVoiceService()
         startCallMonitorService()
+        startCharacterOverlay()
         checkAccessibility()
         checkBatteryOptimization()
+    }
+
+    private fun startCharacterOverlay() {
+        if (android.provider.Settings.canDrawOverlays(this)) {
+            val intent = Intent(this, MayaCharacterService::class.java).apply {
+                action = MayaCharacterService.ACTION_SHOW
+            }
+            ContextCompat.startForegroundService(this, intent)
+            
+            // Set character mode from personality
+            val prefs = getSharedPreferences("myra_prefs", MODE_PRIVATE)
+            val mode = when (prefs.getString("personality_mode", "gf")) {
+                "gf" -> MayaCharacterService.Mode.GF.name
+                "professional" -> MayaCharacterService.Mode.PROFESSIONAL.name
+                "friend" -> MayaCharacterService.Mode.FRIEND.name
+                else -> MayaCharacterService.Mode.DEFAULT.name
+            }
+            Intent(this, MayaCharacterService::class.java).apply {
+                action = MayaCharacterService.ACTION_SET_MODE
+                putExtra(MayaCharacterService.EXTRA_MODE, mode)
+            }.also { startService(it) }
+        }
     }
 
     private fun startCallMonitorService() {
