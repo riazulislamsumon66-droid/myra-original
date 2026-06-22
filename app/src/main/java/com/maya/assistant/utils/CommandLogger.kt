@@ -164,17 +164,18 @@ object CommandLogger {
         }
     }
 
-    private fun logDir(ctx: Context = appContext ?: return File("")): File? {
-        val base = ctx.getExternalFilesDir(null) ?: return null
+    private fun logDir(ctx: Context?): File? {
+        val context = ctx ?: return null
+        val base = context.getExternalFilesDir(null) ?: return null
         return File(base, LOG_DIR_NAME).apply { mkdirs() }
     }
 
-    private fun logFile(ctx: Context = appContext ?: return null): File? {
+    private fun logFile(ctx: Context? = appContext): File? {
         val dir = logDir(ctx) ?: return null
         return File(dir, LOG_FILE_NAME)
     }
 
-    private fun oldLogFile(ctx: Context = appContext ?: return null): File? {
+    private fun oldLogFile(ctx: Context? = appContext): File? {
         val dir = logDir(ctx) ?: return null
         return File(dir, LOG_FILE_NAME_OLD)
     }
