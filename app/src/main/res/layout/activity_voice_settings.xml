@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1A1A2E"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🎤 Voice Setup"
+            android:textSize="24sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Enroll voices so Maya can recognize who is speaking"
+            android:textSize="14sp"
+            android:textColor="#B0B0B0"
+            android:gravity="center"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Slot 0: Owner -->
+        <LinearLayout
+            android:id="@+id/slot0Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_voice_card"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="👑 Owner (Sumon)"
+                android:textSize="18sp"
+                android:textColor="#FFD700"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/slot0Name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Not enrolled"
+                android:textSize="14sp"
+                android:textColor="#B0B0B0"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/slot0Status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tap to enroll"
+                android:textSize="12sp"
+                android:textColor="#888888"
+                android:layout_marginTop="2dp" />
+
+            <Button
+                android:id="@+id/slot0Button"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Enroll"
+                android:textSize="12sp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="#FFD700"
+                android:textColor="#000000" />
+        </LinearLayout>
+
+        <!-- Slot 1: Known Person -->
+        <LinearLayout
+            android:id="@+id/slot1Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_voice_card"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="👧 Known Person (Tuha Moni)"
+                android:textSize="18sp"
+                android:textColor="#FF4FC3F7"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/slot1Name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Not enrolled"
+                android:textSize="14sp"
+                android:textColor="#B0B0B0"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/slot1Status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tap to enroll"
+                android:textSize="12sp"
+                android:textColor="#888888"
+                android:layout_marginTop="2dp" />
+
+            <Button
+                android:id="@+id/slot1Button"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Enroll"
+                android:textSize="12sp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="#FF4FC3F7"
+                android:textColor="#000000" />
+        </LinearLayout>
+
+        <!-- Slot 2: Unknown -->
+        <LinearLayout
+            android:id="@+id/slot2Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_voice_card"
+            android:padding="16dp"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="❓ Unknown Person"
+                android:textSize="18sp"
+                android:textColor="#FF7043"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/slot2Name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Not enrolled"
+                android:textSize="14sp"
+                android:textColor="#B0B0B0"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/slot2Status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tap to enroll"
+                android:textSize="12sp"
+                android:textColor="#888888"
+                android:layout_marginTop="2dp" />
+
+            <Button
+                android:id="@+id/slot2Button"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Enroll"
+                android:textSize="12sp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="#FF7043"
+                android:textColor="#000000" />
+        </LinearLayout>
+
+        <!-- Test Section -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#333333"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🧪 Test Voice Recognition"
+            android:textSize="18sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/testVoiceButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="🎙️ Test — Speak Now"
+            android:textSize="16sp"
+            android:backgroundTint="#4CAF50"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/testResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tap test button and speak"
+            android:textSize="14sp"
+            android:textColor="#B0B0B0"
+            android:gravity="center"
+            android:padding="12dp"
+            android:background="#2A2A3E" />
+
+    </LinearLayout>
+</ScrollView>

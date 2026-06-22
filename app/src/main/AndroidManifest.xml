@@ -84,6 +84,11 @@
             android:name=".security.SecuritySettingsActivity"
             android:exported="false"/>
 
+        <!-- VOICE SETTINGS -->
+        <activity
+            android:name=".ui.settings.VoiceSettingsActivity"
+            android:exported="false"/>
+
         <!-- PATTERN SETUP -->
         <activity
             android:name=".security.PatternSetupActivity"
