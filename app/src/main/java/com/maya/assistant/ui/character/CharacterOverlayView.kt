@@ -74,12 +74,13 @@ class CharacterOverlayView @JvmOverloads constructor(
         // Fallback canvas view (original drawing)
         fallbackCanvasView = CharacterCanvasView(context).apply {
             layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-            visibility = GONE
         }
         addView(fallbackCanvasView)
 
         setBackgroundColor(Color.TRANSPARENT)
         applyModeColors()
+        // Default to canvas mode so character is visible
+        useCanvasFallback()
     }
 
     // ── Public API ────────────────────────────────────────────
