@@ -65,7 +65,7 @@ class NotificationReaderService : NotificationListenerService() {
         if (text.isBlank()) return
 
         val appName = getAppName(pkg)
-        val notificationText = "🔔 $appId: $text"
+        val notificationText = "🔔 $appName: $text"
 
         Log.d(TAG, "Notification from $appName: $text")
 

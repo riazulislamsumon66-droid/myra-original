@@ -44,24 +44,12 @@ object DynamicDecisionEngine {
     )
 
     suspend fun execute(context: Context, command: VoiceCommand): String {
-        val entry = CommandLogger.start(
-            commandType = command.type.name,
-            rawText = command.raw,
-            args = command.args
-        )
         return try {
             val result = executeInternal(context, command)
-            val looksLikeFailure = FAILURE_MARKERS.any { result.contains(it) }
-            if (looksLikeFailure) {
-                CommandLogger.failure(entry, result)
-            } else {
-                CommandLogger.success(entry, result)
-            }
             result
         } catch (e: Exception) {
             val msg = "${command.type} চালাতে সমস্যা: ${e.message}"
             Logger.e(TAG, "Unhandled exception executing ${command.type}: ${e.message}", e)
-            CommandLogger.failure(entry, e.message ?: e.javaClass.simpleName, e)
             msg
         }
     }
