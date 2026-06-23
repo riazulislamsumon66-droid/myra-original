@@ -18,7 +18,7 @@ static csmMoc* g_moc = nullptr;
 static csmModel* g_model = nullptr;
 static void* g_mocBuffer = nullptr;
 static void* g_modelBuffer = nullptr;
-static csmUint32 g_mocSize = 0;
+static unsigned int g_mocSize = 0;
 static bool g_sdkLoaded = false;
 
 extern "C" {
@@ -89,12 +89,12 @@ Java_com_maya_assistant_ui_character_Live2DRenderer_nativeInit(
         return JNI_FALSE;
     }
 
-    // Initialize model
-    g_modelBuffer = malloc(g_mocSize);  // Allocate at least mocSize
-    g_model = csmInitializeModelInPlace(g_moc, g_modelBuffer, g_mocSize);
+    // Initialize model (allocate buffer 4x moc size for safety)
+    unsigned int modelBufferSize = g_mocSize * 4;
+    g_modelBuffer = malloc(modelBufferSize);
+    g_model = csmInitializeModelInPlace(g_moc, g_modelBuffer, modelBufferSize);
     if (!g_model) {
         LOGE("Failed to initialize model");
-        csmDeleteMoc(g_moc);
         g_moc = nullptr;
         free(g_mocBuffer);
         g_mocBuffer = nullptr;
