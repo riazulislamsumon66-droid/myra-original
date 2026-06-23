@@ -1,8 +1,8 @@
 package com.maya.assistant.ui.settings
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.maya.assistant.R
@@ -15,24 +15,71 @@ import com.maya.assistant.utils.FaceRecognitionHelper
 class FaceSettingsActivity : AppCompatActivity() {
 
     private lateinit var faceHelper: FaceRecognitionHelper
-    private lateinit var enrolledList: LinearLayout
+    private lateinit var container: LinearLayout
     private lateinit var statusText: TextView
     private lateinit var enrollBtn: Button
     private lateinit var nameInput: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_voice_settings) // Reuse layout for simplicity
+
+        // Create UI programmatically (no XML layout dependency)
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 32, 48, 32)
+        }
+
+        // Title
+        val title = TextView(this).apply {
+            text = "👤 চেহরা সংরক্ষণ"
+            textSize = 22f
+            setPadding(0, 0, 0, 24)
+        }
+        root.addView(title)
+
+        // Status
+        statusText = TextView(this).apply {
+            text = "লোড হচ্ছে..."
+            textSize = 14f
+            setPadding(0, 0, 0, 16)
+        }
+        root.addView(statusText)
+
+        // Name input
+        nameInput = EditText(this).apply {
+            hint = "নাম লিখো (যেমন: Sumon)"
+            textSize = 16f
+            setPadding(32, 16, 32, 16)
+            setBackgroundResource(android.R.drawable.edit_text)
+        }
+        root.addView(nameInput)
+
+        // Enroll button
+        enrollBtn = Button(this).apply {
+            text = "সংরক্ষণ করো"
+            textSize = 16f
+            setPadding(32, 16, 32, 16)
+        }
+        root.addView(enrollBtn)
+
+        // Separator
+        root.addView(View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1)
+            setBackgroundColor(0xFFCCCCCC.toInt())
+        })
+        root.addView(View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 16)
+        })
+
+        // Enrolled faces container
+        container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        root.addView(container)
+
+        setContentView(root)
 
         faceHelper = FaceRecognitionHelper.getInstance(this)
-        enrolledList = findViewById(R.id.voice_slots_container)
-        statusText = findViewById(R.id.voice_status_text)
-        enrollBtn = findViewById(R.id.voice_enroll_btn)
-        nameInput = findViewById(R.id.voice_name_input)
-
-        // Update title
-        findViewById<TextView>(android.R.id.text1)?.text = "চেহরা সংরক্ষণ"
-
         refreshEnrolledList()
 
         enrollBtn.setOnClickListener {
@@ -42,14 +89,16 @@ class FaceSettingsActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            enrollBtn.isEnabled = false
             faceHelper.enrollFace(name) { success ->
                 runOnUiThread {
+                    enrollBtn.isEnabled = true
                     if (success) {
-                        Toast.makeText(this, "$name সংরক্ষিত হয়েছে ✅", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "✅ $name সংরক্ষিত হয়েছে", Toast.LENGTH_SHORT).show()
                         nameInput.text.clear()
                         refreshEnrolledList()
                     } else {
-                        Toast.makeText(this, "সংরক্ষণ ব্যর্থ 😢", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "❌ সংরক্ষণ ব্যর্থ", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -57,11 +106,11 @@ class FaceSettingsActivity : AppCompatActivity() {
     }
 
     private fun refreshEnrolledList() {
-        enrolledList.removeAllViews()
+        container.removeAllViews()
         val profiles = faceHelper.getEnrolledProfiles()
 
         if (profiles.isEmpty()) {
-            statusText.text = "কোনো চেহরা সংরক্ষিত নেই।"
+            statusText.text = "কোনো চেহরা সংরক্ষিত নেই। উপরে নাম লিখে সংরক্ষণ করো।"
             enrollBtn.isEnabled = true
         } else {
             statusText.text = "সংরক্ষিত চেহরা (${profiles.size}/10):"
@@ -90,7 +139,7 @@ class FaceSettingsActivity : AppCompatActivity() {
 
                 row.addView(nameText)
                 row.addView(deleteBtn)
-                enrolledList.addView(row)
+                container.addView(row)
             }
         }
     }

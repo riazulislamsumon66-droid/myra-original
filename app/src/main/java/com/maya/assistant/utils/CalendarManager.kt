@@ -24,7 +24,7 @@ object CalendarManager {
         CalendarContract.Events.DESCRIPTION,
         CalendarContract.Events.DTSTART,
         CalendarContract.Events.DTEND,
-        CalendarContract.Events.LOCATION,
+        CalendarContract.Events.EVENT_LOCATION,
         CalendarContract.Events.CALENDAR_ID,
         CalendarContract.Events.CALENDAR_DISPLAY_NAME
     )
@@ -64,7 +64,7 @@ object CalendarManager {
                 val descriptionIndex = it.getColumnIndex(CalendarContract.Events.DESCRIPTION)
                 val dtStartIndex = it.getColumnIndex(CalendarContract.Events.DTSTART)
                 val dtEndIndex = it.getColumnIndex(CalendarContract.Events.DTEND)
-                val locationIndex = it.getColumnIndex(CalendarContract.Events.LOCATION)
+                val locationIndex = it.getColumnIndex(CalendarContract.Events.EVENT_LOCATION)
 
                 while (it.moveToNext() && events.size < 10) {
                     val title = if (titleIndex >= 0) it.getString(titleIndex) else "No Title"
@@ -125,7 +125,7 @@ object CalendarManager {
                 val descriptionIndex = it.getColumnIndex(CalendarContract.Events.DESCRIPTION)
                 val dtStartIndex = it.getColumnIndex(CalendarContract.Events.DTSTART)
                 val dtEndIndex = it.getColumnIndex(CalendarContract.Events.DTEND)
-                val locationIndex = it.getColumnIndex(CalendarContract.Events.LOCATION)
+                val locationIndex = it.getColumnIndex(CalendarContract.Events.EVENT_LOCATION)
 
                 while (it.moveToNext() && events.size < 20) {
                     val title = if (titleIndex >= 0) it.getString(titleIndex) else "No Title"
@@ -197,7 +197,7 @@ object CalendarManager {
                 put(CalendarContract.Events.DTSTART, startTime)
                 put(CalendarContract.Events.DTEND, endTime)
                 if (location.isNotEmpty()) {
-                    put(CalendarContract.Events.LOCATION, location)
+                    put(CalendarContract.Events.EVENT_LOCATION, location)
                 }
                 put(CalendarContract.Events.EVENT_TIMEZONE, java.util.TimeZone.getDefault().id)
                 put(CalendarContract.Events.HAS_ALARM, 1)
@@ -272,8 +272,7 @@ object CalendarManager {
             val time = event["time"] ?: ""
             val title = event["title"] ?: ""
             val location = event["location"] ?: ""
-            sb.append("
-${index + 1}.")
+            sb.append("\n${index + 1}.")
             if (time.isNotEmpty()) sb.append(" $time সময়")
             sb.append(" — $title")
             if (location.isNotEmpty()) sb.append(" ($location)")

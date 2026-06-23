@@ -94,11 +94,10 @@
         <!-- PATTERN SETUP -->
         <activity
             android:name=".security.PatternSetupActivity"
-            android:exported="false"/>
-
         <!-- FACE SETTINGS -->
         <activity
             android:name=".ui.settings.FaceSettingsActivity"
+            android:exported="false"/>
             android:exported="false"/>
 
         <!-- APP SELECTION -->
