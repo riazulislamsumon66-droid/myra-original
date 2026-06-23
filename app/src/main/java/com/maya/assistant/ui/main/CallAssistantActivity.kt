@@ -781,7 +781,7 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         try { unregisterReceiver(callStateReceiver) } catch (_: Exception) {}
         tts?.shutdown()
         if (::liveClient.isInitialized) liveClient.disconnect()
-        liveAudioManager.stop()
+        liveAudioManager.release()
         speechRecognizer?.destroy()
 
         // ✅ FIXED: Reset all states on destroy
