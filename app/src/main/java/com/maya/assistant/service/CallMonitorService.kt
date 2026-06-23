@@ -18,16 +18,19 @@ import android.provider.CallLog
 import com.maya.assistant.R
 import com.maya.assistant.ui.main.CallAssistantActivity
 import java.util.*
+import java.util.concurrent.Executors
 
 class CallMonitorService : Service(), TextToSpeech.OnInitListener {
 
     private var telephonyManager: TelephonyManager? = null
     private var phoneListener: PhoneStateListener? = null
+    private var telephonyCallback: android.telephony.TelephonyCallback? = null
     private var tts: TextToSpeech? = null
     private var ttsReady = false
 
     private var lastState = TelephonyManager.CALL_STATE_IDLE
     private var announced = false
+    private var lastPhoneNumber: String? = null
 
     companion object {
         const val ACTION_CALL_ACTIVE = "com.maya.assistant.CALL_ACTIVE"
@@ -51,7 +54,6 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
             val result = tts?.setLanguage(Locale("bn", "BD"))
             ttsReady = (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED)
             if (!ttsReady) {
-                // Fallback to English
                 tts?.setLanguage(Locale.ENGLISH)
                 ttsReady = true
             }
@@ -62,22 +64,19 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Android 12+ — use TelephonyCallback
             try {
-                val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
-                telephonyManager?.registerTelephonyCallback(
-                    executor,
-                    object : android.telephony.TelephonyCallback(),
-                        android.telephony.TelephonyCallback.CallStateListener {
-                        override fun onCallStateChanged(state: Int) {
-                            // Android 12+: number not in callback, fetch from call log
-                            val number = if (state == TelephonyManager.CALL_STATE_RINGING) {
-                                getLastIncomingNumber()
-                            } else null
-                            handleCallState(state, number)
-                        }
+                val executor = Executors.newSingleThreadExecutor()
+                val callback = object : android.telephony.TelephonyCallback(),
+                    android.telephony.TelephonyCallback.CallStateListener {
+                    override fun onCallStateChanged(state: Int) {
+                        val number = if (state == TelephonyManager.CALL_STATE_RINGING) {
+                            getLastIncomingNumber()
+                        } else null
+                        handleCallState(state, number)
                     }
-                )
+                }
+                telephonyCallback = callback
+                telephonyManager?.registerTelephonyCallback(executor, callback)
             } catch (e: Exception) {
                 Log.e(TAG, "TelephonyCallback failed, using legacy: ${e.message}")
                 setupLegacyPhoneListener()
@@ -109,6 +108,7 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
             TelephonyManager.CALL_STATE_RINGING -> {
                 if (!announced) {
                     announced = true
+                    lastPhoneNumber = number
                     handleIncomingCall(number)
                 }
             }
@@ -117,6 +117,7 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
             }
             TelephonyManager.CALL_STATE_IDLE -> {
                 announced = false
+                lastPhoneNumber = null
                 sendBroadcast(Intent(ACTION_CALL_ENDED))
             }
         }
@@ -127,7 +128,6 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
         val callerName = resolveCallerName(number)
         Log.d(TAG, "Incoming: $callerName from $number")
 
-        // Announce via TTS (check user preference)
         val announceOn = getSharedPreferences("maya_prefs", MODE_PRIVATE)
             .getBoolean("call_announce_enabled", true)
         if (ttsReady && announceOn) {
@@ -140,7 +140,6 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
             }
         }
 
-        // Open CallAssistantActivity
         val intent = Intent(this, CallAssistantActivity::class.java).apply {
             putExtra("CALLER_NAME", callerName)
             putExtra("PHONE_NUMBER", number ?: "")
@@ -221,14 +220,10 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-
-    /**
-     * Android 12+ এ TelephonyCallback এ phone number আসে না।
-     * Call log থেকে সর্বশেষ incoming number পড়ে।
-     */
     private fun getLastIncomingNumber(): String? {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG)
-            != PackageManager.PERMISSION_GRANTED) return null
+            != PackageManager.PERMISSION_GRANTED
+        ) return null
         return try {
             contentResolver.query(
                 CallLog.Calls.CONTENT_URI,
@@ -247,7 +242,9 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
 
     override fun onDestroy() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // TelephonyCallback is unregistered automatically
+            telephonyCallback?.let {
+                telephonyManager?.unregisterTelephonyCallback(it)
+            }
         } else {
             @Suppress("DEPRECATION")
             telephonyManager?.listen(phoneListener, PhoneStateListener.LISTEN_NONE)

@@ -124,7 +124,9 @@ object AIResponseManager {
             "SETTINGS_BLUETOOTH_ON", "SETTINGS_BLUETOOTH_OFF",
             "SETTINGS_BRIGHTNESS",
             "IMO_CALL", "MESSENGER_CALL", "TELEGRAM_CALL",
-            "CLICK", "SEARCH", "TYPE_TEXT"
+            "CLICK", "SEARCH", "TYPE_TEXT",
+            "CALENDAR_TODAY", "CALENDAR_UPCOMING", "CALENDAR_CREATE",
+            "REGISTER_FACE", "RECOGNIZE_FACE", "IDENTIFY_SPEAKER"
         )
         // Search ALL lines for a command, not just the first line
         // Gemini often puts thinking text before the actual command

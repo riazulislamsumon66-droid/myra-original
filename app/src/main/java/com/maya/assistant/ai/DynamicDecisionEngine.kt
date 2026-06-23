@@ -19,8 +19,9 @@ import com.maya.assistant.screenvision.ScreenCaptureService
 import com.maya.assistant.screenvision.VisionDecisionEngine
 import com.maya.assistant.automation.UiTreeSerializer
 import com.maya.assistant.service.SmartAccessibilityEngine
+import com.maya.assistant.utils.CalendarManager
 import com.maya.assistant.utils.Logger
-import com.maya.assistant.utils.CommandLogger
+import com.maya.assistant.utils.PermissionUtils
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -515,6 +516,47 @@ object DynamicDecisionEngine {
                             else "স্ক্রিনে কোনো লেখা পাওয়া যায়নি"
                         } else "Screen Capture চালু নেই"
                     } else "Accessibility Service বা Screen Vision চালু নেই"
+                }
+            }
+
+            // Calendar commands
+            CommandType.CALENDAR_TODAY -> {
+                val events = CalendarManager.getTodayEvents(context)
+                CalendarManager.formatEventsBangla(events, "আজ")
+            }
+
+            CommandType.CALENDAR_UPCOMING -> {
+                val events = CalendarManager.getUpcomingEvents(context, 7)
+                CalendarManager.formatEventsBangla(events, "আগামী ৭ দিন")
+            }
+
+            CommandType.CALENDAR_CREATE -> {
+                // Try to parse "reminder X at HH:MM" or just create a reminder
+                val reminderResult = CalendarManager.createReminder(context, command.raw, 30)
+                if (reminderResult) "⏰ রিমাইন্ডার সেট হয়েছে (৩০ মিনিট পর)"
+                else "রিমাইন্ডার সেট করতে সমস্যা"
+            }
+
+            // Face recognition commands
+            CommandType.REGISTER_FACE -> {
+                "মুখ সংরক্ষণের জন্য Settings → Face Recognition এ যাও। সেখানে 'নতুন মুখ যোগ করো' বাটনে ক্লিক করো।"
+            }
+
+            CommandType.RECOGNIZE_FACE -> {
+                "চেহরা শনাক্ত করার জন্য Settings → Face Recognition → স্ক্যান করো। সম্পূর্ণ ফিচার শীঘ্রই আসছে!"
+            }
+
+            CommandType.IDENTIFY_SPEAKER -> {
+                // Trigger voice identification
+                val voiceId = com.maya.assistant.voice.VoiceIdentifier(context)
+                val enrolled = voiceId.getEnrolledProfiles()
+                if (enrolled.isNotEmpty()) {
+                    voiceId.recognizeVoice { result ->
+                        // Result handled via broadcast from ForegroundVoiceService
+                    }
+                    "বক্তা শনাক্ত করছি..."
+                } else {
+                    "কোনো কণ্ঠ সংরক্ষিত নেই। Settings → Voice Enrollment এ যাও।"
                 }
             }
 

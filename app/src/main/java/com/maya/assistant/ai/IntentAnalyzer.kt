@@ -33,6 +33,11 @@ object IntentAnalyzer {
     private val BACK_PATTERNS = listOf("back", "পেছনে", "पीछे", "رجوع", "retour")
     private val HOME_PATTERNS = listOf("home", "হোম", "घर", "الرئيسية", "accueil")
     private val NOTIFICATION_PATTERNS = listOf("notification", "notification bar", "নোটিফিকেশন", "सूचना", "إشعار", "notification")
+    private val CALENDAR_TODAY_PATTERNS = listOf("calendar today", "আজ কী আছে", "আজ কোনো event", "আজ কোনো programme", "today's schedule", "আজকের কাজ", "আজ কি হবে")
+    private val CALENDAR_UPCOMING_PATTERNS = listOf("calendar upcoming", "আগামীকাল কী আছে", "কাল কী আছে", "upcoming events", "next event", "৭ দিন কী আছে", "এই সপ্তাহে কী আছে")
+    private val CALENDAR_CREATE_PATTERNS = listOf("set reminder", "create event", "ইভেন্ট করো", "রিমাইন্ডার করো", "মনে রাখো", "offer dates", "set date")
+    private val REGISTER_FACE_PATTERNS = listOf("register face", "enroll face", "মুখ সংরক্ষণ", "চেহারা সেভ", "face enrollment", "face id setup")
+    private val RECOGNIZE_FACE_PATTERNS = listOf("recognize face", "identify face", "চেনো", "কে এই ব্যক্তি", "কে এটা", "who is this", "face recognition")
 
     fun analyze(text: String): VoiceCommand {
         val lower = text.lowercase().trim()
@@ -102,6 +107,27 @@ object IntentAnalyzer {
 
             NOTIFICATION_PATTERNS.any { lower.contains(it) } ->
                 VoiceCommand(text, CommandType.NAVIGATE, mapOf("action" to "notification"))
+
+            // Calendar
+            CALENDAR_TODAY_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.CALENDAR_TODAY)
+
+            CALENDAR_UPCOMING_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.CALENDAR_UPCOMING)
+
+            CALENDAR_CREATE_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.CALENDAR_CREATE, mapOf("text" to lower))
+
+            // Face recognition
+            REGISTER_FACE_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.REGISTER_FACE)
+
+            RECOGNIZE_FACE_PATTERNS.any { lower.contains(it) } ->
+                VoiceCommand(text, CommandType.RECOGNIZE_FACE)
+
+            // Speaker identification
+            lower.contains("who is speaking") || lower.contains("কে কথা বলছে") || lower.contains("identify speaker") ->
+                VoiceCommand(text, CommandType.IDENTIFY_SPEAKER)
 
             // Scroll
             SCROLL_UP_PATTERNS.any { lower.contains(it) } ->
