@@ -267,6 +267,10 @@ static bool g_idleLoaded = false;
 // Parameter name → index cache for fast lookup
 static std::map<std::string, int> g_paramIndexCache;
 
+// Stored asset manager for motion loading
+static AAssetManager* g_assetManager = nullptr;
+static std::string g_basePath;
+
 extern "C" {
 
 JNIEXPORT jboolean JNICALL
@@ -280,14 +284,18 @@ Java_com_maya_assistant_ui_character_Live2DRenderer_nativeInit(
 
     LOGI("Initializing Live2D native renderer: %dx%d", width, height);
 
+    // Store asset manager for later use (motion loading)
+    g_assetManager = AAssetManager_fromJava(env, assetManager);
+
     // Load .moc3 file from assets
     const char* path = env->GetStringUTFChars(modelPath, nullptr);
     std::string basePath(path);
     env->ReleaseStringUTFChars(modelPath, path);
+    g_basePath = basePath;
 
     // Try to find the .moc3 file
     std::string mocPath;
-    AAssetManager* mgr = AAssetManager_fromJava(env, assetManager);
+    AAssetManager* mgr = g_assetManager;
 
     // First try: specific file
     mocPath = basePath + "/miara_pro_t03.moc3";
@@ -471,15 +479,33 @@ Java_com_maya_assistant_ui_character_Live2DRenderer_nativePlayMotion(
     }
 
     // Load motion from assets
-    AAssetManager* mgr = AAssetManager_fromJava(env, nullptr);
-    // We need asset manager — pass it through a different mechanism
-    // For now, use the cached idle motion or switch between pre-loaded motions
-    if (motionFile == "motion/Scene1.motion3.json" && g_idleLoaded) {
-        g_currentMotion = g_idleMotion;
+    if (!g_assetManager) {
+        LOGE("No asset manager available for motion loading");
+        return;
+    }
+
+    std::string fullPath = g_basePath + "/" + motionFile;
+    AAsset* motionAsset = AAssetManager_open(g_assetManager, fullPath.c_str(), AASSET_MODE_BUFFER);
+    if (!motionAsset) {
+        LOGE("Failed to open motion file: %s", fullPath.c_str());
+        return;
+    }
+
+    size_t motionLen = AAsset_getLength(motionAsset);
+    const void* motionData = AAsset_getBuffer(motionAsset);
+
+    MotionData newMotion;
+    if (parseMotionData(static_cast<const char*>(motionData), motionLen, newMotion)) {
+        g_currentMotion = newMotion;
         g_motionTime = 0.0f;
         g_motionPlaying = true;
-        LOGI("Switched to Idle motion");
+        LOGI("Motion loaded: %s (%.1fs, %zu curves)", motionFile.c_str(),
+             g_currentMotion.duration, g_currentMotion.curves.size());
+    } else {
+        LOGE("Failed to parse motion: %s", motionFile.c_str());
     }
+
+    AAsset_close(motionAsset);
 }
 
 JNIEXPORT void JNICALL
