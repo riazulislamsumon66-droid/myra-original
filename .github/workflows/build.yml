@@ -54,7 +54,7 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
 
@@ -75,16 +75,14 @@ jobs:
           ## 📱 MAYA AI Voice Assistant
 
           ### ✅ Features
-          - Live2D Character (native OpenGL rendering)
+          - Lightweight Shimeji-style 2D character (Canvas-based, no GPU overhead)
           - Voice Identification (3-slot enrollment)
           - Screen Reading, Battery Check, Settings Control
-          - Shimeji-style autonomous character movement
-          - Canvas fallback when native lib unavailable
+          - Autonomous character movement (walk, fall, climb, sleep)
+          - Drag, pinch-zoom, TTS sync
 
           ### 🔧 Build Info
           - Run: ${{ github.run_number }}
           - Commit: ${{ github.sha }}
-          - NDK: 25.2.9519653
-          - CMake: 3.22.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
