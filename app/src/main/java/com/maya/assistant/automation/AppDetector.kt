@@ -9,12 +9,19 @@ import android.util.Log
 object AppDetector {
 
     private const val TAG = "MAYA_APP_DETECTOR"
+    private const val CACHE_TTL_MS = 60_000L // 60 seconds
 
     data class InstalledApp(
         val packageName: String,
         val label: String,
         val isSystemApp: Boolean
     )
+
+    // Cache
+    private var cachedLaunchableApps: List<InstalledApp>? = null
+    private var cachedLaunchableAppsTime = 0L
+    private var cachedAllApps: List<InstalledApp>? = null
+    private var cachedAllAppsTime = 0L
 
     private fun normalizeName(value: String): String {
         return value
@@ -30,6 +37,11 @@ object AppDetector {
         service: AccessibilityService,
         includeSystem: Boolean = true
     ): List<InstalledApp> {
+        // Check cache
+        val now = System.currentTimeMillis()
+        if (cachedLaunchableApps != null && (now - cachedLaunchableAppsTime) < CACHE_TTL_MS) {
+            return cachedLaunchableApps!!
+        }
 
         val pm = service.packageManager
         val apps = mutableListOf<InstalledApp>()
@@ -69,6 +81,9 @@ object AppDetector {
             Log.e(TAG, "Error getting launchable apps: ${e.message}")
         }
 
+        // Update cache
+        cachedLaunchableApps = apps
+        cachedLaunchableAppsTime = now
         return apps
     }
 

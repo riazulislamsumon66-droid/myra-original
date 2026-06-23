@@ -98,13 +98,16 @@ object DynamicDecisionEngine {
                 } else {
                     val number = findContactNumber(context, name)
                     if (number.isNotEmpty()) {
-                        val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number"))
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        try {
-                            context.startActivity(intent)
+                        // Use CallAutomation for proper permission check + dialer fallback
+                        if (com.maya.assistant.automation.CallAutomation.makeCall(context, number)) {
                             "কল করছি: $name"
-                        } catch (e: Exception) {
-                            "কল করতে সমস্যা: ${e.message}"
+                        } else {
+                            // Fallback: open dialer
+                            if (com.maya.assistant.automation.CallAutomation.openDialer(context, number)) {
+                                "ডায়ালার খুলে দিলাম: $name"
+                            } else {
+                                "কল করতে সমস্যা: $name"
+                            }
                         }
                     } else {
                         "কন্টাক্ট পাই নাই: $name"

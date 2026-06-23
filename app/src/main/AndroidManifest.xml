@@ -49,7 +49,7 @@
         android:roundIcon="@mipmap/img"
         android:supportsRtl="true"
         android:theme="@style/Theme.Maya"
-        android:usesCleartextTraffic="true"
+        android:usesCleartextTraffic="false"
         android:networkSecurityConfig="@xml/network_security_config">
 
         <!-- MAIN ACTIVITY -->
@@ -138,7 +138,11 @@
         <service
             android:name=".service.MayaOverlayService"
             android:exported="false"
-            android:foregroundServiceType="microphone"/>
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="overlay_ui"/>
+        </service>
 
         <!-- SCREEN CAPTURE SERVICE (OCR / Screen Vision) -->
         <service

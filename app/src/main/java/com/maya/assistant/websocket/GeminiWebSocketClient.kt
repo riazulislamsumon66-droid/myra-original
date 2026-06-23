@@ -103,6 +103,10 @@ class GeminiWebSocketClient(
                             })
                         })
                     })
+                    // Minimize thinking to prevent thinking-text leaks
+                    put("thinkingConfig", JSONObject().apply {
+                        put("thinkingLevel", "minimal")
+                    })
                 })
                 put("systemInstruction", JSONObject().apply {
                     put("parts", JSONArray().put(JSONObject().put("text", systemPrompt)))

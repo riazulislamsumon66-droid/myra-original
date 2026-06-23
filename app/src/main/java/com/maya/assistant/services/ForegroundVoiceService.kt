@@ -104,6 +104,15 @@ class ForegroundVoiceService : Service() {
             }
         }
 
+        // Request audio focus before starting recorder
+        audioFocus.requestFocus(
+            onGained = { Logger.d(TAG, "Audio focus gained") },
+            onLost = {
+                Logger.d(TAG, "Audio focus lost — stopping recorder")
+                audioRecorder.stop()
+            }
+        )
+
         val apiKey = SecurePrefs.getApiKey(this@ForegroundVoiceService)
         if (apiKey.isNotEmpty()) {
             connectGemini(apiKey)
@@ -135,15 +144,20 @@ class ForegroundVoiceService : Service() {
             onTextReceived = { text ->
                 val clean = AIResponseManager.clean(text)
                 // Skip if response was only thinking text or is empty after cleaning
-                if (clean.isNotBlank() && !AIResponseManager.hasThinkingText(text)) {
+                if (clean.isNotBlank() && !AIResponseManager.hasThinkingText(clean)) {
                     ConversationMemory.addAssistant(clean)
                     // Try structured command first, then natural language
                     val cmd = AIResponseManager.extractCommand(clean)
                     val intent = if (cmd != null) {
                         IntentAnalyzer.analyze(cmd)
                     } else {
-                        // Natural language fallback - analyze directly
-                        IntentAnalyzer.analyze(clean)
+                        // Natural language fallback — only analyze short command-like text
+                        // Skip long conversational responses (likely not commands)
+                        if (clean.length < 80 && clean.lines().size <= 2) {
+                            IntentAnalyzer.analyze(clean)
+                        } else {
+                            com.maya.assistant.models.VoiceCommand(clean, CommandType.CONVERSATION)
+                        }
                     }
                     if (intent.type != CommandType.CONVERSATION && intent.type != CommandType.UNKNOWN) {
                         // Check accessibility before executing
@@ -161,7 +175,7 @@ class ForegroundVoiceService : Service() {
                     }
                     // Broadcast to UI
                     sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", clean))
-                } else if (AIResponseManager.hasThinkingText(text) && clean.isBlank()) {
+                } else if (AIResponseManager.hasThinkingText(clean) && clean.isBlank()) {
                     // Gemini returned only thinking text — ask it to respond properly
                     Logger.d(TAG, "Gemini returned thinking text only, skipping")
                 }
@@ -298,6 +312,7 @@ IMO_CALL <name> | MESSENGER_CALL <name> | TELEGRAM_CALL <name>
         instance = null
         audioRecorder.stop()
         audioPlayer.release()
+        audioFocus.abandonFocus()
         geminiClient?.disconnect()
         // Unregister power button receiver
         powerButtonReceiver?.let {

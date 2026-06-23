@@ -9,6 +9,7 @@ import org.json.JSONObject
 object UiTreeSerializer {
 
     private const val TAG = "MAYA_UI_TREE"
+    private const val MAX_DEPTH = 15
 
     private fun normalize(text: String): String {
         return text
@@ -31,8 +32,10 @@ object UiTreeSerializer {
 
     private fun traverse(
         node: AccessibilityNodeInfo,
-        array: JSONArray
+        array: JSONArray,
+        depth: Int = 0
     ) {
+        if (depth > MAX_DEPTH) return
 
         val rect = Rect()
         node.getBoundsInScreen(rect)
@@ -57,7 +60,7 @@ object UiTreeSerializer {
 
         for (i in 0 until node.childCount) {
             node.getChild(i)?.let {
-                traverse(it, array)
+                traverse(it, array, depth + 1)
             }
         }
     }
@@ -83,8 +86,10 @@ object UiTreeSerializer {
     private fun findMatchingElementsRecursive(
         node: AccessibilityNodeInfo,
         query: String,
-        results: MutableList<AccessibilityNodeInfo>
+        results: MutableList<AccessibilityNodeInfo>,
+        depth: Int = 0
     ) {
+        if (depth > MAX_DEPTH) return
 
         val text = normalize(node.text?.toString() ?: "")
         val desc = normalize(node.contentDescription?.toString() ?: "")
@@ -98,7 +103,7 @@ object UiTreeSerializer {
         // Recurse through children
         for (i in 0 until node.childCount) {
             node.getChild(i)?.let {
-                findMatchingElementsRecursive(it, query, results)
+                findMatchingElementsRecursive(it, query, results, depth + 1)
             }
         }
     }
@@ -120,8 +125,10 @@ object UiTreeSerializer {
 
     private fun findClickableElementsRecursive(
         node: AccessibilityNodeInfo,
-        results: MutableList<AccessibilityNodeInfo>
+        results: MutableList<AccessibilityNodeInfo>,
+        depth: Int = 0
     ) {
+        if (depth > MAX_DEPTH) return
 
         if (node.isClickable && node.isVisibleToUser) {
             results.add(node)
@@ -129,7 +136,7 @@ object UiTreeSerializer {
 
         for (i in 0 until node.childCount) {
             node.getChild(i)?.let {
-                findClickableElementsRecursive(it, results)
+                findClickableElementsRecursive(it, results, depth + 1)
             }
         }
     }
@@ -153,11 +160,12 @@ object UiTreeSerializer {
     fun extractAllText(root: AccessibilityNodeInfo?): String {
         if (root == null) return ""
         val sb = StringBuilder()
-        fun traverse(node: AccessibilityNodeInfo) {
+        fun traverse(node: AccessibilityNodeInfo, depth: Int = 0) {
+            if (depth > MAX_DEPTH) return
             node.text?.let { if (it.isNotBlank()) sb.appendLine(it) }
             node.contentDescription?.let { if (it.isNotBlank()) sb.appendLine(it) }
             for (i in 0 until node.childCount) {
-                node.getChild(i)?.let { traverse(it) }
+                node.getChild(i)?.let { traverse(it, depth + 1) }
             }
         }
         traverse(root)

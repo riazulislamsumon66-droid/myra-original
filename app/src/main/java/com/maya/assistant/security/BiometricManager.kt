@@ -207,7 +207,10 @@ object BiometricManager {
     }
 
     private fun hashPin(pin: String): String {
-        // Simple hash - in production use proper encryption
-        return pin.hashCode().toString()
+        // Salted SHA-256 — secure against rainbow tables
+        val salt = "maya_pin_salt_2026"
+        val salted = salt + pin
+        val bytes = java.security.MessageDigest.getInstance("SHA-256").digest(salted.toByteArray())
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 }

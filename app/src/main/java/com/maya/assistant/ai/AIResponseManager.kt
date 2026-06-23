@@ -126,11 +126,12 @@ object AIResponseManager {
             "IMO_CALL", "MESSENGER_CALL", "TELEGRAM_CALL",
             "CLICK", "SEARCH", "TYPE_TEXT"
         )
-        val upper = text.uppercase()
+        // Only match commands at the START of the text (first line, first word)
+        val firstLine = text.trim().lines().firstOrNull()?.trim() ?: return null
+        val upperFirst = firstLine.uppercase()
         for (cmd in commands) {
-            val index = upper.indexOf(cmd)
-            if (index != -1) {
-                return text.substring(index).trim().lines().first().replace("`", "").trim()
+            if (upperFirst.startsWith(cmd)) {
+                return firstLine.substring(cmd.length).trim().replace("`", "").trim().ifEmpty { cmd }
             }
         }
         return null

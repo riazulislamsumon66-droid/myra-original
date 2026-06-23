@@ -21,7 +21,11 @@ class BootReceiver : BroadcastReceiver() {
             if (apiKey.isNotEmpty()) {
                 // Check mic permission before starting voice service
                 if (PermissionUtils.hasMicPermission(context)) {
-                    ContextCompat.startForegroundService(context, Intent(context, ForegroundVoiceService::class.java))
+                    try {
+                        ContextCompat.startForegroundService(context, Intent(context, ForegroundVoiceService::class.java))
+                    } catch (e: Exception) {
+                        android.util.Log.e("BOOT", "Failed to start ForegroundVoiceService: ${e.message}")
+                    }
                 }
             }
             // Also start call monitoring on boot

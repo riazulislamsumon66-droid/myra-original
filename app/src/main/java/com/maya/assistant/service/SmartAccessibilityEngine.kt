@@ -306,38 +306,30 @@ object SmartAccessibilityEngine {
     }
 
     private fun findFocusedEditableNode(
-        node: AccessibilityNodeInfo
+        node: AccessibilityNodeInfo,
+        depth: Int = 0
     ): AccessibilityNodeInfo? {
+        if (depth > 15) return null
         if (node.isFocused && node.isEditable) return node
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
-            val result = findFocusedEditableNode(child)
+            val result = findFocusedEditableNode(child, depth + 1)
             if (result != null) return result
         }
         return null
     }
 
     private fun findEditableNode(
-        node: AccessibilityNodeInfo
+        node: AccessibilityNodeInfo,
+        depth: Int = 0
     ): AccessibilityNodeInfo? {
-
-        if (node.isEditable)
-            return node
-
+        if (depth > 15) return null
+        if (node.isEditable) return node
         for (i in 0 until node.childCount) {
-
-            val child = node.getChild(i)
-
-            if (child != null) {
-
-                val result =
-                    findEditableNode(child)
-
-                if (result != null)
-                    return result
-            }
+            val child = node.getChild(i) ?: continue
+            val result = findEditableNode(child, depth + 1)
+            if (result != null) return result
         }
-
         return null
     }
 
@@ -445,11 +437,12 @@ object SmartAccessibilityEngine {
         }
     }
 
-    private fun findScrollableNode(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+    private fun findScrollableNode(node: AccessibilityNodeInfo, depth: Int = 0): AccessibilityNodeInfo? {
+        if (depth > 15) return null
         if (node.isScrollable) return node
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
-            val result = findScrollableNode(child)
+            val result = findScrollableNode(child, depth + 1)
             if (result != null) return result
         }
         return null
