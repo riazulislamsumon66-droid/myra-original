@@ -65,23 +65,23 @@ static bool parseJsonString(const char* p, std::string& out) {
     return true;
 }
 
-static bool parseJsonNumber(const char*& p, float& out) {
-    p = skipWhitespace(p);
-    const char* start = p;
-    if (*p == '-') p++;
-    while (*p >= '0' && *p <= '9') p++;
-    if (*p == '.') {
-        p++;
-        while (*p >= '0' && *p <= '9') p++;
+static bool parseJsonNumber(const char* p, float& out) {
+    const char* cur = skipWhitespace(p);
+    const char* start = cur;
+    if (*cur == '-') cur++;
+    while (*cur >= '0' && *cur <= '9') cur++;
+    if (*cur == '.') {
+        cur++;
+        while (*cur >= '0' && *cur <= '9') cur++;
     }
     out = strtof(start, nullptr);
     return true;
 }
 
-static bool parseJsonBool(const char*& p, bool& out) {
-    p = skipWhitespace(p);
-    if (strncmp(p, "true", 4) == 0) { out = true; p += 4; return true; }
-    if (strncmp(p, "false", 5) == 0) { out = false; p += 5; return true; }
+static bool parseJsonBool(const char* p, bool& out) {
+    const char* cur = skipWhitespace(p);
+    if (strncmp(cur, "true", 4) == 0) { out = true; return true; }
+    if (strncmp(cur, "false", 5) == 0) { out = false; return true; }
     return false;
 }
 
