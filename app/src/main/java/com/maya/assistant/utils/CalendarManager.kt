@@ -272,8 +272,7 @@ object CalendarManager {
             val time = event["time"] ?: ""
             val title = event["title"] ?: ""
             val location = event["location"] ?: ""
-            sb.append("
-${index + 1}.")
+            sb.append("\n${index + 1}.")
             if (time.isNotEmpty()) sb.append(" $time সময়")
             sb.append(" — $title")
             if (location.isNotEmpty()) sb.append(" ($location)")
