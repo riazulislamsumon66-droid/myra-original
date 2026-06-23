@@ -85,6 +85,8 @@ class Live2DCharacterView @JvmOverloads constructor(
         // Visibility handled by parent
     }
 
+    fun isNativeAvailable(): Boolean = useNative
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         nativeRenderer?.cleanup()
