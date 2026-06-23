@@ -13,6 +13,8 @@ import android.view.animation.DecelerateInterpolator
 import androidx.core.app.NotificationCompat
 import com.maya.assistant.R
 import com.maya.assistant.ui.character.CharacterOverlayView
+import com.maya.assistant.ui.character.Live2DCharacterView
+import com.maya.assistant.ui.character.Live2DRenderer
 import com.maya.assistant.ui.main.MainActivity
 import java.util.*
 import kotlin.math.*
@@ -56,6 +58,9 @@ class MayaCharacterService : Service() {
     private var windowManager: WindowManager? = null
     private var containerView: View? = null
     private var characterView: CharacterOverlayView? = null
+    private var live2dView: Live2DCharacterView? = null
+    private var live2dRenderer: Live2DRenderer? = null
+    private var useLive2D = false
     private var overlayParams: WindowManager.LayoutParams? = null
 
     private var isVisible = false
@@ -173,9 +178,38 @@ class MayaCharacterService : Service() {
 
         updateScreenDimensions()
 
-        val inflater = LayoutInflater.from(this)
-        containerView = inflater.inflate(R.layout.overlay_character_3d, null)
-        characterView = containerView?.findViewById(R.id.characterOverlayView)
+        // Try Live2D native renderer first
+        try {
+            live2dView = Live2DCharacterView(this)
+            live2dRenderer = Live2DRenderer(this)
+            val modelPath = "live2d/miara/runtime"
+            val displayMetrics = android.util.DisplayMetrics()
+            @Suppress("DEPRECATION")
+            windowManager?.defaultDisplay?.getMetrics(displayMetrics)
+            val initSuccess = live2dRenderer?.init(modelPath, displayMetrics.widthPixels, displayMetrics.heightPixels) ?: false
+            if (initSuccess) {
+                useLive2D = true
+                containerView = live2dView
+                android.util.Log.d("MAYA_CHAR", "Live2D native renderer initialized ✅")
+            } else {
+                useLive2D = false
+                live2dView = null
+                live2dRenderer = null
+                android.util.Log.w("MAYA_CHAR", "Live2D init failed, using Canvas fallback")
+            }
+        } catch (e: Exception) {
+            useLive2D = false
+            live2dView = null
+            live2dRenderer = null
+            android.util.Log.w("MAYA_CHAR", "Live2D not available: ${e.message}")
+        }
+
+        // Canvas fallback if Live2D failed
+        if (!useLive2D) {
+            val inflater = LayoutInflater.from(this)
+            containerView = inflater.inflate(R.layout.overlay_character_3d, null)
+            characterView = containerView?.findViewById(R.id.characterOverlayView)
+        }
 
         overlayParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -198,7 +232,9 @@ class MayaCharacterService : Service() {
         isVisible = true
 
         setupDragAndPinch()
-        characterView?.setState(CharacterOverlayView.CharState.IDLE)
+        if (!useLive2D) {
+            characterView?.setState(CharacterOverlayView.CharState.IDLE)
+        }
         startSleepTimer()
 
         // Start Shimeji autonomous movement
@@ -223,6 +259,13 @@ class MayaCharacterService : Service() {
     private fun removeOverlay() {
         stopAutonomousMovement()
         containerView?.let { try { windowManager?.removeView(it) } catch (_: Exception) {} }
+        // Cleanup Live2D
+        if (useLive2D) {
+            live2dRenderer?.cleanup()
+            live2dRenderer = null
+            live2dView = null
+            useLive2D = false
+        }
         containerView = null; characterView = null
         isVisible = false
         sleepHandler.removeCallbacks(sleepRunnable)

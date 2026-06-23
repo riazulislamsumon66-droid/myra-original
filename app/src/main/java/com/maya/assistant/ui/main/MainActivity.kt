@@ -46,6 +46,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ramText: TextView
     private lateinit var timeText: TextView
 
+    private var isReceiverRegistered = false
+
     private val timeHandler = Handler(Looper.getMainLooper())
     private val timeRunnable = object : Runnable {
         override fun run() {
@@ -299,16 +301,26 @@ class MainActivity : AppCompatActivity() {
             com.maya.assistant.security.AppLockActivity.launch(this)
             return
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(responseReceiver, IntentFilter("MAYA_RESPONSE"), Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            registerReceiver(responseReceiver, IntentFilter("MAYA_RESPONSE"))
+        // Register receiver only if not already registered
+        if (!isReceiverRegistered) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(responseReceiver, IntentFilter("MAYA_RESPONSE"), Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                registerReceiver(responseReceiver, IntentFilter("MAYA_RESPONSE"))
+            }
+            isReceiverRegistered = true
         }
+        // Start timer
+        timeHandler.post(timeRunnable)
     }
 
     override fun onPause() {
         super.onPause()
-        try { unregisterReceiver(responseReceiver) } catch (_: Exception) {}
+        timeHandler.removeCallbacks(timeRunnable)
+        if (isReceiverRegistered) {
+            try { unregisterReceiver(responseReceiver) } catch (_: Exception) {}
+            isReceiverRegistered = false
+        }
     }
 
     override fun onDestroy() {

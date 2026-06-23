@@ -107,6 +107,7 @@ data class ChatMessage(
 class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val messages = mutableListOf<ChatMessage>()
+    private val MAX_MESSAGES = 200 // Prevent unbounded memory growth
 
     companion object {
         const val VIEW_USER = 0
@@ -115,6 +116,11 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     fun addMessage(message: ChatMessage) {
         messages.add(message)
+        // Trim old messages if exceeding cap
+        while (messages.size > MAX_MESSAGES) {
+            messages.removeAt(0)
+            notifyItemRemoved(0)
+        }
         notifyItemInserted(messages.size - 1)
     }
 
