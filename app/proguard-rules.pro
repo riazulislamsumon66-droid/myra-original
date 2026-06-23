@@ -1,6 +1,5 @@
 # ProGuard rules for MAYA Assistant
 # Add project specific ProGuard rules here.
-# Since minifyEnabled is false for debug builds, these rules only apply to release builds.
 
 # Keep all classes in the main package
 -keep class com.maya.assistant.** { *; }
@@ -17,3 +16,22 @@
 
 # Keep annotation
 -keepattributes *Annotation*
+
+# Keep WebSocket classes (OkHttp)
+-keep class okhttp3.** { *; }
+-dontwarn okhttp3.**
+
+# Keep ML Kit
+-keep class com.google.mlkit.** { *; }
+
+# Remove logging in release
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}
+
+# Keep Kotlin coroutines
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
