@@ -18,7 +18,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import com.maya.assistant.R
 import com.maya.assistant.ai.GeminiLiveClient
-import com.maya.assistant.utils.LiveAudioManager
+import com.maya.assistant.voice.AudioPlayer
 import com.maya.assistant.ui.main.MainActivity
 import java.util.Locale
 
@@ -52,7 +52,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var enteredPin = ""
     private var tts: TextToSpeech? = null
     private var geminiClient: GeminiLiveClient? = null
-    private var liveAudioManager: LiveAudioManager? = null
+    private var liveAudioManager: AudioPlayer? = null
     private var isGeminiConnected = false
     private var isTtsReady = false
     private var speechRecognizer: SpeechRecognizer? = null
@@ -90,7 +90,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         // Force refresh Fingerprint tab visibility
         tabFinger.visibility = if (isFingerprintEnabled) View.VISIBLE else View.GONE
         
-        liveAudioManager = LiveAudioManager(this)
+        liveAudioManager = AudioPlayer()
         initGemini()
         tts = TextToSpeech(this, this)
         setupTabs()
@@ -517,7 +517,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         tts?.shutdown()
         speechRecognizer?.destroy()
         geminiClient?.disconnect()
-        liveAudioManager?.stop()
+        liveAudioManager?.release()
         super.onDestroy()
     }
 }

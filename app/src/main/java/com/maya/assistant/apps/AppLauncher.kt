@@ -9,7 +9,20 @@ object AppLauncher {
     private val TAG = "LAUNCHER"
 
     fun launch(context: Context, appName: String): Boolean {
-        val intent = InstalledAppsManager.getLaunchIntent(context, appName) ?: run {
+        val pm = context.packageManager
+        // Try direct package name first
+        var intent = pm.getLaunchIntentForPackage(appName.lowercase())
+        // Try fuzzy match via AppDetector if accessibility service is available
+        if (intent == null) {
+            val svc = com.maya.assistant.service.SmartAccessibilityEngine.service
+            if (svc != null) {
+                val app = com.maya.assistant.automation.AppDetector.findAppByName(svc, appName)
+                if (app != null) {
+                    intent = pm.getLaunchIntentForPackage(app.packageName)
+                }
+            }
+        }
+        if (intent == null) {
             Logger.w(TAG, "App not found: $appName")
             return false
         }
