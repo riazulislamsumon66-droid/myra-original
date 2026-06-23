@@ -252,7 +252,7 @@ class MayaCharacterService : Service() {
         containerView?.let { try { windowManager?.removeView(it) } catch (_: Exception) {} }
         // Cleanup Live2D
         if (useLive2D) {
-            live2dView?.onDetachedFromWindow()
+            live2dView?.cleanup()
             live2dView = null
             useLive2D = false
         }

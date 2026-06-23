@@ -87,6 +87,10 @@ class Live2DCharacterView @JvmOverloads constructor(
 
     fun isNativeAvailable(): Boolean = useNative
 
+    fun cleanup() {
+        nativeRenderer?.cleanup()
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         nativeRenderer?.cleanup()
