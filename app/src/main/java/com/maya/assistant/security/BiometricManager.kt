@@ -189,11 +189,12 @@ object BiometricManager {
      * Set PIN
      */
     fun setPin(context: Context, pin: String) {
-        // In production, use encrypted storage
+        val salt = generateSalt()
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(KEY_PIN_SET, true)
-            .putString("pin_hash", hashPin(pin))
+            .putString("pin_salt", salt)
+            .putString("pin_hash", hashPin(pin, salt))
             .apply()
     }
 
@@ -201,14 +202,24 @@ object BiometricManager {
      * Verify PIN
      */
     fun verifyPin(context: Context, pin: String): Boolean {
-        val storedHash = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getString("pin_hash", "") ?: ""
-        return storedHash == hashPin(pin)
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val salt = prefs.getString("pin_salt", null) ?: return false
+        val storedHash = prefs.getString("pin_hash", "") ?: ""
+        return storedHash == hashPin(pin, salt)
     }
 
-    private fun hashPin(pin: String): String {
-        // Salted SHA-256 — secure against rainbow tables
-        val salt = "maya_pin_salt_2026"
+    private fun generateSalt(): String {
+        val bytes = ByteArray(16)
+        java.security.SecureRandom().nextBytes(bytes)
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    private fun hashPin(pin: String, salt: String): String {
+        // Salted SHA-256 with a per-user random salt (NOT a hardcoded
+        // constant — a fixed salt is visible to anyone who decompiles the
+        // APK and lets an attacker precompute one rainbow table that breaks
+        // every installation, which defeats the point of salting for short
+        // numeric PINs).
         val salted = salt + pin
         val bytes = java.security.MessageDigest.getInstance("SHA-256").digest(salted.toByteArray())
         return bytes.joinToString("") { "%02x".format(it) }

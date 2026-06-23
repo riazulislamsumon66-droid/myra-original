@@ -13,7 +13,6 @@ import android.view.animation.DecelerateInterpolator
 import androidx.core.app.NotificationCompat
 import com.maya.assistant.R
 import com.maya.assistant.ui.character.CharacterOverlayView
-import com.maya.assistant.ui.character.Live2DCharacterView
 import com.maya.assistant.ui.main.MainActivity
 import java.util.*
 import kotlin.math.*
@@ -57,8 +56,6 @@ class MayaCharacterService : Service() {
     private var windowManager: WindowManager? = null
     private var containerView: View? = null
     private var characterView: CharacterOverlayView? = null
-    private var live2dView: Live2DCharacterView? = null
-    private var useLive2D = false
     private var overlayParams: WindowManager.LayoutParams? = null
 
     private var isVisible = false
@@ -176,31 +173,11 @@ class MayaCharacterService : Service() {
 
         updateScreenDimensions()
 
-        // Try Live2D native renderer first
-        try {
-            live2dView = Live2DCharacterView(this)
-            // Live2DCharacterView.init() already tries native init internally
-            // We just need to check if it succeeded
-            useLive2D = live2dView?.isNativeAvailable() ?: false
-            if (useLive2D) {
-                containerView = live2dView
-                android.util.Log.d("MAYA_CHAR", "Live2D native renderer initialized ✅")
-            } else {
-                live2dView = null
-                android.util.Log.w("MAYA_CHAR", "Live2D native not available, using Canvas fallback")
-            }
-        } catch (e: Exception) {
-            useLive2D = false
-            live2dView = null
-            android.util.Log.w("MAYA_CHAR", "Live2D not available: ${e.message}")
-        }
-
-        // Canvas fallback if Live2D failed
-        if (!useLive2D) {
-            val inflater = LayoutInflater.from(this)
-            containerView = inflater.inflate(R.layout.overlay_character_3d, null)
-            characterView = containerView?.findViewById(R.id.characterOverlayView)
-        }
+        // Lightweight Canvas-based character (ValueAnimator + Paint —
+        // no bitmaps, no GPU/OpenGL, smooth on low-end phones)
+        val inflater = LayoutInflater.from(this)
+        containerView = inflater.inflate(R.layout.overlay_character_3d, null)
+        characterView = containerView?.findViewById(R.id.characterOverlayView)
 
         overlayParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -223,9 +200,7 @@ class MayaCharacterService : Service() {
         isVisible = true
 
         setupDragAndPinch()
-        if (!useLive2D) {
-            characterView?.setState(CharacterOverlayView.CharState.IDLE)
-        }
+        characterView?.setState(CharacterOverlayView.CharState.IDLE)
         startSleepTimer()
 
         // Start Shimeji autonomous movement
@@ -250,12 +225,6 @@ class MayaCharacterService : Service() {
     private fun removeOverlay() {
         stopAutonomousMovement()
         containerView?.let { try { windowManager?.removeView(it) } catch (_: Exception) {} }
-        // Cleanup Live2D
-        if (useLive2D) {
-            live2dView?.cleanup()
-            live2dView = null
-            useLive2D = false
-        }
         containerView = null; characterView = null
         isVisible = false
         sleepHandler.removeCallbacks(sleepRunnable)

@@ -95,7 +95,7 @@ object AppLauncher {
         }
     }
 
-    fun closeViaRecents(context: Context, appName: String): Boolean {
+    suspend fun closeViaRecents(context: Context, appName: String): Boolean {
         return try {
             val svc = com.maya.assistant.service.SmartAccessibilityEngine.service
             if (svc == null) {
@@ -104,7 +104,11 @@ object AppLauncher {
             }
             // Step 1: Open recent apps (global action)
             svc.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_RECENTS)
-            Thread.sleep(1500)
+            // NOTE: suspend delay(), not Thread.sleep() — this function is
+            // called from DynamicDecisionEngine's Dispatchers.Main scope.
+            // Thread.sleep() here would freeze the entire UI (animations,
+            // touch, character movement) for 1.5s and risks an ANR.
+            kotlinx.coroutines.delay(1500)
             // Step 2: Find the app card in recents and swipe it away
             val root = svc.rootInActiveWindow ?: return false
             val appCard = findAppCardInRecents(root, appName)
@@ -128,13 +132,23 @@ object AppLauncher {
         }
     }
 
-    private fun findAppCardInRecents(node: android.view.accessibility.AccessibilityNodeInfo, appName: String): android.view.accessibility.AccessibilityNodeInfo? {
+    // Guards against StackOverflowError on deep accessibility trees
+    // (same pattern as other recursive tree-walks fixed elsewhere in
+    // this codebase — e.g. NodeFinder, UiTreeSerializer).
+    private const val MAX_RECENTS_DEPTH = 40
+
+    private fun findAppCardInRecents(
+        node: android.view.accessibility.AccessibilityNodeInfo,
+        appName: String,
+        depth: Int = 0
+    ): android.view.accessibility.AccessibilityNodeInfo? {
+        if (depth > MAX_RECENTS_DEPTH) return null
         if (node.text != null && node.text.toString().contains(appName, ignoreCase = true)) {
             return node
         }
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
-            val result = findAppCardInRecents(child, appName)
+            val result = findAppCardInRecents(child, appName, depth + 1)
             if (result != null) return result
         }
         return null

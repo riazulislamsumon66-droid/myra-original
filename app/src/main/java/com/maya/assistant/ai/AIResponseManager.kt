@@ -126,12 +126,16 @@ object AIResponseManager {
             "IMO_CALL", "MESSENGER_CALL", "TELEGRAM_CALL",
             "CLICK", "SEARCH", "TYPE_TEXT"
         )
-        // Only match commands at the START of the text (first line, first word)
-        val firstLine = text.trim().lines().firstOrNull()?.trim() ?: return null
-        val upperFirst = firstLine.uppercase()
-        for (cmd in commands) {
-            if (upperFirst.startsWith(cmd)) {
-                return firstLine.substring(cmd.length).trim().replace("`", "").trim().ifEmpty { cmd }
+        // Search ALL lines for a command, not just the first line
+        // Gemini often puts thinking text before the actual command
+        val lines = text.trim().lines()
+        for (line in lines) {
+            val trimmed = line.trim()
+            val upperLine = trimmed.uppercase()
+            for (cmd in commands) {
+                if (upperLine.startsWith(cmd)) {
+                    return trimmed.substring(cmd.length).trim().replace("`", "").trim().ifEmpty { cmd }
+                }
             }
         }
         return null
