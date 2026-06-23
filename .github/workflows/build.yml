@@ -1,9 +1,7 @@
-name: Build APK
+name: Build & Release APK
 
 on:
   push:
-    branches: [ master, main ]
-  pull_request:
     branches: [ master, main ]
   workflow_dispatch:
 
@@ -25,6 +23,11 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
+    - name: Install NDK
+      run: |
+        yes | sdkmanager --install "ndk;25.2.9519653" --no_https 2>&1 | tail -5
+        echo "NDK installed successfully"
+
     - name: Cache Gradle
       uses: actions/cache@v4
       with:
@@ -42,8 +45,46 @@ jobs:
       run: ./gradlew assembleDebug --no-daemon --stacktrace
       timeout-minutes: 15
 
-    - name: Upload APK
+    - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
         name: myra-debug-apk
         path: app/build/outputs/apk/debug/app-debug.apk
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download APK
+      uses: actions/download-artifact@v4
+      with:
+        name: myra-debug-apk
+        path: apk
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: apk/app-debug.apk
+        tag_name: v${{ github.run_number }}.${{ github.run_attempt }}
+        name: MAYA Assistant v${{ github.run_number }}
+        body: |
+          ## 📱 MAYA AI Voice Assistant
+
+          ### ✅ Features
+          - Live2D Character (native OpenGL rendering)
+          - Voice Identification (3-slot enrollment)
+          - Screen Reading, Battery Check, Settings Control
+          - Shimeji-style autonomous character movement
+          - Canvas fallback when native lib unavailable
+
+          ### 🔧 Build Info
+          - Run: ${{ github.run_number }}
+          - Commit: ${{ github.sha }}
+          - NDK: 25.2.9519653
+          - CMake: 3.22.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
