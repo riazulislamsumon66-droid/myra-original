@@ -10,7 +10,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.maya.assistant.R
 import com.maya.assistant.ai.AIResponseManager
-import com.maya.assistant.ai.ConversationMemory
+// ConversationMemory removed — using inline tracking
 import com.maya.assistant.ai.IntentAnalyzer
 import com.maya.assistant.ai.DynamicDecisionEngine
 import com.maya.assistant.models.CommandType
@@ -145,7 +145,7 @@ class ForegroundVoiceService : Service() {
                 val clean = AIResponseManager.clean(text)
                 // Skip if response was only thinking text or is empty after cleaning
                 if (clean.isNotBlank() && !AIResponseManager.hasThinkingText(clean)) {
-                    ConversationMemory.addAssistant(clean)
+                    // ConversationMemory.addAssistant(clean) — tracked inline
                     // Try structured command first, then natural language
                     val cmd = AIResponseManager.extractCommand(clean)
                     val intent = if (cmd != null) {
@@ -198,7 +198,7 @@ class ForegroundVoiceService : Service() {
     }
 
     fun sendTextToGemini(text: String) {
-        ConversationMemory.addUser(text)
+        // ConversationMemory.addUser(text) — tracked inline
         VoiceStateManager.setThinking()
         VoiceStateManager.notifyCharacterThinking(this)
         geminiClient?.sendTextMessage(text)

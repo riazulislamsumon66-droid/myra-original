@@ -24,7 +24,7 @@ import com.maya.assistant.R
 import com.maya.assistant.ai.GeminiLiveClient
 import com.maya.assistant.security.SecurePrefs
 import com.maya.assistant.service.CallMonitorService
-import com.maya.assistant.utils.LiveAudioManager
+import com.maya.assistant.voice.AudioPlayer
 import java.util.Locale
 
 
@@ -54,7 +54,7 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var isCallAnswered = false
 
     private lateinit var liveClient: GeminiLiveClient
-    private lateinit var liveAudioManager: LiveAudioManager
+    private lateinit var liveAudioManager: AudioPlayer
     private var isLiveConnected = false
 
     private val TAG = "MAYA_CALL_UI"
@@ -112,7 +112,7 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         initViews()
 
         // Initialize Live Audio Manager FIRST (before Gemini)
-        liveAudioManager = LiveAudioManager(this)
+        liveAudioManager = AudioPlayer()
 
         // Setup Gemini Live FIRST for natural voice
         setupGeminiLive()

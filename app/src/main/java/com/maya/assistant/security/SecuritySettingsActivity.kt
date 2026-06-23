@@ -19,7 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import com.maya.assistant.R
 import com.maya.assistant.ai.GeminiLiveClient
-import com.maya.assistant.utils.LiveAudioManager
+import com.maya.assistant.voice.AudioPlayer
 import java.util.Locale
 
 /**
@@ -50,14 +50,14 @@ class SecuritySettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListene
     private val handler = Handler(Looper.getMainLooper())
     private var firstPattern: List<Int>? = null
     private var geminiClient: GeminiLiveClient? = null
-    private var liveAudioManager: LiveAudioManager? = null
+    private var liveAudioManager: AudioPlayer? = null
     private var isGeminiConnected = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_security_settings)
         initViews()
-        liveAudioManager = LiveAudioManager(this)
+        liveAudioManager = AudioPlayer()
         initGemini()
         tts = TextToSpeech(this, this)
         loadCurrentStatus()
@@ -360,7 +360,7 @@ class SecuritySettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListene
         tts?.shutdown()
         speechRecognizer?.destroy()
         geminiClient?.disconnect()
-        liveAudioManager?.stop()
+        liveAudioManager?.release()
         super.onDestroy()
     }
 
