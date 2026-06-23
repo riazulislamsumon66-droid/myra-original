@@ -44,25 +44,24 @@ static const char* skipWhitespace(const char* p) {
     return p;
 }
 
-static bool parseJsonString(const char*& p, std::string& out) {
-    p = skipWhitespace(p);
-    if (*p != '"') return false;
-    p++;
+static bool parseJsonString(const char* p, std::string& out) {
+    const char* cur = skipWhitespace(p);
+    if (*cur != '"') return false;
+    cur++;
     out.clear();
-    while (*p && *p != '"') {
-        if (*p == '\\') {
-            p++;
-            if (*p == 'n') out += '\n';
-            else if (*p == 't') out += '\t';
-            else if (*p == '"') out += '"';
-            else if (*p == '\\') out += '\\';
-            else out += *p;
+    while (*cur && *cur != '"') {
+        if (*cur == '\\') {
+            cur++;
+            if (*cur == 'n') out += '\n';
+            else if (*cur == 't') out += '\t';
+            else if (*cur == '"') out += '"';
+            else if (*cur == '\\') out += '\\';
+            else out += *cur;
         } else {
-            out += *p;
+            out += *cur;
         }
-        p++;
+        cur++;
     }
-    if (*p == '"') p++;
     return true;
 }
 
