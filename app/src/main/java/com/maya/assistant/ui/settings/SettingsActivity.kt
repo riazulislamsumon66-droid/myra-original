@@ -116,29 +116,10 @@ class SettingsActivity : AppCompatActivity() {
 
         JarvisSession.userName = userNameInput.text.toString()
 
-        when (prefs.getString("personality_mode", "gf")) {
-            "gf" -> findViewById<RadioButton>(R.id.gfRadio).isChecked = true
-            "professional" -> findViewById<RadioButton>(R.id.proRadio).isChecked = true
-            else -> findViewById<RadioButton>(R.id.assistantRadio).isChecked = true
-        }
+        val personality = prefs.getString("personality_mode", "gf") ?: "gf"
+        JarvisSession.setPreference("personality", personality)
 
-        when (prefs.getString("voice_engine", "system")) {
-            "elevenlabs" -> findViewById<RadioButton>(R.id.radioEleven).isChecked = true
-            else -> findViewById<RadioButton>(R.id.radioSystem).isChecked = true
-        }
-
-        liveModeSwitch.isChecked = prefs.getBoolean("live_mode_enabled", false)
-
-        val announceEnabled = prefs.getBoolean("call_announce_enabled", true)
-        callAnnounceSwitch.isChecked = announceEnabled
-        updateCallAnnounceStatus(announceEnabled)
-
-        val screenVisionEnabled = prefs.getBoolean("screen_vision_enabled", false)
-        screenVisionSwitch.isChecked = screenVisionEnabled
-        updateScreenVisionStatus(screenVisionEnabled)
-
-        updateLanguageButton()
-    }
+        val voiceEngine = prefs.getString("voice_engine", "system") ?: "system"
 
     private fun updateLanguageButton() {
         val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE)
@@ -215,8 +196,10 @@ class SettingsActivity : AppCompatActivity() {
             .setItems(languages) { _, which ->
                 val code = langCodes[which]
                 getSharedPreferences("maya_prefs", Context.MODE_PRIVATE).edit()
-                    .putString("language", code).apply()
-                LanguageManager.setLocale(this, code)
+                    .putString("language", code)
+                    .putString("selected_language", code)
+                    .apply()
+                LanguageManager.applyLanguage(this@SettingsActivity)
                 updateLanguageButton()
                 Toast.makeText(this, "Language set to ${languages[which]} ✅", Toast.LENGTH_SHORT).show()
             }
@@ -315,11 +298,7 @@ class SettingsActivity : AppCompatActivity() {
 
         JarvisSession.userName = userName
 
-        val personality = when (personalityGroup.checkedRadioButtonId) {
-            R.id.gfRadio -> "gf"
-            R.id.proRadio -> "professional"
-            else -> "assistant"
-        }
+        val personality = JarvisSession.getPreference("personality", "gf")
         prefs.putString("personality_mode", personality)
 
         val voiceEngine = when (voiceTypeGroup.checkedRadioButtonId) {
