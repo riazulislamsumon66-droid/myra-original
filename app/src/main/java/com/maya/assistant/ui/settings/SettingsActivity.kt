@@ -18,16 +18,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.maya.assistant.R
+import com.maya.assistant.jarvis.JarvisSession
 import com.maya.assistant.service.AccessibilityHelperService
 import com.maya.assistant.service.MayaDeviceAdminReceiver
-import com.maya.assistant.security.SecuritySettingsActivity
 import com.maya.assistant.security.SecurePrefs
 import com.maya.assistant.utils.LanguageManager
 
-
 class SettingsActivity : AppCompatActivity() {
 
-    // ── Original Views ──────────────────────────────────────────
+    // Views
     private lateinit var apiKeyInput: EditText
     private lateinit var ttsApiKeyInput: EditText
     private lateinit var userNameInput: EditText
@@ -40,15 +39,13 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var accessibilityStatus: TextView
     private lateinit var adminStatusText: TextView
     private lateinit var pickContactBtn: ImageButton
-
-    // ── NEW Views ─────────────────────────────────────────────
     private lateinit var callAnnounceSwitch: Switch
     private lateinit var callAnnounceStatusText: TextView
     private lateinit var grantPermissionsBtn: Button
-    private lateinit var setDefaultAssistantBtn: Button
     private lateinit var permissionsStatusText: TextView
     private lateinit var screenVisionSwitch: Switch
     private lateinit var screenVisionStatusText: TextView
+    private lateinit var languageBtn: Button
 
     private lateinit var devicePolicyManager: DevicePolicyManager
     private lateinit var componentName: ComponentName
@@ -62,7 +59,6 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    // Required permissions list
     private val allPermissions = arrayOf(
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.READ_CONTACTS,
@@ -89,7 +85,6 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
-        // Original views
         apiKeyInput = findViewById(R.id.apiKeyInput)
         ttsApiKeyInput = findViewById(R.id.ttsApiKeyInput)
         userNameInput = findViewById(R.id.userNameInput)
@@ -102,15 +97,13 @@ class SettingsActivity : AppCompatActivity() {
         accessibilityStatus = findViewById(R.id.accessibilityStatus)
         adminStatusText = findViewById(R.id.adminStatusText)
         pickContactBtn = findViewById(R.id.pickContactBtn)
-
-        // NEW views
         callAnnounceSwitch = findViewById(R.id.callAnnounceSwitch)
         callAnnounceStatusText = findViewById(R.id.callAnnounceStatusText)
         grantPermissionsBtn = findViewById(R.id.grantPermissionsBtn)
-        setDefaultAssistantBtn = findViewById(R.id.setDefaultAssistantBtn)
         permissionsStatusText = findViewById(R.id.permissionsStatusText)
         screenVisionSwitch = findViewById(R.id.screenVisionSwitch)
         screenVisionStatusText = findViewById(R.id.screenVisionStatusText)
+        languageBtn = findViewById(R.id.languageBtn)
     }
 
     private fun loadPreferences() {
@@ -120,6 +113,8 @@ class SettingsActivity : AppCompatActivity() {
         userNameInput.setText(prefs.getString("user_name", "Sir"))
         primeNameInput.setText(prefs.getString("prime_name", ""))
         primeNumberInput.setText(prefs.getString("prime_number", ""))
+
+        JarvisSession.userName = userNameInput.text.toString()
 
         when (prefs.getString("personality_mode", "gf")) {
             "gf" -> findViewById<RadioButton>(R.id.gfRadio).isChecked = true
@@ -134,15 +129,30 @@ class SettingsActivity : AppCompatActivity() {
 
         liveModeSwitch.isChecked = prefs.getBoolean("live_mode_enabled", false)
 
-        // Call announce (default ON for better UX)
         val announceEnabled = prefs.getBoolean("call_announce_enabled", true)
         callAnnounceSwitch.isChecked = announceEnabled
         updateCallAnnounceStatus(announceEnabled)
 
-        // Screen vision (default OFF — user must opt-in)
         val screenVisionEnabled = prefs.getBoolean("screen_vision_enabled", false)
         screenVisionSwitch.isChecked = screenVisionEnabled
         updateScreenVisionStatus(screenVisionEnabled)
+
+        updateLanguageButton()
+    }
+
+    private fun updateLanguageButton() {
+        val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE)
+        val lang = prefs.getString("language", "banglish") ?: "banglish"
+        val langName = when (lang) {
+            "bangla" -> "🇧🇩 Bangla"
+            "banglish" -> "🇧🇩 Banglish"
+            "hindi" -> "🇮🇳 Hindi"
+            "hinglish" -> "🇮🇳 Hinglish"
+            "english" -> "🇬🇧 English"
+            "creole" -> "🇸🇨 Seychellois Creole"
+            else -> "🇧🇩 Banglish"
+        }
+        languageBtn.text = "$langName ▾"
     }
 
     private fun setupListeners() {
@@ -153,9 +163,8 @@ class SettingsActivity : AppCompatActivity() {
             contactPickerLauncher.launch(intent)
         }
 
-        // Original cards
         findViewById<View>(R.id.accessibilityCard).setOnClickListener {
-            startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
 
         findViewById<View>(R.id.deviceAdminCard).setOnClickListener {
@@ -170,52 +179,50 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<View>(R.id.securitySettingsCard).setOnClickListener {
-            startActivity(Intent(this, SecuritySettingsActivity::class.java))
-        }
-
-        // NEW: Call announce switch
         callAnnounceSwitch.setOnCheckedChangeListener { _, isChecked ->
             updateCallAnnounceStatus(isChecked)
         }
 
-        // NEW: Screen vision switch
         screenVisionSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
-                // Check if we have screen capture permission
                 if (com.maya.assistant.screenvision.ScreenCaptureService.isRunning()) {
                     updateScreenVisionStatus(true)
                 } else {
-                    // Need to request permission — delegate to MainActivity
                     screenVisionSwitch.isChecked = false
                     Toast.makeText(this, "প্রথমে MainActivity তে গিয়ে Screen Vision enable করো", Toast.LENGTH_LONG).show()
                 }
             } else {
-                // Stop screen capture
                 com.maya.assistant.screenvision.ScreenCaptureService.stop(this)
                 updateScreenVisionStatus(false)
             }
         }
 
-        // NEW: Grant permissions button
         grantPermissionsBtn.setOnClickListener {
             checkAndRequestPermissions()
         }
 
-        // NEW: Set default assistant button
-        setDefaultAssistantBtn.setOnClickListener {
-            try {
-                startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS))
-                Toast.makeText(this, "MAYA ko Default Assistant chuno 👆", Toast.LENGTH_LONG).show()
-            } catch (e: Exception) {
-                Toast.makeText(this, "Settings → Apps → Default Apps → Assistant → MAYA", Toast.LENGTH_LONG).show()
-            }
+        languageBtn.setOnClickListener {
+            showLanguagePicker()
         }
     }
 
-    /**
-     * NEW: Check and request all required permissions
-     */
+    private fun showLanguagePicker() {
+        val languages = arrayOf("Bangla", "Banglish", "Hindi", "Hinglish", "English", "Seychellois Creole")
+        val langCodes = arrayOf("bangla", "banglish", "hindi", "hinglish", "english", "creole")
+
+        AlertDialog.Builder(this)
+            .setTitle("🌐 Select Language")
+            .setItems(languages) { _, which ->
+                val code = langCodes[which]
+                getSharedPreferences("maya_prefs", Context.MODE_PRIVATE).edit()
+                    .putString("language", code).apply()
+                LanguageManager.setLocale(this, code)
+                updateLanguageButton()
+                Toast.makeText(this, "Language set to ${languages[which]} ✅", Toast.LENGTH_SHORT).show()
+            }
+            .show()
+    }
+
     private fun checkAndRequestPermissions() {
         val missing = allPermissions.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
@@ -224,7 +231,7 @@ class SettingsActivity : AppCompatActivity() {
         if (missing.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, missing.toTypedArray(), PERMISSIONS_REQUEST_CODE)
         } else {
-            Toast.makeText(this, "Sab permissions already granted! ✅", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "All permissions already granted! ✅", Toast.LENGTH_SHORT).show()
             updatePermissionsStatus()
         }
     }
@@ -236,33 +243,9 @@ class SettingsActivity : AppCompatActivity() {
             val total = permissions.size
 
             if (granted == total) {
-                Toast.makeText(this, "Sab permissions mil gayi! ✅", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "All permissions granted! ✅", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "$granted/$total permissions mili ⚠️", Toast.LENGTH_LONG).show()
-
-                val permanentlyDenied = permissions.filterIndexed { index, _ ->
-                    grantResults[index] == PackageManager.PERMISSION_DENIED &&
-                    !ActivityCompat.shouldShowRequestPermissionRationale(this, permissions[index])
-                }
-
-                if (permanentlyDenied.isNotEmpty()) {
-                    AlertDialog.Builder(this)
-                        .setTitle("Permissions Required ⚠️")
-                        .setMessage("Kuch permissions permanently deny ho gayi hain. Settings se manually enable karo.\n\n" +
-                                permanentlyDenied.joinToString("\n") { "• ${it.split('.').last()}" })
-                        .setPositiveButton("Open Settings") { _, _ ->
-                            try {
-                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                    data = Uri.fromParts("package", packageName, null)
-                                }
-                                startActivity(intent)
-                            } catch (e: Exception) {
-                                Toast.makeText(this, "Settings open nahi ho paya", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                        .setNegativeButton("Cancel", null)
-                        .show()
-                }
+                Toast.makeText(this, "$granted/$total permissions granted ⚠️", Toast.LENGTH_LONG).show()
             }
             updatePermissionsStatus()
         }
@@ -306,7 +289,7 @@ class SettingsActivity : AppCompatActivity() {
         })
     }
 
-    private fun handleContactResult(uri: android.net.Uri) {
+    private fun handleContactResult(uri: Uri) {
         val cursor = contentResolver.query(uri, null, null, null, null)
         if (cursor?.moveToFirst() == true) {
             val nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
@@ -320,11 +303,17 @@ class SettingsActivity : AppCompatActivity() {
     private fun savePreferences() {
         val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE).edit()
 
+        // Save API keys
         SecurePrefs.saveApiKey(this, apiKeyInput.text.toString().trim())
         SecurePrefs.saveTtsApiKey(this, ttsApiKeyInput.text.toString().trim())
-        prefs.putString("user_name", userNameInput.text.toString().trim())
+
+        // Save user settings
+        val userName = userNameInput.text.toString().trim()
+        prefs.putString("user_name", userName)
         prefs.putString("prime_name", primeNameInput.text.toString().trim())
         prefs.putString("prime_number", primeNumberInput.text.toString().trim())
+
+        JarvisSession.userName = userName
 
         val personality = when (personalityGroup.checkedRadioButtonId) {
             R.id.gfRadio -> "gf"
@@ -344,18 +333,20 @@ class SettingsActivity : AppCompatActivity() {
         prefs.putBoolean("screen_vision_enabled", screenVisionSwitch.isChecked)
 
         prefs.apply()
-        Toast.makeText(this, "Settings Saved! MAYA updated. ✅", Toast.LENGTH_SHORT).show()
-        startActivity(Intent(this, LanguageSettingsActivity::class.java))
-        finish()
+        Toast.makeText(this, "Settings Saved! ✅", Toast.LENGTH_SHORT).show()
+
+        // Update Jarvis session
+        JarvisSession.setPreference("gemini_api_key_set", apiKeyInput.text.toString().isNotEmpty.toString())
+        JarvisSession.setPreference("tts_api_key_set", ttsApiKeyInput.text.toString().isNotEmpty.toString())
     }
 
     private fun updateStatus() {
         val enabled = AccessibilityHelperService.isEnabled(this)
-        accessibilityStatus.text = if (enabled) "✅ Full Control On" else "❌ Accessibility Off"
+        accessibilityStatus.text = if (enabled) "✅ Enabled" else "❌ Disabled"
         accessibilityStatus.setTextColor(if (enabled) 0xFF00E676.toInt() else 0xFFFF1744.toInt())
 
         val adminActive = devicePolicyManager.isAdminActive(componentName)
-        adminStatusText.text = if (adminActive) "✅ Admin Active" else "❌ Admin Inactive"
+        adminStatusText.text = if (adminActive) "✅ Active" else "❌ Inactive"
         adminStatusText.setTextColor(if (adminActive) 0xFF00E676.toInt() else 0xFFFF1744.toInt())
 
         updatePermissionsStatus()
