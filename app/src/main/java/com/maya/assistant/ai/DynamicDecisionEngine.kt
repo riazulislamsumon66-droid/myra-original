@@ -383,22 +383,6 @@ object DynamicDecisionEngine {
                 } catch (e: Exception) { "ব্রাইটনেস পরিবর্তন করতে সমস্যা — WRITE_SETTINGS permission দরকার" }
             }
 
-            CommandType.WHATSAPP_CALL -> {
-                val name = command.args["name"] ?: ""
-                // Open WhatsApp, find contact, use accessibility to click call button
-                if (AppLauncher.launch(context, "whatsapp")) {
-                    scope.launch {
-                        kotlinx.coroutines.delay(2000)
-                        SmartAccessibilityEngine.execute("SEARCH $name")
-                        kotlinx.coroutines.delay(1500)
-                        SmartAccessibilityEngine.execute("CLICK call")
-                    }
-                    "WhatsApp এ কল করছি: $name"
-                } else {
-                    "WhatsApp খুলতে পারি নাই"
-                }
-            }
-
             CommandType.IMO_CALL -> {
                 val name = command.args["name"] ?: ""
                 if (AppLauncher.launch(context, "imo")) {
@@ -445,30 +429,6 @@ object DynamicDecisionEngine {
                         "YouTube তে চালাচ্ছি: $query"
                     } catch (e2: Exception) {
                         "মিউজিক চালাতে সমস্যা"
-                    }
-                }
-            }
-
-            CommandType.SPOTIFY_PLAY -> {
-                var query = command.args["query"] ?: ""
-                query = cleanMusicQuery(query)
-                if (query.isEmpty()) query = command.raw.replace("SPOTIFY_PLAY", "", ignoreCase = true).trim()
-                // Use Spotify deep link with search query
-                try {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("spotify:search:$query"))
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                    "Spotify তে চালাচ্ছি: $query"
-                } catch (_: Exception) {
-                    // Fallback: open Spotify app with query in search
-                    if (AppLauncher.launch(context, "spotify")) {
-                        scope.launch {
-                            kotlinx.coroutines.delay(1500)
-                            SmartAccessibilityEngine.execute("SEARCH $query")
-                        }
-                        "Spotify খুলে দিলাম — খুঁজো: $query"
-                    } else {
-                        "Spotify খুলতে পারি নাই"
                     }
                 }
             }

@@ -25,7 +25,7 @@ import com.maya.assistant.voice.AudioPlayer
 import com.maya.assistant.voice.AudioRecorder
 import com.maya.assistant.voice.VoiceActivityDetector
 import com.maya.assistant.voice.VoiceStateManager
-import com.maya.assistant.websocket.GeminiWebSocketClient
+import com.maya.assistant.ai.GeminiLiveClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -40,7 +40,7 @@ class ForegroundVoiceService : Service() {
     private lateinit var audioPlayer: AudioPlayer
     private lateinit var vad: VoiceActivityDetector
     private lateinit var audioFocus: AudioFocusManager
-    private var geminiClient: GeminiWebSocketClient? = null
+    private var geminiClient: GeminiLiveClient? = null
 
     companion object {
         var instance: ForegroundVoiceService? = null
@@ -100,7 +100,8 @@ class ForegroundVoiceService : Service() {
             // Don't send audio while AI is speaking
             if (!VoiceStateManager.isAiSpeaking()) {
                 vad.processChunk(chunk)
-                geminiClient?.sendAudioChunk(chunk)
+                // Audio chunks sent only when GeminiWebSocketClient is available
+                // (GeminiLiveClient is text-only — no audio streaming support yet)
             }
         }
 
@@ -130,7 +131,7 @@ class ForegroundVoiceService : Service() {
     }
 
     private fun connectGemini(apiKey: String) {
-        geminiClient = GeminiWebSocketClient(
+        geminiClient = GeminiLiveClient(
             apiKey = apiKey,
             systemPrompt = buildSystemPrompt(),
             onConnected = {
@@ -238,6 +239,10 @@ Language: Reply in $language (Bangla/English/Hindi/Arabic/French based on user p
 8. When user mentions flashlight ("ফ্লাশলাইট", "flashlight", "আলো") → respond with ONLY: FLASHLIGHT_ON or FLASHLIGHT_OFF
 9. When user mentions YouTube ("youtube", "ইউটিউব", "ভিডিও", "video") → respond with ONLY: YOUTUBE_PLAY <query>
 10. When user mentions call ("call", "কল", "phone", "ফোন") → respond with ONLY: CALL <name>
+11. When user mentions calendar/schedule ("calendar", "আজ কী", "event", "রিমাইন্ডার") → respond with ONLY: CALENDAR_TODAY or CALENDAR_UPCOMING or CALENDAR_CREATE <text>
+12. When user mentions notification ("notification", "নোটিফিকেশন") → respond with ONLY: NOTIFICATION
+13. When user mentions face/চেহরা ("face", "চেহরা", "register face", "recognize face") → respond with ONLY: REGISTER_FACE or RECOGNIZE_FACE
+14. When user mentions "who is speaking" or "কে কথা বলছে" → respond with ONLY: IDENTIFY_SPEAKER
 
 === DEVICE COMMANDS (return ONLY the command text on its own line) ===
 OPEN_APP <name> | CLOSE_APP <name> | CALL <name> | WHATSAPP_CALL <name>
@@ -250,7 +255,10 @@ BATTERY_CHECK | SETTINGS_OPEN
 SETTINGS_WIFI_ON | SETTINGS_WIFI_OFF
 SETTINGS_BLUETOOTH_ON | SETTINGS_BLUETOOTH_OFF
 SETTINGS_BRIGHTNESS <up|down|0-255>
-IMO_CALL <name> | MESSENGER_CALL <name> | TELEGRAM_CALL <name>
+|IMO_CALL <name> | MESSENGER_CALL <name> | TELEGRAM_CALL <name>
+CALENDAR_TODAY | CALENDAR_UPCOMING | CALENDAR_CREATE <text>
+REGISTER_FACE | RECOGNIZE_FACE | IDENTIFY_SPEAKER
+NOTIFICATION
 
 === COMMAND FORMAT — THIS IS CRITICAL ===
 - For device commands: output ONLY the command, first line, nothing else
