@@ -23,6 +23,17 @@ object LanguageManager {
         Language("crl", "Seychellois Creole", "Kreol Seselwa")
     )
 
+    /** Returns the Android resource qualifier for the language, or null for programmatic-only */
+    fun getResourceQualifier(code: String): String? {
+        return when (code) {
+            "bn" -> "bn"
+            "hi" -> "hi"
+            "en" -> "en"
+            "crl" -> "crl"
+            else -> null // Banglish, Hinglish — use default strings.xml
+        }
+    }
+
     fun getSelectedLanguage(context: Context): Language {
         val code = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
             .getString(PREF_LANGUAGE, "banglish") ?: "banglish"
@@ -38,7 +49,11 @@ object LanguageManager {
 
     fun applyLanguage(context: Context): Context {
         val lang = getSelectedLanguage(context)
-        val locale = Locale(lang.code)
+        val locale = when (lang.code) {
+            "banglish" -> Locale("bn") // Fallback to Bangla locale
+            "hinglish" -> Locale("hi") // Fallback to Hindi locale
+            else -> Locale(lang.code)
+        }
         Locale.setDefault(locale)
         val config = context.resources.configuration
         config.setLocale(locale)
@@ -47,7 +62,11 @@ object LanguageManager {
 
     fun applyLanguage(activity: Activity) {
         val lang = getSelectedLanguage(activity)
-        val locale = Locale(lang.code)
+        val locale = when (lang.code) {
+            "banglish" -> Locale("bn")
+            "hinglish" -> Locale("hi")
+            else -> Locale(lang.code)
+        }
         Locale.setDefault(locale)
         val config = activity.resources.configuration
         config.setLocale(locale)
