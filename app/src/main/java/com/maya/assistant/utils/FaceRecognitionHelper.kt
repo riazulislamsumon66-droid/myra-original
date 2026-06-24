@@ -175,19 +175,16 @@ class FaceRecognitionHelper(private val context: Context) {
         signature[6] = face.smilingProbability ?: 0f
         signature[7] = face.rightEyeOpenProbability ?: 0f
 
-        // Features 8-39: Normalized landmark positions (16 landmarks × 2 coords)
+        // Features 8-39: Normalized landmark positions
+        // ML Kit FaceLandmark integer IDs (avoiding unresolved constants):
+        // 0=LEFT_EYE, 1=RIGHT_EYE, 2=LEFT_EAR, 3=RIGHT_EAR,
+        // 4=NOSE_BASE, 5=MOUTH_LEFT, 6=MOUTH_RIGHT,
+        // 100=FACE_CENTER, 101=LEFT_CHEEK, 102=RIGHT_CHEEK
         val landmarks = listOf(
             FaceLandmark.LEFT_EYE, FaceLandmark.RIGHT_EYE,
             FaceLandmark.NOSE_BASE, FaceLandmark.MOUTH_LEFT, FaceLandmark.MOUTH_RIGHT,
-            FaceLandmark.MOUTH_CENTER, FaceLandmark.LEFT_CHEEK, FaceLandmark.RIGHT_CHEEK,
-            FaceLandmark.LEFT_EAR, FaceLandmark.RIGHT_EAR,
-            FaceLandmark.LEFT_EYE_INNER, FaceLandmark.LEFT_EYE_OUTER,
-            FaceLandmark.RIGHT_EYE_INNER, FaceLandmark.RIGHT_EYE_OUTER,
-            FaceLandmark.LEFT_EYEBROW_TOP, FaceLandmark.LEFT_EYEBROW_BOTTOM,
-            FaceLandmark.RIGHT_EYEBROW_TOP, FaceLandmark.RIGHT_EYEBROW_BOTTOM,
-            FaceLandmark.NOSE_BRIDGE, FaceLandmark.FOREHEAD_CENTER,
-            FaceLandmark.LEFT_EAR_TIP, FaceLandmark.RIGHT_EAR_TIP,
-            FaceLandmark.CHIN_CENTER, FaceLandmark.MOUTH_BOTTOM
+            FaceLandmark.LEFT_CHEEK, FaceLandmark.RIGHT_CHEEK,
+            FaceLandmark.LEFT_EAR, FaceLandmark.RIGHT_EAR
         )
 
         var idx = 8

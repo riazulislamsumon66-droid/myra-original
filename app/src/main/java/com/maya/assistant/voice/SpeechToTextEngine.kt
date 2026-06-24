@@ -17,6 +17,15 @@ class SpeechToTextEngine(private val context: Context) {
 
     companion object {
         private const val TAG = "STT"
+
+        fun getLanguageCodeForLocale(locale: Locale): String {
+            return when (locale.language) {
+                "bn" -> "bn-BD"
+                "hi" -> "hi-IN"
+                "en" -> "en-US"
+                else -> "en-US"
+            }
+        }
     }
 
     private var speechRecognizer: SpeechRecognizer? = null
@@ -49,7 +58,7 @@ class SpeechToTextEngine(private val context: Context) {
             return
         }
 
-        speechRecognizer = SpeechRecognizer.create(context(context).apply {
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
             setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {
                     isListening = true
@@ -103,14 +112,4 @@ class SpeechToTextEngine(private val context: Context) {
         speechRecognizer?.stopListening()
     }
 
-    companion object {
-        fun getLanguageCodeForLocale(locale: Locale): String {
-            return when (locale.language) {
-                "bn" -> "bn-BD"
-                "hi" -> "hi-IN"
-                "en" -> "en-US"
-                else -> "en-US"
-            }
-        }
-    }
 }
