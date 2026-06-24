@@ -326,8 +326,8 @@ class SettingsActivity : AppCompatActivity() {
         prefs.apply()
         Toast.makeText(this, "Settings Saved! ✅", Toast.LENGTH_SHORT).show()
 
-        JarvisSession.setPreference("gemini_api_key_set", apiKeyInput.text.toString().isNotEmpty.toString())
-        JarvisSession.setPreference("tts_api_key_set", ttsApiKeyInput.text.toString().isNotEmpty.toString())
+        JarvisSession.setPreference("gemini_api_key_set", apiKeyInput.text.toString().isNotEmpty().toString())
+        JarvisSession.setPreference("tts_api_key_set", ttsApiKeyInput.text.toString().isNotEmpty().toString())
     }
 
     private fun updateStatus() {
