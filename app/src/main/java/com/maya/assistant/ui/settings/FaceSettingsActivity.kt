@@ -1,12 +1,18 @@
 package com.maya.assistant.ui.settings
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.os.Environment
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import com.maya.assistant.R
 import com.maya.assistant.utils.FaceRecognitionHelper
+import java.io.File
 
 /**
  * FaceSettingsActivity — manage enrolled faces.
@@ -19,6 +25,37 @@ class FaceSettingsActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var enrollBtn: Button
     private lateinit var nameInput: EditText
+    private var currentPhotoPath: String? = null
+    private var pendingName: String? = null
+
+    private val takePictureLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            val path = currentPhotoPath ?: return@registerForActivityResult
+            val bitmap = BitmapFactory.decodeFile(path)
+            if (bitmap != null) {
+                val name = pendingName ?: return@registerForActivityResult
+                faceHelper.enrollFace(name, bitmap) { result ->
+                    runOnUiThread {
+                        enrollBtn.isEnabled = true
+                        if (result) {
+                            Toast.makeText(this, "✅ $name সংরক্ষিত হয়েছে", Toast.LENGTH_SHORT).show()
+                            nameInput.text.clear()
+                            refreshEnrolledList()
+                        } else {
+                            Toast.makeText(this, "❌ সংরক্ষণ ব্যর্থ - মুখ পাওয়া যায়নি", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            } else {
+                enrollBtn.isEnabled = true
+                Toast.makeText(this, "❌ ছবি লোড হয়নি", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            enrollBtn.isEnabled = true
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,7 +93,7 @@ class FaceSettingsActivity : AppCompatActivity() {
 
         // Enroll button
         enrollBtn = Button(this).apply {
-            text = "সংরক্ষণ করো"
+            text = "📷 ছবি তুলে সংরক্ষণ করো"
             textSize = 16f
             setPadding(32, 16, 32, 16)
         }
@@ -89,19 +126,22 @@ class FaceSettingsActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            // Create file for photo
+            val photoFile = File(
+                getExternalFilesDir(Environment.DIRECTORY_PICTURES),
+                "face_${System.currentTimeMillis()}.jpg"
+            )
+            currentPhotoPath = photoFile.absolutePath
+            pendingName = name
+
+            val photoUri = FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                photoFile
+            )
+
             enrollBtn.isEnabled = false
-            faceHelper.enrollFace(name) { success ->
-                runOnUiThread {
-                    enrollBtn.isEnabled = true
-                    if (success) {
-                        Toast.makeText(this, "✅ $name সংরক্ষিত হয়েছে", Toast.LENGTH_SHORT).show()
-                        nameInput.text.clear()
-                        refreshEnrolledList()
-                    } else {
-                        Toast.makeText(this, "❌ সংরক্ষণ ব্যর্থ", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
+            takePictureLauncher.launch(photoUri)
         }
     }
 
