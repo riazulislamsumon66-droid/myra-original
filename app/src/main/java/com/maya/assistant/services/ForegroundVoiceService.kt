@@ -22,6 +22,7 @@ import com.maya.assistant.security.SecurePrefs
 import com.maya.assistant.voice.AudioFocusManager
 import com.maya.assistant.voice.AudioPlayer
 import com.maya.assistant.voice.AudioRecorder
+import com.maya.assistant.voice.TextToSpeechEngine
 import com.maya.assistant.voice.VoiceActivityDetector
 import com.maya.assistant.voice.VoiceStateManager
 import kotlinx.coroutines.CoroutineScope
@@ -37,6 +38,7 @@ class ForegroundVoiceService : Service() {
 
     private lateinit var audioRecorder: AudioRecorder
     private lateinit var audioPlayer: AudioPlayer
+    private lateinit var ttsEngine: TextToSpeechEngine
     private lateinit var vad: VoiceActivityDetector
     private lateinit var audioFocus: AudioFocusManager
     private var geminiClient: GeminiLiveClient? = null
@@ -79,13 +81,21 @@ class ForegroundVoiceService : Service() {
         audioFocus = AudioFocusManager(this)
         audioPlayer = AudioPlayer()
 
+        // Initialize TTS engine for text-to-speech output
+        ttsEngine = TextToSpeechEngine(this)
+
+        // Sync language with settings
+        val prefs = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
+        val langCode = prefs.getString(Constants.KEY_LANGUAGE, "banglish") ?: "banglish"
+        ttsEngine.setLanguageByCode(langCode)
+
         audioPlayer.onPlaybackStarted = {
             VoiceStateManager.setSpeaking()
-            
+
         }
         audioPlayer.onPlaybackFinished = {
             VoiceStateManager.setListening()
-            
+
         }
 
         vad = VoiceActivityDetector(
@@ -166,12 +176,15 @@ class ForegroundVoiceService : Service() {
                     Logger.d(TAG, "STT result: $text")
                     sendTextToGemini(text)
                 } else {
+                    // STT returned empty — tell user to repeat
+                    ttsEngine.speak("আমি ঠিক শুনতে পাইনি, আবার বলুন")
                     VoiceStateManager.setListening()
                 }
             }
             override fun onSpeechError(errorCode: Int) {
                 Logger.e(TAG, "STT error: $errorCode")
-                VoiceStateManager.setError("Speech recognition error")
+                // Tell user that STT failed
+                ttsEngine.speak("Speech recognition error, try again")
                 VoiceStateManager.setListening()
             }
             override fun onSpeechStart() {
@@ -255,6 +268,11 @@ class ForegroundVoiceService : Service() {
 
         // Always broadcast the text response to UI
         sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", clean))
+
+        // Speak the response via TTS (only for conversation responses)
+        if (intent.type == CommandType.CONVERSATION) {
+            ttsEngine.speak(clean)
+        }
     }
 
     fun toggleRecording(): Boolean {
@@ -415,6 +433,7 @@ REGISTER_FACE | RECOGNIZE_FACE | IDENTIFY_SPEAKER
         instance = null
         audioRecorder.stop()
         audioPlayer.release()
+        ttsEngine.shutdown()
         audioFocus.abandonFocus()
         geminiClient?.disconnect()
         powerButtonReceiver?.let {
