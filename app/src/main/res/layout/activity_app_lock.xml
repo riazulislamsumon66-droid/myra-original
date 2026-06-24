@@ -340,19 +340,6 @@
             android:theme="@style/Theme.AppCompat.NoActionBar"/>
 
         ════════════════════════════════════════════════════════
-        res/values/styles.xml mein add karo:
-        ════════════════════════════════════════════════════════
-
-        <style name="PinButton">
-            <item name="android:layout_width">80dp</item>
-            <item name="android:layout_height">80dp</item>
-            <item name="android:textSize">22sp</item>
-            <item name="android:textColor">#FFFFFF</item>
-            <item name="android:background">@drawable/pin_button_bg</item>
-            <item name="android:textStyle">bold</item>
-        </style>
-
-        ════════════════════════════════════════════════════════
         MainActivity mein security check:
         ════════════════════════════════════════════════════════
 

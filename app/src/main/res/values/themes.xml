@@ -19,6 +19,16 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
+    <!-- PinButton Style for App Lock -->
+    <style name="PinButton">
+        <item name="android:layout_width">80dp</item>
+        <item name="android:layout_height">80dp</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:background">@drawable/pin_button_bg</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
     <!-- Jarvis Colors -->
     <color name="jarvis_bg">#0A0E27</color>
     <color name="jarvis_surface">#111633</color>
