@@ -134,68 +134,63 @@ class ForegroundVoiceService : Service() {
         geminiClient = GeminiLiveClient(
             apiKey = apiKey,
             systemPrompt = buildSystemPrompt(),
-            onConnected = {
-                VoiceStateManager.setListening()
-                VoiceStateManager.notifyCharacterListening(this)
-                audioRecorder.start()
-            },
-            onAudioReceived = { data ->
-                audioPlayer.playChunk(data)
-            },
-            onTextReceived = { text ->
-                val clean = AIResponseManager.clean(text)
-                // Skip if response was only thinking text or is empty after cleaning
-                if (clean.isNotBlank() && !AIResponseManager.hasThinkingText(clean)) {
-                    // ConversationMemory.addAssistant(clean) — tracked inline
-                    // Try structured command first, then natural language
-                    val cmd = AIResponseManager.extractCommand(clean)
-                    val intent = if (cmd != null) {
-                        IntentAnalyzer.analyze(cmd)
-                    } else {
-                        // Natural language fallback — only analyze short command-like text
-                        // Skip long conversational responses (likely not commands)
-                        if (clean.length < 80 && clean.lines().size <= 2) {
-                            IntentAnalyzer.analyze(clean)
-                        } else {
-                            com.maya.assistant.models.VoiceCommand(clean, CommandType.CONVERSATION)
-                        }
-                    }
-                    if (intent.type != CommandType.CONVERSATION && intent.type != CommandType.UNKNOWN) {
-                        // Check accessibility before executing
-                        if (com.maya.assistant.service.SmartAccessibilityEngine.service == null) {
-                            sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", "⚠️ Accessibility Service বন্ধ আছে। Settings → Accessibility → MAYA → ON করো।"))
-                        }
-                        scope.launch {
-                            val result = DynamicDecisionEngine.execute(this@ForegroundVoiceService, intent)
-                            // Broadcast result to UI
-                            sendBroadcast(Intent("MAYA_RESPONSE").apply {
-                                putExtra("text", result)
-                                putExtra("is_result", true)
-                            })
-                        }
-                    }
-                    // Broadcast to UI
-                    sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", clean))
-                } else if (AIResponseManager.hasThinkingText(clean) && clean.isBlank()) {
-                    // Gemini returned only thinking text — ask it to respond properly
-                    Logger.d(TAG, "Gemini returned thinking text only, skipping")
+            callback = object : GeminiLiveClient.LiveListener {
+                override fun onConnected() {
+                    VoiceStateManager.setListening()
+                    VoiceStateManager.notifyCharacterListening(this@ForegroundVoiceService)
+                    audioRecorder.start()
                 }
-            },
-            onTurnComplete = {
-                // Resume listening after AI finishes
-                if (!audioRecorder.isActive()) audioRecorder.start()
-            },
-            onError = { msg ->
-                Logger.e(TAG, "Gemini error: $msg")
-                VoiceStateManager.setError("Reconnecting...")
-                // Auto-reconnect after delay
-                scope.launch {
-                    kotlinx.coroutines.delay(3000)
-                    geminiClient?.connect()
+
+                override fun onAudioReceived(data: ByteArray) {
+                    audioPlayer.playChunk(data)
+                }
+
+                override fun onTextReceived(text: String) {
+                    val clean = AIResponseManager.clean(text)
+                    if (clean.isNotBlank() && !AIResponseManager.hasThinkingText(clean)) {
+                        val cmd = AIResponseManager.extractCommand(clean)
+                        val intent = if (cmd != null) {
+                            IntentAnalyzer.analyze(cmd)
+                        } else {
+                            if (clean.length < 80 && clean.lines().size <= 2) {
+                                IntentAnalyzer.analyze(clean)
+                            } else {
+                                com.maya.assistant.models.VoiceCommand(clean, CommandType.CONVERSATION)
+                            }
+                        }
+                        if (intent.type != CommandType.CONVERSATION && intent.type != CommandType.UNKNOWN) {
+                            if (com.maya.assistant.service.SmartAccessibilityEngine.service == null) {
+                                sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", "⚠️ Accessibility Service বন্ধ আছে। Settings → Accessibility → MAYA → ON করো।"))
+                            }
+                            scope.launch {
+                                val result = DynamicDecisionEngine.execute(this@ForegroundVoiceService, intent)
+                                sendBroadcast(Intent("MAYA_RESPONSE").apply {
+                                    putExtra("text", result)
+                                    putExtra("is_result", true)
+                                })
+                            }
+                        }
+                        sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", clean))
+                    } else if (AIResponseManager.hasThinkingText(clean) && clean.isBlank()) {
+                        Logger.d(TAG, "Gemini returned thinking text only, skipping")
+                    }
+                }
+
+                override fun onTurnComplete() {
+                    if (!audioRecorder.isActive()) audioRecorder.start()
+                }
+
+                override fun onError(msg: String) {
+                    Logger.e(TAG, "Gemini error: $msg")
+                    VoiceStateManager.setError("Reconnecting...")
+                    scope.launch {
+                        kotlinx.coroutines.delay(3000)
+                        reconnectGemini()
+                    }
                 }
             }
         )
-        geminiClient?.connect()
+        geminiClient?.start()
     }
 
     fun sendTextToGemini(text: String) {
