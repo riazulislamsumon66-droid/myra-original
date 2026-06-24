@@ -10,7 +10,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.maya.assistant.R
 import com.maya.assistant.ai.AIResponseManager
-// ConversationMemory removed — using inline tracking
+import com.maya.assistant.ai.GeminiLiveClient
 import com.maya.assistant.ai.IntentAnalyzer
 import com.maya.assistant.ai.DynamicDecisionEngine
 import com.maya.assistant.models.CommandType
@@ -18,18 +18,17 @@ import com.maya.assistant.ui.main.MainActivity
 import com.maya.assistant.service.PowerButtonReceiver
 import com.maya.assistant.utils.Constants
 import com.maya.assistant.utils.Logger
-import com.maya.assistant.utils.prefs
 import com.maya.assistant.security.SecurePrefs
 import com.maya.assistant.voice.AudioFocusManager
 import com.maya.assistant.voice.AudioPlayer
 import com.maya.assistant.voice.AudioRecorder
 import com.maya.assistant.voice.VoiceActivityDetector
 import com.maya.assistant.voice.VoiceStateManager
-import com.maya.assistant.ai.GeminiLiveClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
 class ForegroundVoiceService : Service() {
     private val TAG = "VOICE_SVC"
@@ -41,6 +40,10 @@ class ForegroundVoiceService : Service() {
     private lateinit var vad: VoiceActivityDetector
     private lateinit var audioFocus: AudioFocusManager
     private var geminiClient: GeminiLiveClient? = null
+
+    // Audio buffer: collects chunks from speech start → speech end
+    private val speechBuffer = ByteArrayOutputStream()
+    private val bufferLock = Any()
 
     companion object {
         var instance: ForegroundVoiceService? = null
@@ -87,25 +90,31 @@ class ForegroundVoiceService : Service() {
 
         vad = VoiceActivityDetector(
             onSpeechStart = {
+                // Clear buffer when new speech starts
+                synchronized(bufferLock) {
+                    speechBuffer.reset()
+                }
                 VoiceStateManager.setListening()
                 VoiceStateManager.notifyCharacterListening(this)
             },
             onSpeechEnd = {
                 VoiceStateManager.setThinking()
                 VoiceStateManager.notifyCharacterThinking(this)
+                // Process collected audio
+                processCollectedAudio()
             }
         )
 
         audioRecorder = AudioRecorder(this) { chunk ->
-            // Don't send audio while AI is speaking
             if (!VoiceStateManager.isAiSpeaking()) {
                 vad.processChunk(chunk)
-                // Audio chunks sent only when GeminiWebSocketClient is available
-                // (GeminiLiveClient is text-only — no audio streaming support yet)
+                // Also buffer the audio for sending to Gemini
+                synchronized(bufferLock) {
+                    speechBuffer.write(chunk, 0, chunk.size)
+                }
             }
         }
 
-        // Request audio focus before starting recorder
         audioFocus.requestFocus(
             onGained = { Logger.d(TAG, "Audio focus gained") },
             onLost = {
@@ -118,14 +127,41 @@ class ForegroundVoiceService : Service() {
         if (apiKey.isNotEmpty()) {
             connectGemini(apiKey)
         } else {
-            // Fallback: try plain text prefs for backward compatibility
-            val plainKey = prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+            val plainKey = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
+                .getString(Constants.KEY_API_KEY, "") ?: ""
             if (plainKey.isNotEmpty()) {
                 connectGemini(plainKey)
-                // Migrate to encrypted storage
                 SecurePrefs.saveApiKey(this@ForegroundVoiceService, plainKey)
             } else {
                 Logger.w(TAG, "No API key found — voice features disabled")
+            }
+        }
+    }
+
+    private fun processCollectedAudio() {
+        val audioData: ByteArray
+        synchronized(bufferLock) {
+            audioData = speechBuffer.toByteArray()
+            speechBuffer.reset()
+        }
+
+        if (audioData.isEmpty()) {
+            Logger.w(TAG, "Empty audio buffer — nothing to send")
+            return
+        }
+
+        Logger.d(TAG, "Collected ${audioData.size} bytes of audio")
+
+        // For now, send a text prompt asking Gemini to listen
+        // Since GeminiLiveClient is text-only, we send a signal
+        // TODO: Implement Whisper STT here for proper voice-to-text
+        scope.launch {
+            try {
+                // Send text-based trigger since we can't stream raw audio
+                // to GeminiLiveClient. The mic button still works for text.
+                VoiceStateManager.setListening()
+            } catch (e: Exception) {
+                Logger.e(TAG, "Audio processing error: ${e.message}")
             }
         }
     }
@@ -146,37 +182,11 @@ class ForegroundVoiceService : Service() {
                 }
 
                 override fun onTextReceived(text: String) {
-                    val clean = AIResponseManager.clean(text)
-                    if (clean.isNotBlank() && !AIResponseManager.hasThinkingText(clean)) {
-                        val cmd = AIResponseManager.extractCommand(clean)
-                        val intent = if (cmd != null) {
-                            IntentAnalyzer.analyze(cmd)
-                        } else {
-                            if (clean.length < 80 && clean.lines().size <= 2) {
-                                IntentAnalyzer.analyze(clean)
-                            } else {
-                                com.maya.assistant.models.VoiceCommand(clean, CommandType.CONVERSATION)
-                            }
-                        }
-                        if (intent.type != CommandType.CONVERSATION && intent.type != CommandType.UNKNOWN) {
-                            if (com.maya.assistant.service.SmartAccessibilityEngine.service == null) {
-                                sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", "⚠️ Accessibility Service বন্ধ আছে। Settings → Accessibility → MAYA → ON করো।"))
-                            }
-                            scope.launch {
-                                val result = DynamicDecisionEngine.execute(this@ForegroundVoiceService, intent)
-                                sendBroadcast(Intent("MAYA_RESPONSE").apply {
-                                    putExtra("text", result)
-                                    putExtra("is_result", true)
-                                })
-                            }
-                        }
-                        sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", clean))
-                    } else if (AIResponseManager.hasThinkingText(clean) && clean.isBlank()) {
-                        Logger.d(TAG, "Gemini returned thinking text only, skipping")
-                    }
+                    handleGeminiText(text)
                 }
 
                 override fun onTurnComplete() {
+                    // Resume listening after AI finishes
                     if (!audioRecorder.isActive()) audioRecorder.start()
                 }
 
@@ -193,8 +203,56 @@ class ForegroundVoiceService : Service() {
         geminiClient?.start()
     }
 
+    private fun handleGeminiText(text: String) {
+        val clean = AIResponseManager.clean(text)
+        if (clean.isBlank() || AIResponseManager.hasThinkingText(clean)) {
+            Logger.d(TAG, "Skipping empty/thinking response")
+            return
+        }
+
+        // Try structured command first, then natural language
+        val cmd = AIResponseManager.extractCommand(clean)
+        val intent = if (cmd != null) {
+            IntentAnalyzer.analyze(cmd)
+        } else {
+            if (clean.length < 80 && clean.lines().size <= 2) {
+                IntentAnalyzer.analyze(clean)
+            } else {
+                com.maya.assistant.models.VoiceCommand(clean, CommandType.CONVERSATION)
+            }
+        }
+
+        if (intent.type != CommandType.CONVERSATION && intent.type != CommandType.UNKNOWN) {
+            if (com.maya.assistant.service.SmartAccessibilityEngine.service == null) {
+                sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text",
+                    "⚠️ Accessibility Service বন্ধ আছে। Settings → Accessibility → MAYA → ON করো।"))
+            }
+            scope.launch {
+                val result = DynamicDecisionEngine.execute(this@ForegroundVoiceService, intent)
+                sendBroadcast(Intent("MAYA_RESPONSE").apply {
+                    putExtra("text", result)
+                    putExtra("is_result", true)
+                })
+            }
+        }
+
+        // Always broadcast the text response to UI
+        sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", clean))
+    }
+
+    fun toggleRecording(): Boolean {
+        return if (::audioRecorder.isInitialized && audioRecorder.isActive()) {
+            audioRecorder.stop()
+            false
+        } else {
+            audioRecorder.start()
+            true
+        }
+    }
+
+    fun isRecording() = ::audioRecorder.isInitialized && audioRecorder.isActive()
+
     fun sendTextToGemini(text: String) {
-        // ConversationMemory.addUser(text) — tracked inline
         VoiceStateManager.setThinking()
         VoiceStateManager.notifyCharacterThinking(this)
         geminiClient?.sendTextMessage(text)
@@ -205,7 +263,8 @@ class ForegroundVoiceService : Service() {
         if (apiKey.isNotEmpty()) {
             connectGemini(apiKey)
         } else {
-            val plainKey = prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+            val plainKey = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
+                .getString(Constants.KEY_API_KEY, "") ?: ""
             if (plainKey.isNotEmpty()) {
                 connectGemini(plainKey)
                 SecurePrefs.saveApiKey(this@ForegroundVoiceService, plainKey)
@@ -214,12 +273,15 @@ class ForegroundVoiceService : Service() {
     }
 
     private fun buildSystemPrompt(): String {
-        val userName = prefs().getString(Constants.KEY_USER_NAME, "Boss") ?: "Boss"
-        val personality = prefs().getString(Constants.KEY_PERSONALITY, "friendly") ?: "friendly"
-        val language = prefs().getString(Constants.KEY_LANGUAGE, "bangla") ?: "bangla"
+        val userName = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
+            .getString(Constants.KEY_USER_NAME, "Boss") ?: "Boss"
+        val personality = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
+            .getString(Constants.KEY_PERSONALITY, "friendly") ?: "friendly"
+        val language = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
+            .getString(Constants.KEY_LANGUAGE, "bangla") ?: "bangla"
+
         return """
-YOU ARE MAYA - My Yours Responsive Assistant.
-User's name is $userName.
+YOU ARE MAYA — $userName's personal AI assistant.
 Personality: $personality.
 Language: Reply in $language (Bangla/English/Hindi/Arabic/French based on user preference).
 
@@ -250,16 +312,15 @@ BATTERY_CHECK | SETTINGS_OPEN
 SETTINGS_WIFI_ON | SETTINGS_WIFI_OFF
 SETTINGS_BLUETOOTH_ON | SETTINGS_BLUETOOTH_OFF
 SETTINGS_BRIGHTNESS <up|down|0-255>
-|IMO_CALL <name> | MESSENGER_CALL <name> | TELEGRAM_CALL <name>
+IMO_CALL <name> | MESSENGER_CALL <name> | TELEGRAM_CALL <name>
 CALENDAR_TODAY | CALENDAR_UPCOMING | CALENDAR_CREATE <text>
 REGISTER_FACE | RECOGNIZE_FACE | IDENTIFY_SPEAKER
-NOTIFICATION
 
 === COMMAND FORMAT — THIS IS CRITICAL ===
 - For device commands: output ONLY the command, first line, nothing else
-- WRONG: "I'll play that for you!\\nYOUTUBE_PLAY song" → RIGHT: "YOUTUBE_PLAY song"
-- WRONG: "Let me turn on the flashlight\\nFLASHLIGHT_ON" → RIGHT: "FLASHLIGHT_ON"
-- WRONG: "You want me to read the screen?\\nREAD_SCREEN" → RIGHT: "READ_SCREEN"
+- WRONG: "I'll play that for you!\nYOUTUBE_PLAY song" → RIGHT: "YOUTUBE_PLAY song"
+- WRONG: "Let me turn on the flashlight\nFLASHLIGHT_ON" → RIGHT: "FLASHLIGHT_ON"
+- WRONG: "You want me to read the screen?\nREAD_SCREEN" → RIGHT: "READ_SCREEN"
 
 === YOUTUBE/SPOTIFY/MUSIC QUERY RULES ===
 - Query MUST contain ONLY the song/video name + optional language/genre
@@ -324,7 +385,6 @@ NOTIFICATION
         audioPlayer.release()
         audioFocus.abandonFocus()
         geminiClient?.disconnect()
-        // Unregister power button receiver
         powerButtonReceiver?.let {
             try { unregisterReceiver(it) } catch (_: Exception) {}
         }

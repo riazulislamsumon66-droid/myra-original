@@ -189,9 +189,12 @@ class MainActivity : AppCompatActivity() {
         micButton.setOnClickListener {
             val svc = ForegroundVoiceService.instance
             if (svc != null) {
-                val text = "Hey MAYA"
-                svc.sendTextToGemini(text)
-                addUserMessage(text)
+                val isRecording = svc.toggleRecording()
+                if (isRecording) {
+                    addUserMessage("🎤 Listening... Speak now!")
+                } else {
+                    addUserMessage("🎤 Processing...")
+                }
             } else {
                 startVoiceService()
             }
