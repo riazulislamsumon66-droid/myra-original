@@ -508,16 +508,16 @@
                         android:layout_height="wrap_content"
                         android:thumbTint="@color/jarvis_accent"
                         android:trackTint="#444" />
-                </LinearLayout>
+                    </LinearLayout>
 
-                <TextView
-                    android:id="@+id/screenVisionStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="❌ Screen Vision বন্ধ আছে"
-                    android:textColor="@color/jarvis_text_secondary"
-                    android:textSize="11sp"
-                    android:layout_marginBottom="8dp"/>
+                    <TextView
+                        android:id="@+id/screenVisionStatusText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Screen Vision বন্ধ আছে"
+                        android:textColor="@color/jarvis_text_secondary"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="8dp"/>
 
                 <!-- Call Announce -->
                 <LinearLayout
