@@ -159,18 +159,26 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.accessibilityCard).setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            try {
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            } catch (e: Exception) {
+                Toast.makeText(this, "Settings → Accessibility → MAYA → ON করো", Toast.LENGTH_LONG).show()
+            }
         }
 
         findViewById<View>(R.id.deviceAdminCard).setOnClickListener {
-            if (!devicePolicyManager.isAdminActive(componentName)) {
-                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
-                    putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
-                    putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "MAYA needs admin to control system.")
+            try {
+                if (!devicePolicyManager.isAdminActive(componentName)) {
+                    val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                        putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
+                        putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "MAYA needs device admin for app lock, screen capture, and call control.")
+                    }
+                    startActivity(intent)
+                } else {
+                    Toast.makeText(this, "Device Admin is already active ✅", Toast.LENGTH_SHORT).show()
                 }
-                startActivity(intent)
-            } else {
-                Toast.makeText(this, "Admin is already active ✅", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Settings → Security → Device Admin → MAYA → Activate", Toast.LENGTH_LONG).show()
             }
         }
 
@@ -193,7 +201,35 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         grantPermissionsBtn.setOnClickListener {
-            checkAndRequestPermissions()
+            // Show helpful info first
+            val runtimeCount = arrayOf(
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_CONTACTS,
+                Manifest.permission.WRITE_CONTACTS,
+                Manifest.permission.CAMERA,
+                Manifest.permission.SEND_SMS
+            ).count {
+                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            }
+            val restrictedCount = arrayOf(
+                Manifest.permission.READ_PHONE_STATE,
+                Manifest.permission.READ_CALL_LOG,
+                Manifest.permission.ANSWER_PHONE_CALLS
+            ).count {
+                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            }
+
+            val msg = "📋 Permissions needed:\n" +
+                "• Runtime: $runtimeCount remaining\n" +
+                "• Restricted: $restrictedCount (needs Settings)\n\n" +
+                "Runtime permissions আগে নেবে, তারপর restricted জন্য Settings এ যেতে হবে।"
+
+            AlertDialog.Builder(this)
+                .setTitle("🔓 Grant Permissions")
+                .setMessage(msg)
+                .setPositiveButton("Start") { _, _ -> checkAndRequestPermissions() }
+                .setNegativeButton("Cancel", null)
+                .show()
         }
 
         languageBtn.setOnClickListener {
@@ -221,16 +257,74 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun checkAndRequestPermissions() {
-        val missing = allPermissions.filter {
+        // Runtime permissions that CAN be requested via dialog
+        val runtimePermissions = arrayOf(
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.WRITE_CONTACTS,
+            Manifest.permission.CAMERA,
+            Manifest.permission.SEND_SMS
+        )
+
+        // Restricted permissions — need Settings page
+        val restrictedPermissions = arrayOf(
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.READ_CALL_LOG,
+            Manifest.permission.ANSWER_PHONE_CALLS
+        )
+
+        val missingRuntime = runtimePermissions.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
 
-        if (missing.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, missing.toTypedArray(), PERMISSIONS_REQUEST_CODE)
+        val missingRestricted = restrictedPermissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missingRuntime.isNotEmpty()) {
+            // Show runtime permission dialog
+            ActivityCompat.requestPermissions(
+                this,
+                missingRuntime.toTypedArray(),
+                PERMISSIONS_REQUEST_CODE
+            )
+        } else if (missingRestricted.isNotEmpty()) {
+            // Guide user to Settings for restricted permissions
+            showRestrictedPermissionGuide(missingRestricted)
         } else {
-            Toast.makeText(this, "All permissions already granted! ✅", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "সব Permission আগে থেকেই Granted! ✅", Toast.LENGTH_SHORT).show()
             updatePermissionsStatus()
         }
+    }
+
+    private fun showRestrictedPermissionGuide(permissions: List<String>) {
+        val names = permissions.map { perm ->
+            when (perm) {
+                Manifest.permission.READ_PHONE_STATE -> "📞 Phone State"
+                Manifest.permission.READ_CALL_LOG -> "📋 Call Log"
+                Manifest.permission.ANSWER_PHONE_CALLS -> "📱 Answer Calls"
+                else -> perm
+            }
+        }.joinToString("\n")
+
+        AlertDialog.Builder(this)
+            .setTitle("⚠️ Restricted Permissions Required")
+            .setMessage(
+                "এই permissions গুলো manually enable করতে হবে:\n\n$names\n\n" +
+                "Settings → Apps → MAYA → Permissions → Allow করো"
+            )
+            .setPositiveButton("Open Settings") { _, _ ->
+                try {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", packageName, null)
+                    }
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Settings open করতে পারিনি", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
