@@ -25,8 +25,8 @@ object JarvisSuggestions {
         val mostUsed = getTopHabit(context)
         if (mostUsed != null && hour in 9..22) {
             // Only suggest if user does this frequently (>3 times)
-            if (mostUsed.second >= 3) {
-                return "📌 আপনি সাধারণত ${mostUsed.first} করে থাকেন। করবেন?"
+            if (mostUsed.count >= 3) {
+                return "📌 আপনি সাধারণত ${mostUsed.action} করে থাকেন। করবেন?"
             }
         }
 
