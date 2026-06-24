@@ -26,13 +26,11 @@ import com.maya.assistant.utils.LanguageManager
 
 class SettingsActivity : AppCompatActivity() {
 
-    // Views
     private lateinit var apiKeyInput: EditText
     private lateinit var ttsApiKeyInput: EditText
     private lateinit var userNameInput: EditText
     private lateinit var primeNameInput: EditText
     private lateinit var primeNumberInput: EditText
-    private lateinit var personalityGroup: RadioGroup
     private lateinit var voiceTypeGroup: RadioGroup
     private lateinit var liveModeSwitch: Switch
     private lateinit var saveBtn: Button
@@ -90,7 +88,6 @@ class SettingsActivity : AppCompatActivity() {
         userNameInput = findViewById(R.id.userNameInput)
         primeNameInput = findViewById(R.id.primeNameInput)
         primeNumberInput = findViewById(R.id.primeNumberInput)
-        personalityGroup = findViewById(R.id.personalityGroup)
         voiceTypeGroup = findViewById(R.id.voiceTypeGroup)
         liveModeSwitch = findViewById(R.id.liveModeSwitch)
         saveBtn = findViewById(R.id.saveBtn)
@@ -120,6 +117,23 @@ class SettingsActivity : AppCompatActivity() {
         JarvisSession.setPreference("personality", personality)
 
         val voiceEngine = prefs.getString("voice_engine", "system") ?: "system"
+        when (voiceEngine) {
+            "elevenlabs" -> findViewById<RadioButton>(R.id.radioEleven).isChecked = true
+            else -> findViewById<RadioButton>(R.id.radioSystem).isChecked = true
+        }
+
+        liveModeSwitch.isChecked = prefs.getBoolean("live_mode_enabled", false)
+
+        val announceEnabled = prefs.getBoolean("call_announce_enabled", true)
+        callAnnounceSwitch.isChecked = announceEnabled
+        updateCallAnnounceStatus(announceEnabled)
+
+        val screenVisionEnabled = prefs.getBoolean("screen_vision_enabled", false)
+        screenVisionSwitch.isChecked = screenVisionEnabled
+        updateScreenVisionStatus(screenVisionEnabled)
+
+        updateLanguageButton()
+    }
 
     private fun updateLanguageButton() {
         val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE)
@@ -286,11 +300,9 @@ class SettingsActivity : AppCompatActivity() {
     private fun savePreferences() {
         val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE).edit()
 
-        // Save API keys
         SecurePrefs.saveApiKey(this, apiKeyInput.text.toString().trim())
         SecurePrefs.saveTtsApiKey(this, ttsApiKeyInput.text.toString().trim())
 
-        // Save user settings
         val userName = userNameInput.text.toString().trim()
         prefs.putString("user_name", userName)
         prefs.putString("prime_name", primeNameInput.text.toString().trim())
@@ -314,7 +326,6 @@ class SettingsActivity : AppCompatActivity() {
         prefs.apply()
         Toast.makeText(this, "Settings Saved! ✅", Toast.LENGTH_SHORT).show()
 
-        // Update Jarvis session
         JarvisSession.setPreference("gemini_api_key_set", apiKeyInput.text.toString().isNotEmpty.toString())
         JarvisSession.setPreference("tts_api_key_set", ttsApiKeyInput.text.toString().isNotEmpty.toString())
     }
