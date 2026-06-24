@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MAYA</string>
+    <string name="app_tagline">AI সহকারী</string>
+    <string name="system_ready">সিস্টেম প্রস্তুত</string>
+    <string name="listening">শুনছি…</string>
+    <string name="thinking">ভাবছি…</string>
+    <string name="speaking">বলছি…</string>
+    <string name="settings">সেটিংস</string>
+    <string name="api_key_hint">Gemini API Key দাও</string>
+    <string name="save">সেভ করো</string>
+    <string name="accessibility_enabled">অ্যাক্সেসিবিলিটি: চালু ✅</string>
+    <string name="accessibility_disabled">অ্যাক্সেসিবিলিটি: বন্ধ ⚠️</string>
+    <string name="long_press_stop">ধরে রাখো — সংযোগ বিচ্ছিন্ন হবে</string>
+    <string name="maya_full">ম · আ · য় · আ</string>
+    <string name="accessibility_description">MAYA অ্যাক্সেসিবিলিটি সার্ভিস — স্ক্রিন পড়া, অ্যাপ নিয়ন্ত্রণ, কল মনিটরিং, এবং ডিভাইস অটোমেশন</string>
+    <string name="language_settings">ভাষা সেটিংস</string>
+    <string name="select_language">ভাষা বেছে নাও</string>
+    <string name="bangla">বাংলা</string>
+    <string name="banglish">Banglish</string>
+    <string name="hindi">हिन्दी</string>
+    <string name="hinglish">Hinglish</string>
+    <string name="english">English</string>
+    <string name="seychellois_creole">Kreol Seselwa</string>
+    <string name="voice_settings">ভয়েস সেটিংস</string>
+    <string name="face_settings">ফেস সেটিংস</string>
+    <string name="calendar_settings">ক্যালেন্ডার</string>
+    <string name="notification_settings">নোটিফিকেশন</string>
+    <string name="start_listening">শুরু করো</string>
+    <string name="stop_listening">থামাও</string>
+    <string name="send">পাঠাও</string>
+    <string name="cancel">বাতিল</string>
+    <string name="ok">ঠিক আছে</string>
+</resources>

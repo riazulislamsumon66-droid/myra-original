@@ -15,7 +15,7 @@ import java.util.Locale
  * Global Application class for MAYA.
  *
  * Installs an uncaught-exception handler so that any crash (e.g. the
- * mic-button → MayaCharacterService foreground-service crash) writes a
+ * mic-button → ForegroundVoiceService crash) writes a
  * full stack trace to both Logcat and a local file, instead of the app
  * just disappearing with no diagnostic info.
  *

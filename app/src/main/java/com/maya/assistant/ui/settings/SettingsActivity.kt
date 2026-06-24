@@ -22,6 +22,7 @@ import com.maya.assistant.service.AccessibilityHelperService
 import com.maya.assistant.service.MayaDeviceAdminReceiver
 import com.maya.assistant.security.SecuritySettingsActivity
 import com.maya.assistant.security.SecurePrefs
+import com.maya.assistant.utils.LanguageManager
 
 
 class SettingsActivity : AppCompatActivity() {
@@ -344,6 +345,7 @@ class SettingsActivity : AppCompatActivity() {
 
         prefs.apply()
         Toast.makeText(this, "Settings Saved! MAYA updated. ✅", Toast.LENGTH_SHORT).show()
+        startActivity(Intent(this, LanguageSettingsActivity::class.java))
         finish()
     }
 

@@ -18,7 +18,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.maya.assistant.R
 import com.maya.assistant.security.BiometricManager
 import com.maya.assistant.security.SecurePrefs
-import com.maya.assistant.service.MayaCharacterService
 import com.maya.assistant.service.AccessibilityHelperService
 import com.maya.assistant.services.ForegroundVoiceService
 import com.maya.assistant.ui.settings.SettingsActivity
@@ -110,45 +109,8 @@ class MainActivity : AppCompatActivity() {
         observeVoiceState()
         startVoiceService()
         startCallMonitorService()
-        startCharacterOverlay()
         checkAccessibility()
         checkBatteryOptimization()
-    }
-
-    private fun startCharacterOverlay() {
-        if (android.provider.Settings.canDrawOverlays(this)) {
-            val intent = Intent(this, MayaCharacterService::class.java).apply {
-                action = MayaCharacterService.ACTION_SHOW
-            }
-            ContextCompat.startForegroundService(this, intent)
-            
-            // Set character mode from personality
-            val prefs = getSharedPreferences("maya_prefs", MODE_PRIVATE)
-            val mode = when (prefs.getString("personality_mode", "gf")) {
-                "gf" -> "GF"
-                "professional" -> "PROFESSIONAL"
-                "friend" -> "FRIEND"
-                else -> "DEFAULT"
-            }
-            Intent(this, MayaCharacterService::class.java).apply {
-                action = MayaCharacterService.ACTION_SET_MODE
-                putExtra(MayaCharacterService.EXTRA_MODE, mode)
-            }.also { startService(it) }
-        } else {
-            // Request overlay permission
-            try {
-                val intent = Intent(
-                    android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    android.net.Uri.parse("package:$packageName")
-                )
-                startActivity(intent)
-            } catch (_: Exception) {
-                // Fallback: open app settings
-                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    android.net.Uri.parse("package:$packageName"))
-                startActivity(intent)
-            }
-        }
     }
 
     private fun startCallMonitorService() {

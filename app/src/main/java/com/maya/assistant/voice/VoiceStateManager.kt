@@ -1,11 +1,7 @@
 package com.maya.assistant.voice
 
-import android.content.Context
-import android.content.Intent
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.MutableLiveData
 import com.maya.assistant.utils.Constants
-import com.maya.assistant.service.MayaCharacterService
 
 object VoiceStateManager {
 
@@ -50,39 +46,4 @@ object VoiceStateManager {
     fun isAiSpeaking() = state.value == Constants.STATE_SPEAKING
 
     fun isListening() = state.value == Constants.STATE_LISTENING
-
-    // ── Character Notifications ──────────────────────────────────────
-    fun notifyCharacterListening(ctx: Context) {
-        Intent(ctx, MayaCharacterService::class.java).apply {
-            action = MayaCharacterService.ACTION_SET_STATE
-            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.LISTENING.name)
-        }.also { ContextCompat.startForegroundService(ctx, it) }
-        Intent(ctx, MayaCharacterService::class.java).apply {
-            action = MayaCharacterService.ACTION_WAKE
-        }.also { ContextCompat.startForegroundService(ctx, it) }
-    }
-
-    fun notifyCharacterTalking(ctx: Context) {
-        Intent(ctx, MayaCharacterService::class.java).apply {
-            action = MayaCharacterService.ACTION_SET_STATE
-            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.TALKING.name)
-        }.also { ContextCompat.startForegroundService(ctx, it) }
-        Intent(ctx, MayaCharacterService::class.java).apply {
-            action = MayaCharacterService.ACTION_WAKE
-        }.also { ContextCompat.startForegroundService(ctx, it) }
-    }
-
-    fun notifyCharacterThinking(ctx: Context) {
-        Intent(ctx, MayaCharacterService::class.java).apply {
-            action = MayaCharacterService.ACTION_SET_STATE
-            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.THINKING.name)
-        }.also { ContextCompat.startForegroundService(ctx, it) }
-    }
-
-    fun notifyCharacterIdle(ctx: Context) {
-        Intent(ctx, MayaCharacterService::class.java).apply {
-            action = MayaCharacterService.ACTION_SET_STATE
-            putExtra(MayaCharacterService.EXTRA_STATE, MayaCharacterService.Companion.State.IDLE.name)
-        }.also { ContextCompat.startForegroundService(ctx, it) }
-    }
 }

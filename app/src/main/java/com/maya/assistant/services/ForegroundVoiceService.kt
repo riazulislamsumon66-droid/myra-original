@@ -81,11 +81,11 @@ class ForegroundVoiceService : Service() {
 
         audioPlayer.onPlaybackStarted = {
             VoiceStateManager.setSpeaking()
-            VoiceStateManager.notifyCharacterTalking(this)
+            
         }
         audioPlayer.onPlaybackFinished = {
             VoiceStateManager.setListening()
-            VoiceStateManager.notifyCharacterIdle(this)
+            
         }
 
         vad = VoiceActivityDetector(
@@ -95,11 +95,11 @@ class ForegroundVoiceService : Service() {
                     speechBuffer.reset()
                 }
                 VoiceStateManager.setListening()
-                VoiceStateManager.notifyCharacterListening(this)
+                
             },
             onSpeechEnd = {
                 VoiceStateManager.setThinking()
-                VoiceStateManager.notifyCharacterThinking(this)
+                
                 // Process collected audio
                 processCollectedAudio()
             }
@@ -146,24 +146,41 @@ class ForegroundVoiceService : Service() {
         }
 
         if (audioData.isEmpty()) {
-            Logger.w(TAG, "Empty audio buffer — nothing to send")
+            Logger.w(TAG, "Empty audio buffer — nothing to process")
             return
         }
 
-        Logger.d(TAG, "Collected ${audioData.size} bytes of audio")
+        Logger.d(TAG, "Collected ${audioData.size} bytes of audio — running STT")
 
-        // For now, send a text prompt asking Gemini to listen
-        // Since GeminiLiveClient is text-only, we send a signal
-        // TODO: Implement Whisper STT here for proper voice-to-text
-        scope.launch {
-            try {
-                // Send text-based trigger since we can't stream raw audio
-                // to GeminiLiveClient. The mic button still works for text.
-                VoiceStateManager.setListening()
-            } catch (e: Exception) {
-                Logger.e(TAG, "Audio processing error: ${e.message}")
+        // Use Android SpeechRecognizer for speech-to-text
+        val language = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
+            .getString(Constants.KEY_LANGUAGE, "banglish") ?: "banglish"
+        val sttLanguage = com.maya.assistant.voice.SpeechToTextEngine.getLanguageCodeForLocale(
+            java.util.Locale(language)
+        )
+
+        val sttEngine = com.maya.assistant.voice.SpeechToTextEngine(this)
+        sttEngine.startListening(sttLanguage, object : com.maya.assistant.voice.SpeechToTextEngine.STTCallback {
+            override fun onSpeechResult(text: String) {
+                if (text.isNotBlank()) {
+                    Logger.d(TAG, "STT result: $text")
+                    sendTextToGemini(text)
+                } else {
+                    VoiceStateManager.setListening()
+                }
             }
-        }
+            override fun onSpeechError(errorCode: Int) {
+                Logger.e(TAG, "STT error: $errorCode")
+                VoiceStateManager.setError("Speech recognition error")
+                VoiceStateManager.setListening()
+            }
+            override fun onSpeechStart() {
+                VoiceStateManager.setListening()
+            }
+            override fun onSpeechEnd() {
+                VoiceStateManager.setThinking()
+            }
+        })
     }
 
     private fun connectGemini(apiKey: String) {
@@ -173,7 +190,7 @@ class ForegroundVoiceService : Service() {
             callback = object : GeminiLiveClient.LiveListener {
                 override fun onConnected() {
                     VoiceStateManager.setListening()
-                    VoiceStateManager.notifyCharacterListening(this@ForegroundVoiceService)
+                    
                     audioRecorder.start()
                 }
 
@@ -254,7 +271,7 @@ class ForegroundVoiceService : Service() {
 
     fun sendTextToGemini(text: String) {
         VoiceStateManager.setThinking()
-        VoiceStateManager.notifyCharacterThinking(this)
+        
         geminiClient?.sendTextMessage(text)
     }
 
@@ -278,12 +295,21 @@ class ForegroundVoiceService : Service() {
         val personality = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
             .getString(Constants.KEY_PERSONALITY, "friendly") ?: "friendly"
         val language = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
-            .getString(Constants.KEY_LANGUAGE, "bangla") ?: "bangla"
+            .getString(Constants.KEY_LANGUAGE, "banglish") ?: "banglish"
+        val languageInstruction = when (language) {
+            "bangla" -> "বাংলায় উত্তর দাও। বাংলা ও ইংরেজি মিশ্রণ করো না।"
+            "banglish" -> "Reply in Banglish (Bangla written in English script). Do not use pure Hindi or formal Bangla."
+            "hindi" -> "हिंदी में जवाब दो। अंग्रेजी मिक्स न करो।"
+            "hinglish" -> "Reply in Hinglish (Hindi + English mix). Use natural conversational style."
+            "english" -> "Reply in English only."
+            "creole" -> "Reply in Seychellois Creole (Kreol Seselwa). Do not mix English unless necessary."
+            else -> "Reply in Banglish."
+        }
 
         return """
 YOU ARE MAYA — $userName's personal AI assistant.
 Personality: $personality.
-Language: Reply in $language (Bangla/English/Hindi/Arabic/French based on user preference).
+Language instruction: $languageInstruction
 
 === ABSOLUTE RULES — ZERO TOLERANCE ===
 1. NEVER output thinking, reasoning, or internal monologue — YOUR APP CRASHES IF YOU DO

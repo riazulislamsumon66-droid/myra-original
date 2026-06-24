@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MAYA</string>
+    <string name="app_tagline">AI Assistant</string>
+    <string name="system_ready">System Ready</string>
+    <string name="listening">Listening…</string>
+    <string name="thinking">Thinking…</string>
+    <string name="speaking">Speaking…</string>
+    <string name="settings">Settings</string>
+    <string name="api_key_hint">Enter Gemini API Key</string>
+    <string name="save">Save Settings</string>
+    <string name="accessibility_enabled">Accessibility: Active ✅</string>
+    <string name="accessibility_disabled">Accessibility: Disabled ⚠️</string>
+    <string name="long_press_stop">Hold to disconnect</string>
+    <string name="maya_full">M · A · Y · A</string>
+    <string name="accessibility_description">MAYA Accessibility Service — Screen reading, app control, call monitoring, and device automation</string>
+    <string name="language_settings">Language Settings</string>
+    <string name="select_language">Select Language</string>
+    <string name="bangla">বাংলা</string>
+    <string name="banglish">Banglish</string>
+    <string name="hindi">हिन्दी</string>
+    <string name="hinglish">Hinglish</string>
+    <string name="english">English</string>
+    <string name="seychellois_creole">Kreol Seselwa</string>
+    <string name="voice_settings">Voice Settings</string>
+    <string name="face_settings">Face Settings</string>
+    <string name="calendar_settings">Calendar</string>
+    <string name="notification_settings">Notification</string>
+    <string name="start_listening">Start</string>
+    <string name="stop_listening">Stop</string>
+    <string name="send">Send</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+</resources>

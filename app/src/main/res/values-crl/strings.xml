@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MAYA</string>
+    <string name="app_tagline">AI Asistan</string>
+    <string name="system_ready">Sistem Pare</string>
+    <string name="listening">L ekoute…</string>
+    <string name="thinking">L panse…</string>
+    <string name="speaking">L koz…</string>
+    <string name="settings">Paramet</string>
+    <string name="api_key_hint">Met Gemini API Key</string>
+    <string name="save">Sov</string>
+    <string name="accessibility_enabled">Accessibility: Aktif ✅</string>
+    <string name="accessibility_disabled">Accessibility: Koupe ⚠️</string>
+    <string name="long_press_stop">Pe reste l — dekoneksyon</string>
+    <string name="maya_full">M · A · Y · A</string>
+    <string name="accessibility_description">MAYA Accessibility Service — Lir lekran, kontrol app, monitor kalm, otomasyon aparay</string>
+    <string name="language_settings">Paramet Langaz</string>
+    <string name="select_language">Swazir Langaz</string>
+    <string name="bangla">বাংলা</string>
+    <string name="banglish">Banglish</string>
+    <string name="hindi">हिन्दी</string>
+    <string name="hinglish">Hinglish</string>
+    <string name="english">English</string>
+    <string name="seychellois_creole">Kreol Seselwa</string>
+    <string name="voice_settings">Paramet Lavwa</string>
+    <string name="face_settings">Paramet Figir</string>
+    <string name="calendar_settings">Kalenndrye</string>
+    <string name="notification_settings">Notifikasyon</string>
+    <string name="start_listening">Koumans</string>
+    <string name="stop_listening">Arete</string>
+    <string name="send">Avoy</string>
+    <string name="cancel">Anile</string>
+    <string name="ok">OK</string>
+</resources>
