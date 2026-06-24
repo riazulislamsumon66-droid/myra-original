@@ -296,6 +296,11 @@ class ForegroundVoiceService : Service() {
             .getString(Constants.KEY_PERSONALITY, "friendly") ?: "friendly"
         val language = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
             .getString(Constants.KEY_LANGUAGE, "banglish") ?: "banglish"
+
+        // Jarvis session context
+        val jarvisContext = try {
+            com.maya.assistant.jarvis.JarvisSession.buildContext()
+        } catch (_: Exception) { "" }
         val languageInstruction = when (language) {
             "bangla" -> "বাংলায় উত্তর দাও। বাংলা ও ইংরেজি মিশ্রণ করো না।"
             "banglish" -> "Reply in Banglish (Bangla written in English script). Do not use pure Hindi or formal Bangla."
@@ -307,9 +312,10 @@ class ForegroundVoiceService : Service() {
         }
 
         return """
-YOU ARE MAYA — $userName's personal AI assistant.
+YOU ARE MAYA — $userName's personal AI assistant. (Jarvis-style)
 Personality: $personality.
 Language instruction: $languageInstruction
+Session context: $jarvisContext
 
 === ABSOLUTE RULES — ZERO TOLERANCE ===
 1. NEVER output thinking, reasoning, or internal monologue — YOUR APP CRASHES IF YOU DO

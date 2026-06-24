@@ -1,57 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Maya" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:windowBackground">@color/maya_dark</item>
+    <!-- Jarvis Dark Theme -->
+    <style name="Theme.Maya" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">#00BCD4</item>
+        <item name="colorPrimaryDark">#0097A7</item>
+        <item name="colorAccent">#00E5FF</item>
+        <item name="android:windowBackground">@color/jarvis_bg</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@color/maya_dark</item>
-        <item name="colorPrimary">@color/maya_red</item>
-        <item name="colorPrimaryDark">@color/maya_red_dark</item>
-        <item name="colorAccent">@color/maya_purple</item>
-        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:navigationBarColor">@color/jarvis_bg</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:textColorPrimary">@color/maya_text</item>
-        <item name="android:textColorHint">@color/maya_hint</item>
-        <item name="editTextColor">@color/maya_text</item>
-        <item name="colorControlActivated">@color/maya_cyan</item>
-        <item name="colorControlHighlight">@color/maya_glow_cyan</item>
     </style>
 
-    <style name="Theme.Maya.Transparent" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.Maya.Transparent" parent="Theme.MaterialComponents.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowNoTitle">true</item>
-        <item name="android:windowIsFloating">true</item>
-        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
-    <!-- MAYA Custom Text Style -->
-    <style name="MayaTitle">
-        <item name="android:fontFamily">sans-serif-black</item>
-        <item name="android:letterSpacing">0.35</item>
-        <item name="android:textColor">@color/maya_red</item>
-        <item name="android:textSize">26sp</item>
-    </style>
-
-    <style name="MayaSubtitle">
-        <item name="android:fontFamily">monospace</item>
-        <item name="android:letterSpacing">0.4</item>
-        <item name="android:textColor">@color/maya_hint</item>
-        <item name="android:textSize">9sp</item>
-    </style>
-
-    <style name="MayaStatus">
-        <item name="android:fontFamily">monospace</item>
-        <item name="android:letterSpacing">0.15</item>
-        <item name="android:textSize">11sp</item>
-        <item name="android:alpha">0.85</item>
-    </style>
-
-    <style name="PinButton">
-        <item name="android:layout_width">80dp</item>
-        <item name="android:layout_height">80dp</item>
-        <item name="android:textSize">22sp</item>
-        <item name="android:textColor">@color/maya_text</item>
-        <item name="android:background">@android:color/transparent</item>
-        <item name="android:textStyle">bold</item>
-    </style>
+    <!-- Jarvis Colors -->
+    <color name="jarvis_bg">#0A0E27</color>
+    <color name="jarvis_surface">#111633</color>
+    <color name="jarvis_accent">#00E5FF</color>
+    <color name="jarvis_accent_secondary">#7C4DFF</color>
+    <color name="jarvis_text_primary">#E0E0E0</color>
+    <color name="jarvis_text_secondary">#9E9E9E</color>
+    <color name="jarvis_listening">#00E5FF</color>
+    <color name="jarvis_thinking">#7C4DFF</color>
+    <color name="jarvis_speaking">#FF1744</color>
+    <color name="jarvis_idle">#1A237E</color>
+    <color name="jarvis_card">#1A1F3D</color>
+    <color name="jarvis_divider">#283055</color>
 </resources>
