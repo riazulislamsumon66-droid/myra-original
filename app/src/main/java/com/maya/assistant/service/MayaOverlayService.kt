@@ -128,7 +128,7 @@ class MayaOverlayService : Service() {
     }
 
     private fun startOrbPulse() {
-        // Orb pulsing animation is handled in the OrbAnimationView
+        // Orb pulsing animation placeholder
     }
 
     fun hideOverlay() {

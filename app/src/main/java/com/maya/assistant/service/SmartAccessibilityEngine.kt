@@ -9,7 +9,6 @@ import com.maya.assistant.accessibility.NodeFinder
 import com.maya.assistant.automation.AppDetector
 import com.maya.assistant.automation.SmartAutomationAgent
 import com.maya.assistant.automation.ActionExecutor
-import com.maya.assistant.service.ScreenVisionAnalyzer
 
 object SmartAccessibilityEngine {
 
