@@ -25,6 +25,7 @@ import com.maya.assistant.voice.AudioRecorder
 import com.maya.assistant.voice.TextToSpeechEngine
 import com.maya.assistant.voice.VoiceActivityDetector
 import com.maya.assistant.voice.VoiceStateManager
+import com.maya.assistant.websocket.GeminiWebSocketClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
