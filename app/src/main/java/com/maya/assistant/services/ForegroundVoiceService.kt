@@ -149,6 +149,19 @@ class ForegroundVoiceService : Service() {
         }
     }
 
+    /** Toggle recording on/off. Returns true if now recording, false if stopped. */
+    fun toggleRecording(): Boolean {
+        return if (audioRecorder.isActive()) {
+            audioRecorder.stop()
+            VoiceStateManager.setIdle()
+            false
+        } else {
+            audioRecorder.start()
+            VoiceStateManager.setListening()
+            true
+        }
+    }
+
     private fun buildSystemPrompt(): String {
         val userName = prefs().getString(Constants.KEY_USER_NAME, "Boss") ?: "Boss"
         val personality = prefs().getString(Constants.KEY_PERSONALITY, "friendly") ?: "friendly"
