@@ -23,7 +23,7 @@
             android:scaleX="0.85"
             android:scaleY="0.85" />
 
-        <com.maya.assistant.ui.main.OrbAnimationView
+        <View
             android:id="@+id/overlayOrbView"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
