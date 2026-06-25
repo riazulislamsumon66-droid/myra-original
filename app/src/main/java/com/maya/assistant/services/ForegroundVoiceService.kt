@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import com.maya.assistant.R
 import com.maya.assistant.ai.AIResponseManager
 import com.maya.assistant.ai.GeminiLiveClient
+import com.maya.assistant.ai.GeminiTextClient
 import com.maya.assistant.ai.IntentAnalyzer
 import com.maya.assistant.ai.DynamicDecisionEngine
 import com.maya.assistant.models.CommandType
@@ -42,6 +43,7 @@ class ForegroundVoiceService : Service() {
     private lateinit var vad: VoiceActivityDetector
     private lateinit var audioFocus: AudioFocusManager
     private var geminiClient: GeminiLiveClient? = null
+    private var geminiTextClient: GeminiTextClient? = null
 
     // Audio buffer: collects chunks from speech start → speech end
     private val speechBuffer = ByteArrayOutputStream()
@@ -136,12 +138,14 @@ class ForegroundVoiceService : Service() {
         val apiKey = SecurePrefs.getApiKey(this@ForegroundVoiceService)
         if (apiKey.isNotEmpty()) {
             connectGemini(apiKey)
+            geminiTextClient = GeminiTextClient(apiKey, buildSystemPrompt())
         } else {
             val plainKey = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
                 .getString(Constants.KEY_API_KEY, "") ?: ""
             if (plainKey.isNotEmpty()) {
                 connectGemini(plainKey)
                 SecurePrefs.saveApiKey(this@ForegroundVoiceService, plainKey)
+                geminiTextClient = GeminiTextClient(plainKey, buildSystemPrompt())
             } else {
                 Logger.w(TAG, "No API key found — voice features disabled")
             }
@@ -172,14 +176,14 @@ class ForegroundVoiceService : Service() {
         val sttEngine = com.maya.assistant.voice.SpeechToTextEngine(this)
         sttEngine.startListening(sttLanguage, object : com.maya.assistant.voice.SpeechToTextEngine.STTCallback {
             override fun onSpeechResult(text: String) {
-                if (text.isNotBlank()) {
-                    Logger.d(TAG, "STT result: $text")
-                    sendTextToGemini(text)
-                } else {
-                    // STT returned empty — tell user to repeat
-                    ttsEngine.speak("আমি ঠিক শুনতে পাইনি, আবার বলুন")
-                    VoiceStateManager.setListening()
-                }
+            Logger.d(TAG, "STT result: $text")
+            if (text.isNotBlank()) {
+                sendTextToGemini(text)
+            } else {
+                // STT returned empty — tell user to repeat
+                ttsEngine.speak("আমি ঠিক শুনতে পাইনি, আবার বলুন")
+                VoiceStateManager.setListening()
+            }
             }
             override fun onSpeechError(errorCode: Int) {
                 Logger.e(TAG, "STT error: $errorCode")
@@ -222,9 +226,10 @@ class ForegroundVoiceService : Service() {
 
                 override fun onError(msg: String) {
                     Logger.e(TAG, "Gemini error: $msg")
-                    VoiceStateManager.setError("Reconnecting...")
+                    // Don't show error to user — text client will handle responses
+                    // Just try to reconnect WebSocket in background
                     scope.launch {
-                        kotlinx.coroutines.delay(3000)
+                        kotlinx.coroutines.delay(10000)
                         reconnectGemini()
                     }
                 }
@@ -269,8 +274,9 @@ class ForegroundVoiceService : Service() {
         // Always broadcast the text response to UI
         sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", clean))
 
-        // Speak the response via TTS (only for conversation responses)
-        if (intent.type == CommandType.CONVERSATION) {
+        // Speak the response via TTS (always speak, except device commands)
+        val isCommand = intent.type != CommandType.CONVERSATION && intent.type != CommandType.UNKNOWN
+        if (!isCommand || clean.length < 40) {
             ttsEngine.speak(clean)
         }
     }
@@ -289,8 +295,24 @@ class ForegroundVoiceService : Service() {
 
     fun sendTextToGemini(text: String) {
         VoiceStateManager.setThinking()
-        
-        geminiClient?.sendTextMessage(text)
+
+        // Use HTTP text API as primary (reliable) — fallback to WebSocket
+        if (::geminiTextClient.isInitialized && geminiTextClient != null) {
+            Logger.d(TAG, "Sending via GeminiTextClient (HTTP)...")
+            geminiTextClient!!.sendMessage(text, object : GeminiTextClient.TextCallback {
+                override fun onResponse(text: String) {
+                    Logger.d(TAG, "Text API response received: ${text.take(80)}")
+                    handleGeminiText(text)
+                }
+                override fun onError(error: String) {
+                    Logger.e(TAG, "Text API error: $error, trying WebSocket fallback...")
+                    // Fallback to WebSocket
+                    geminiClient?.sendTextMessage(text)
+                }
+            })
+        } else {
+            geminiClient?.sendTextMessage(text)
+        }
     }
 
     fun reconnectGemini() {
