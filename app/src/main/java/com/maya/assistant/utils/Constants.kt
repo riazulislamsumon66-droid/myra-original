@@ -1,11 +1,12 @@
 package com.maya.assistant.utils
 
 object Constants {
-    // Gemini Audio Streaming Models (native audio for voice conversation)
+    // Gemini Audio Streaming Models (ordered by preference — v108 working config)
     const val GEMINI_MODEL = "models/gemini-2.5-flash-native-audio"
     const val GEMINI_MODEL_FALLBACK_1 = "models/gemini-2.5-flash"
     const val GEMINI_MODEL_FALLBACK_2 = "models/gemini-2.0-flash-live-001"
-    val GEMINI_FALLBACK_MODELS = listOf(GEMINI_MODEL, GEMINI_MODEL_FALLBACK_1, GEMINI_MODEL_FALLBACK_2)
+    // Fallback list: each model tried in order until one connects (no duplicates!)
+    val GEMINI_FALLBACK_MODELS = listOf(GEMINI_MODEL_FALLBACK_1, GEMINI_MODEL_FALLBACK_2)
     const val GEMINI_WS_BASE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
     const val GEMINI_VOICE = "Aoede"
 

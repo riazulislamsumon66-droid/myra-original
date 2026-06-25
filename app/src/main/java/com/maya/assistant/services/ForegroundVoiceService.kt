@@ -10,7 +10,6 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.maya.assistant.R
 import com.maya.assistant.ai.AIResponseManager
-import com.maya.assistant.ai.GeminiLiveClient
 import com.maya.assistant.ai.GeminiTextClient
 import com.maya.assistant.ai.IntentAnalyzer
 import com.maya.assistant.ai.DynamicDecisionEngine
@@ -30,7 +29,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import java.io.ByteArrayOutputStream
 
 class ForegroundVoiceService : Service() {
     private val TAG = "VOICE_SVC"
@@ -42,13 +40,7 @@ class ForegroundVoiceService : Service() {
     private lateinit var ttsEngine: TextToSpeechEngine
     private lateinit var vad: VoiceActivityDetector
     private lateinit var audioFocus: AudioFocusManager
-    private var geminiClient: GeminiLiveClient? = null
-    private var geminiTextClient: GeminiTextClient? = null
-    private var webSocketClient: com.maya.assistant.websocket.GeminiWebSocketClient? = null
-
-    // Audio buffer: collects chunks from speech start → speech end
-    private val speechBuffer = ByteArrayOutputStream()
-    private val bufferLock = Any()
+    private var geminiClient: GeminiWebSocketClient? = null
 
     companion object {
         var instance: ForegroundVoiceService? = null
@@ -84,7 +76,7 @@ class ForegroundVoiceService : Service() {
         audioFocus = AudioFocusManager(this)
         audioPlayer = AudioPlayer()
 
-        // Initialize TTS engine for text-to-speech output
+        // Initialize TTS engine for text-to-speech fallback
         ttsEngine = TextToSpeechEngine(this)
 
         // Sync language with settings
@@ -94,28 +86,17 @@ class ForegroundVoiceService : Service() {
 
         audioPlayer.onPlaybackStarted = {
             VoiceStateManager.setSpeaking()
-
         }
         audioPlayer.onPlaybackFinished = {
             VoiceStateManager.setListening()
-
         }
 
         vad = VoiceActivityDetector(
             onSpeechStart = {
-                // Clear buffer when new speech starts
-                synchronized(bufferLock) {
-                    speechBuffer.reset()
-                }
                 VoiceStateManager.setListening()
-                // Start streaming audio to Gemini when speech begins
-                startAudioStreaming()
             },
             onSpeechEnd = {
                 VoiceStateManager.setThinking()
-                // Stop streaming and send final turn
-                stopAudioStreaming()
-                // Process collected audio fallback
                 processCollectedAudio()
             }
         )
@@ -123,12 +104,8 @@ class ForegroundVoiceService : Service() {
         audioRecorder = AudioRecorder(this) { chunk ->
             if (!VoiceStateManager.isAiSpeaking()) {
                 vad.processChunk(chunk)
-                // Buffer audio for Gemini Live
-                synchronized(bufferLock) {
-                    speechBuffer.write(chunk, 0, chunk.size)
-                }
-                // Stream to WebSocket in real-time
-                webSocketClient?.sendAudioChunk(chunk)
+                // Stream audio to Gemini WebSocket
+                geminiClient?.sendAudioChunk(chunk)
             }
         }
 
@@ -158,117 +135,51 @@ class ForegroundVoiceService : Service() {
     }
 
     private fun processCollectedAudio() {
-        val audioData: ByteArray
-        synchronized(bufferLock) {
-            audioData = speechBuffer.toByteArray()
-            speechBuffer.reset()
-        }
+        // If WebSocket is not connected, use STT + text API as fallback
+        if (geminiClient?.isConnected() != true) {
+            Logger.d(TAG, "WebSocket not connected — using local STT + text API")
+            val language = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
+                .getString(Constants.KEY_LANGUAGE, "banglish") ?: "banglish"
+            val sttLanguage = com.maya.assistant.voice.SpeechToTextEngine.getLanguageCodeForLocale(
+                java.util.Locale(language)
+            )
 
-        if (audioData.isEmpty()) {
-            Logger.w(TAG, "Empty audio buffer — nothing to process")
-            return
-        }
-
-        Logger.d(TAG, "Collected ${audioData.size} bytes of audio — checking pipeline")
-
-        // Primary path: WebSocket audio streaming (real-time Gemini audio response)
-        if (webSocketClient?.isConnected() == true) {
-            Logger.d(TAG, "WebSocket connected — audio was streamed in real-time, response incoming")
-            return
-        }
-
-        // Secondary path: Local STT → Text API → TTS
-        if (webSocketClient == null && !::audioRecorder.isInitialized) {
-            Logger.d(TAG, "No audio pipeline available")
-            ttsEngine.speak("Connection error, please try again")
-            VoiceStateManager.setListening()
-            return
-        }
-
-        Logger.d(TAG, "Using local STT + text API fallback")
-        val language = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
-            .getString(Constants.KEY_LANGUAGE, "banglish") ?: "banglish"
-        val sttLanguage = com.maya.assistant.voice.SpeechToTextEngine.getLanguageCodeForLocale(
-            java.util.Locale(language)
-        )
-
-        val sttEngine = com.maya.assistant.voice.SpeechToTextEngine(this)
-        sttEngine.startListening(sttLanguage, object : com.maya.assistant.voice.SpeechToTextEngine.STTCallback {
-            override fun onSpeechResult(text: String) {
-                Logger.d(TAG, "STT result: $text")
-                if (text.isNotBlank()) {
-                    sendTextToGemini(text)
-                } else {
-                    ttsEngine.speak("আমি ঠিক শুনতে পাইনি, আবার বলুন")
+            val sttEngine = com.maya.assistant.voice.SpeechToTextEngine(this)
+            sttEngine.startListening(sttLanguage, object : com.maya.assistant.voice.SpeechToTextEngine.STTCallback {
+                override fun onSpeechResult(text: String) {
+                    Logger.d(TAG, "STT result: $text")
+                    if (text.isNotBlank()) {
+                        sendTextToGemini(text)
+                    } else {
+                        ttsEngine.speak("আমি ঠিক শুনতে পাইনি, আবার বলুন")
+                        VoiceStateManager.setListening()
+                    }
+                }
+                override fun onSpeechError(errorCode: Int) {
+                    Logger.e(TAG, "STT error: $errorCode")
+                    ttsEngine.speak("Speech recognition error, try again")
                     VoiceStateManager.setListening()
                 }
-            }
-            override fun onSpeechError(errorCode: Int) {
-                Logger.e(TAG, "STT error: $errorCode")
-                ttsEngine.speak("Speech recognition error, try again")
-                VoiceStateManager.setListening()
-            }
-            override fun onSpeechStart() {
-                VoiceStateManager.setListening()
-            }
-            override fun onSpeechEnd() {
-                VoiceStateManager.setThinking()
-            }
-        })
-    }
-
-    private fun startAudioStreaming() {
-        if (webSocketClient?.isConnected() == true) return
-        // Reset and start fresh streaming connection
-        webSocketClient?.disconnect()
-        connectWebSocketGemini()
-    }
-
-    private fun stopAudioStreaming() {
-        // Gemini Live API knows end-of-turn from silence
-        // Nothing special needed — the WebSocket stays open for next turn
+                override fun onSpeechStart() {
+                    VoiceStateManager.setListening()
+                }
+                override fun onSpeechEnd() {
+                    VoiceStateManager.setThinking()
+                }
+            })
+        } else {
+            Logger.d(TAG, "WebSocket connected — audio was streamed, waiting for response")
+        }
     }
 
     private fun connectGemini(apiKey: String) {
-        geminiClient = GeminiLiveClient(
-            apiKey = apiKey,
-            systemPrompt = buildSystemPrompt(),
-            callback = object : GeminiLiveClient.LiveListener {
-                override fun onConnected() {
-                    VoiceStateManager.setListening()
-                    audioRecorder.start()
-                }
-
-                override fun onAudioReceived(data: ByteArray) {
-                    audioPlayer.playChunk(data)
-                }
-
-                override fun onTextReceived(text: String) {
-                    handleGeminiText(text)
-                }
-
-                override fun onTurnComplete() {
-                    if (!audioRecorder.isActive()) audioRecorder.start()
-                }
-
-                override fun onError(msg: String) {
-                    Logger.e(TAG, "Gemini WS error: $msg")
-                }
-            }
-        )
-        geminiClient?.start()
-    }
-
-    private fun connectWebSocketGemini() {
-        val apiKey = SecurePrefs.getApiKey(this@ForegroundVoiceService)
-        if (apiKey.isEmpty()) return
-
-        webSocketClient = com.maya.assistant.websocket.GeminiWebSocketClient(
+        // Use GeminiWebSocketClient (audio streaming) — same as v108 working system
+        geminiClient = GeminiWebSocketClient(
             apiKey = apiKey,
             systemPrompt = buildSystemPrompt(),
             onConnected = {
-                Logger.d(TAG, "Audio streaming WebSocket ready ✅")
                 VoiceStateManager.setListening()
+                audioRecorder.start()
             },
             onAudioReceived = { data ->
                 audioPlayer.playChunk(data)
@@ -280,10 +191,14 @@ class ForegroundVoiceService : Service() {
                 if (!audioRecorder.isActive()) audioRecorder.start()
             },
             onError = { msg ->
-                Logger.e(TAG, "Audio streaming error: $msg")
+                Logger.e(TAG, "Gemini error: $msg")
+                // Try text API as fallback
+                if (geminiTextClient != null) {
+                    Logger.d(TAG, "Falling back to text API")
+                }
             }
         )
-        webSocketClient?.connect()
+        geminiClient?.connect()
     }
 
     private fun handleGeminiText(text: String) {
@@ -368,14 +283,12 @@ class ForegroundVoiceService : Service() {
         val apiKey = SecurePrefs.getApiKey(this@ForegroundVoiceService)
         if (apiKey.isNotEmpty()) {
             connectGemini(apiKey)
-            connectWebSocketGemini()
         } else {
             val plainKey = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
                 .getString(Constants.KEY_API_KEY, "") ?: ""
             if (plainKey.isNotEmpty()) {
                 connectGemini(plainKey)
                 SecurePrefs.saveApiKey(this@ForegroundVoiceService, plainKey)
-                connectWebSocketGemini()
             }
         }
     }
@@ -509,7 +422,6 @@ REGISTER_FACE | RECOGNIZE_FACE | IDENTIFY_SPEAKER
         ttsEngine.shutdown()
         audioFocus.abandonFocus()
         geminiClient?.disconnect()
-        webSocketClient?.disconnect()
         powerButtonReceiver?.let {
             try { unregisterReceiver(it) } catch (_: Exception) {}
         }
