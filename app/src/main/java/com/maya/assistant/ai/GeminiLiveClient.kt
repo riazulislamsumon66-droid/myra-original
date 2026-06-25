@@ -100,6 +100,21 @@ class GeminiLiveClient(
         }
     }
 
+    fun sendTurnComplete() {
+        if (!isSetupComplete) return
+        try {
+            val msg = JSONObject().apply {
+                put("clientContent", JSONObject().apply {
+                    put("turns", JSONArray())
+                    put("turnComplete", true)
+                })
+            }
+            webSocket?.send(msg.toString())
+        } catch (e: Exception) {
+            Log.e(TAG, "Turn complete error: ${e.message}")
+        }
+    }
+
     fun sendTextMessage(text: String) {
         if (!isSetupComplete) return
         try {

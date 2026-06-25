@@ -75,6 +75,8 @@ class ForegroundVoiceService : Service() {
             },
             onSpeechEnd = {
                 VoiceStateManager.setThinking()
+                audioRecorder.stop()
+                geminiClient?.sendTurnComplete()
             }
         )
 
@@ -98,7 +100,6 @@ class ForegroundVoiceService : Service() {
             systemPrompt = buildSystemPrompt(),
             onConnected = {
                 VoiceStateManager.setListening()
-                audioRecorder.start()
             },
             onAudioReceived = { data ->
                 audioPlayer.playChunk(data)
@@ -153,9 +154,11 @@ class ForegroundVoiceService : Service() {
     fun toggleRecording(): Boolean {
         return if (audioRecorder.isActive()) {
             audioRecorder.stop()
+            geminiClient?.sendTurnComplete()
             VoiceStateManager.setIdle()
             false
         } else {
+            vad.reset()
             audioRecorder.start()
             VoiceStateManager.setListening()
             true
