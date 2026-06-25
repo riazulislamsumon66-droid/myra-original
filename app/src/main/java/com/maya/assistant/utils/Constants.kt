@@ -1,13 +1,11 @@
 package com.maya.assistant.utils
 
 object Constants {
-    // Gemini — using stable native audio model
-    // Note: gemini-2.5-flash-native-audio-preview-12-2025 was deprecated with 80-90% disconnect rate
+    // Gemini Audio Streaming Models (primary = native audio, fallbacks for reliability)
     const val GEMINI_MODEL = "models/gemini-2.5-flash-native-audio"
-    // Fallback models (ordered by preference)
     const val GEMINI_MODEL_FALLBACK_1 = "models/gemini-2.5-flash"
     const val GEMINI_MODEL_FALLBACK_2 = "models/gemini-2.0-flash-live-001"
-    val GEMINI_FALLBACK_MODELS = listOf(GEMINI_MODEL_FALLBACK_1, GEMINI_MODEL_FALLBACK_2)
+    val GEMINI_FALLBACK_MODELS = listOf(GEMINI_MODEL, GEMINI_MODEL_FALLBACK_1, GEMINI_MODEL_FALLBACK_2)
     const val GEMINI_WS_BASE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
     const val GEMINI_VOICE = "Aoede"
 
