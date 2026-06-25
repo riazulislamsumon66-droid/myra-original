@@ -42,6 +42,7 @@ class ForegroundVoiceService : Service() {
     private lateinit var vad: VoiceActivityDetector
     private lateinit var audioFocus: AudioFocusManager
     private var geminiClient: GeminiWebSocketClient? = null
+    private var geminiTextClient: GeminiTextClient? = null
 
     companion object {
         var instance: ForegroundVoiceService? = null
@@ -195,7 +196,7 @@ class ForegroundVoiceService : Service() {
                 Logger.e(TAG, "Gemini error: $msg")
                 // Try text API as fallback
                 if (geminiTextClient != null) {
-                    Logger.d(TAG, "Falling back to text API")
+                    Logger.d(TAG, "WebSocket failed — text API fallback available")
                 }
             }
         )
@@ -261,13 +262,13 @@ class ForegroundVoiceService : Service() {
         VoiceStateManager.setThinking()
 
         // Use HTTP text API (reliable) — primary path
-        val client = geminiTextClient
-        if (client != null) {
+        val textClient = geminiTextClient
+        if (textClient != null) {
             Logger.d(TAG, "Sending via GeminiTextClient (HTTP)...")
-            client.sendMessage(text, object : GeminiTextClient.TextCallback {
-                override fun onResponse(text: String) {
-                    Logger.d(TAG, "Text API response received: ${text.take(80)}")
-                    handleGeminiText(text)
+            textClient.sendMessage(text, object : GeminiTextClient.TextCallback {
+                override fun onResponse(responseText: String) {
+                    Logger.d(TAG, "Text API response received: ${responseText.take(80)}")
+                    handleGeminiText(responseText)
                 }
                 override fun onError(error: String) {
                     Logger.e(TAG, "Text API error: $error")
