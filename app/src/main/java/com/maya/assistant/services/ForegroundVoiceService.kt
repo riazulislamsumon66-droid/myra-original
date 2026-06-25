@@ -46,7 +46,15 @@ class ForegroundVoiceService : Service() {
         super.onCreate()
         instance = this
         isRunning = true
-        startForeground(Constants.NOTIF_ID_VOICE, buildNotification())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                Constants.NOTIF_ID_VOICE,
+                buildNotification(),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            )
+        } else {
+            startForeground(Constants.NOTIF_ID_VOICE, buildNotification())
+        }
         initComponents()
     }
 

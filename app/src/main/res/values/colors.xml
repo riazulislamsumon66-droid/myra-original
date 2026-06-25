@@ -31,4 +31,13 @@
     <color name="maya_glow_red">#44FF1744</color>
     <color name="maya_glow_cyan">#4400E5FF</color>
     <color name="maya_glow_purple">#44D500F9</color>
+
+    <!-- Jarvis Theme Colors -->
+    <color name="jarvis_bg">#0A0E27</color>
+    <color name="jarvis_card">#111128</color>
+    <color name="jarvis_accent">#00E5FF</color>
+    <color name="jarvis_accent_2">#7C4DFF</color>
+    <color name="jarvis_text_primary">#E8E8FF</color>
+    <color name="jarvis_text_secondary">#8888AA</color>
+    <color name="jarvis_glow">#4400E5FF</color>
 </resources>

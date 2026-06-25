@@ -24,7 +24,9 @@ object PermissionUtils {
         Manifest.permission.SEND_SMS,
         Manifest.permission.CAMERA,
         Manifest.permission.ANSWER_PHONE_CALLS,
-        Manifest.permission.POST_NOTIFICATIONS
+        Manifest.permission.POST_NOTIFICATIONS,
+        Manifest.permission.READ_CALENDAR,
+        Manifest.permission.WRITE_CALENDAR
     )
 
     fun hasPermission(context: Context, permission: String): Boolean =

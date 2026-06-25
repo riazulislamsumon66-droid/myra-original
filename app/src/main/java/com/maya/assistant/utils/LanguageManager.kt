@@ -20,7 +20,7 @@ object LanguageManager {
         Language("hi", "Hindi", "हिन्दी"),
         Language("hinglish", "Hinglish", "Hinglish"),
         Language("en", "English", "English"),
-        Language("crl", "Seychellois Creole", "Kreol Seselwa")
+        Language("crs", "Seychellois Creole", "Kreol Seselwa")
     )
 
     /** Returns the Android resource qualifier for the language, or null for programmatic-only */
@@ -29,7 +29,7 @@ object LanguageManager {
             "bn" -> "bn"
             "hi" -> "hi"
             "en" -> "en"
-            "crl" -> "crl"
+            "crs" -> "crs"
             else -> null // Banglish, Hinglish — use default strings.xml
         }
     }
@@ -81,7 +81,7 @@ object LanguageManager {
             "hi" -> "हिंदी में जवाब दो। अंग्रेजी मिक्स न करो।"
             "hinglish" -> "Reply in Hinglish (Hindi + English mix). Use natural conversational style."
             "en" -> "Reply in English only."
-            "crl" -> "Reply in Seychellois Creole (Kreol Seselwa). Do not mix English unless necessary."
+            "crs" -> "Reply in Seychellois Creole (Kreol Seselwa). Do not mix English unless necessary."
             else -> "Reply in Banglish."
         }
     }
