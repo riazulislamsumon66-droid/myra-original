@@ -13,7 +13,7 @@ import com.maya.assistant.service.ScreenVisionAnalyzer
 
 object SmartAccessibilityEngine {
 
-    private const val TAG = "MAYA_SMART"
+    private const val TAG = "MYRA_SMART"
 
     var service: AccessibilityService? = null
 
@@ -27,13 +27,6 @@ object SmartAccessibilityEngine {
         val cmd = cleanCommand(rawCommand)
 
         Log.d(TAG, "EXECUTE -> $cmd")
-
-        // Ensure service is connected
-        val svc = service
-        if (svc == null) {
-            Log.e(TAG, "Accessibility service not connected! Enable it in Settings.")
-            return Result(false, "Accessibility service not enabled")
-        }
 
         val success = when {
 
@@ -53,34 +46,11 @@ object SmartAccessibilityEngine {
                     cmd.removePrefix("SEARCH").trim()
                 )
 
-            cmd.startsWith("TYPE_TEXT", true) ->
-                typeText(
-                    cmd.removePrefix("TYPE_TEXT").trim()
-                )
-
             cmd.startsWith("VOLUME_UP", true) ->
                 volumeUp()
 
             cmd.startsWith("VOLUME_DOWN", true) ->
                 volumeDown()
-
-            cmd.startsWith("SCREENSHOT", true) ->
-                takeScreenshot()
-
-            cmd.startsWith("SCROLL_UP", true) ->
-                scrollUp()
-
-            cmd.startsWith("SCROLL_DOWN", true) ->
-                scrollDown()
-
-            cmd.equals("BACK", true) ->
-                goBack()
-
-            cmd.equals("HOME", true) ->
-                goHome()
-
-            cmd.equals("NOTIFICATION", true) ->
-                openNotification()
 
             else ->
                 runSmartAutomation(cmd)
@@ -286,50 +256,27 @@ object SmartAccessibilityEngine {
         )
     }
 
-    private fun typeText(text: String): Boolean {
-        return try {
-            val svc = service ?: return false
-            val root = svc.rootInActiveWindow ?: return false
-            // Find the currently focused editable node
-            val editable = findFocusedEditableNode(root) ?: findEditableNode(root) ?: return false
-            val args = android.os.Bundle().apply {
-                putCharSequence(
-                    AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
-                    text
-                )
-            }
-            editable.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-        } catch (e: Exception) {
-            Log.e(TAG, "Type text failed: ${e.message}")
-            false
-        }
-    }
-
-    private fun findFocusedEditableNode(
-        node: AccessibilityNodeInfo,
-        depth: Int = 0
-    ): AccessibilityNodeInfo? {
-        if (depth > 15) return null
-        if (node.isFocused && node.isEditable) return node
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            val result = findFocusedEditableNode(child, depth + 1)
-            if (result != null) return result
-        }
-        return null
-    }
-
     private fun findEditableNode(
-        node: AccessibilityNodeInfo,
-        depth: Int = 0
+        node: AccessibilityNodeInfo
     ): AccessibilityNodeInfo? {
-        if (depth > 15) return null
-        if (node.isEditable) return node
+
+        if (node.isEditable)
+            return node
+
         for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            val result = findEditableNode(child, depth + 1)
-            if (result != null) return result
+
+            val child = node.getChild(i)
+
+            if (child != null) {
+
+                val result =
+                    findEditableNode(child)
+
+                if (result != null)
+                    return result
+            }
         }
+
         return null
     }
 
@@ -365,123 +312,5 @@ object SmartAccessibilityEngine {
         )
 
         return true
-    }
-
-    // ============================
-    // SCREENSHOT
-    // ============================
-
-    private fun takeScreenshot(): Boolean {
-        return try {
-            val svc = service ?: return false
-            // Use global action for screenshot - this works on Android 11+
-            val result = svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT)
-            Log.d(TAG, "Screenshot result: $result")
-            result
-        } catch (e: Exception) {
-            Log.e(TAG, "Screenshot failed: ${e.message}")
-            false
-        }
-    }
-
-    // ============================
-    // SCROLL
-    // ============================
-
-    private fun scrollUp(): Boolean {
-        return try {
-            val svc = service ?: return false
-            val root = svc.rootInActiveWindow ?: return false
-            // Find a scrollable node and scroll up
-            val scrollable = findScrollableNode(root)
-            if (scrollable != null) {
-                val result = scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
-                Log.d(TAG, "Scroll up result: $result")
-                result
-            } else {
-                // Fallback: gesture scroll up
-                val displayMetrics = svc.resources.displayMetrics
-                val x = displayMetrics.widthPixels / 2
-                val startY = displayMetrics.heightPixels * 3 / 4
-                val endY = displayMetrics.heightPixels / 4
-                ActionExecutor.swipe(svc, x, startY, x, endY, 300)
-                true
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Scroll up failed: ${e.message}")
-            false
-        }
-    }
-
-    private fun scrollDown(): Boolean {
-        return try {
-            val svc = service ?: return false
-            val root = svc.rootInActiveWindow ?: return false
-            val scrollable = findScrollableNode(root)
-            if (scrollable != null) {
-                val result = scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
-                Log.d(TAG, "Scroll down result: $result")
-                result
-            } else {
-                // Fallback: gesture scroll down
-                val displayMetrics = svc.resources.displayMetrics
-                val x = displayMetrics.widthPixels / 2
-                val startY = displayMetrics.heightPixels / 4
-                val endY = displayMetrics.heightPixels * 3 / 4
-                ActionExecutor.swipe(svc, x, startY, x, endY, 300)
-                true
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Scroll down failed: ${e.message}")
-            false
-        }
-    }
-
-    private fun findScrollableNode(node: AccessibilityNodeInfo, depth: Int = 0): AccessibilityNodeInfo? {
-        if (depth > 15) return null
-        if (node.isScrollable) return node
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            val result = findScrollableNode(child, depth + 1)
-            if (result != null) return result
-        }
-        return null
-    }
-
-    // ============================
-    // NAVIGATION
-    // ============================
-
-    private fun goBack(): Boolean {
-        return try {
-            val svc = service ?: return false
-            svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Back failed: ${e.message}")
-            false
-        }
-    }
-
-    private fun goHome(): Boolean {
-        return try {
-            val svc = service ?: return false
-            svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Home failed: ${e.message}")
-            false
-        }
-    }
-
-    private fun openNotification(): Boolean {
-        return try {
-            val svc = service ?: return false
-            svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_NOTIFICATIONS)
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Notification failed: ${e.message}")
-            false
-        }
     }
 }

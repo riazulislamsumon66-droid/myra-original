@@ -1,31 +1,26 @@
 package com.maya.assistant.utils
 
 object Constants {
-    // Gemini Audio Streaming Models (ordered by preference — v108 working config)
+    // Gemini
     const val GEMINI_MODEL = "models/gemini-2.5-flash-native-audio"
-    const val GEMINI_MODEL_FALLBACK_1 = "models/gemini-2.5-flash"
-    const val GEMINI_MODEL_FALLBACK_2 = "models/gemini-2.0-flash-live-001"
-    // Fallback list: each model tried in order until one connects (no duplicates!)
-    val GEMINI_FALLBACK_MODELS = listOf(GEMINI_MODEL_FALLBACK_1, GEMINI_MODEL_FALLBACK_2)
     const val GEMINI_WS_BASE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
     const val GEMINI_VOICE = "Aoede"
 
     // Prefs
-    const val PREFS_NAME = "maya_prefs"
+    const val PREFS_NAME = "myra_prefs"
     const val KEY_API_KEY = "api_key"
     const val KEY_USER_NAME = "user_name"
-    const val KEY_PERSONALITY = "personality_mode"
+    const val KEY_PERSONALITY = "personality"
     const val KEY_VOICE_TYPE = "voice_type"
     const val KEY_LIVE_MODE = "live_mode"
     const val KEY_PRIME_NAME = "prime_name"
     const val KEY_PRIME_NUMBER = "prime_number"
     const val KEY_CALL_ANNOUNCE = "call_announce"
     const val KEY_WAKE_WORD = "wake_word"
-    const val KEY_LANGUAGE = "language"
 
     // Notifications
-    const val NOTIF_CHANNEL_OVERLAY = "maya_overlay_channel"
-    const val NOTIF_CHANNEL_VOICE = "maya_voice_channel"
+    const val NOTIF_CHANNEL_OVERLAY = "myra_overlay_channel"
+    const val NOTIF_CHANNEL_VOICE = "myra_voice_channel"
     const val NOTIF_ID_OVERLAY = 1001
     const val NOTIF_ID_VOICE = 1002
 
