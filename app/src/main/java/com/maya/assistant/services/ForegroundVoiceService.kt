@@ -345,9 +345,10 @@ class ForegroundVoiceService : Service() {
         VoiceStateManager.setThinking()
 
         // Use HTTP text API (reliable) — primary path
-        if (::geminiTextClient.isInitialized && geminiTextClient != null) {
+        val client = geminiTextClient
+        if (client != null) {
             Logger.d(TAG, "Sending via GeminiTextClient (HTTP)...")
-            geminiTextClient!!.sendMessage(text, object : GeminiTextClient.TextCallback {
+            client.sendMessage(text, object : GeminiTextClient.TextCallback {
                 override fun onResponse(text: String) {
                     Logger.d(TAG, "Text API response received: ${text.take(80)}")
                     handleGeminiText(text)

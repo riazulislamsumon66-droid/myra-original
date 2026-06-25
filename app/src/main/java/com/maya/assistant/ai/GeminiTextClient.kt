@@ -72,12 +72,12 @@ class GeminiTextClient(
         return JSONObject().apply {
             put("contents", JSONArray().put(JSONObject().apply {
                 put("parts", JSONArray().put(JSONObject().apply {
-                    put("text", userText
+                    put("text", userText)
                 }))
             }))
             put("systemInstruction", JSONObject().apply {
                 put("parts", JSONArray().put(JSONObject().apply {
-                    put("text", systemPrompt
+                    put("text", systemPrompt)
                 }))
             })
             put("generationConfig", JSONObject().apply {
