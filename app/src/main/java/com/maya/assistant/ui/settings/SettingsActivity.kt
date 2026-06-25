@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.view.View
+import android.util.Log
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -25,6 +26,11 @@ import com.maya.assistant.security.SecurePrefs
 import com.maya.assistant.utils.LanguageManager
 
 class SettingsActivity : AppCompatActivity() {
+
+    companion object {
+        private const val TAG = "SettingsActivity"
+        private const val PERMISSIONS_REQUEST_CODE = 200
+    }
 
     private lateinit var apiKeyInput: EditText
     private lateinit var ttsApiKeyInput: EditText
@@ -83,56 +89,77 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
-        apiKeyInput = findViewById(R.id.apiKeyInput)
-        ttsApiKeyInput = findViewById(R.id.ttsApiKeyInput)
-        userNameInput = findViewById(R.id.userNameInput)
-        primeNameInput = findViewById(R.id.primeNameInput)
-        primeNumberInput = findViewById(R.id.primeNumberInput)
-        voiceTypeGroup = findViewById(R.id.voiceTypeGroup)
-        liveModeSwitch = findViewById(R.id.liveModeSwitch)
-        saveBtn = findViewById(R.id.saveBtn)
-        accessibilityStatus = findViewById(R.id.accessibilityStatus)
-        adminStatusText = findViewById(R.id.adminStatusText)
-        pickContactBtn = findViewById(R.id.pickContactBtn)
-        callAnnounceSwitch = findViewById(R.id.callAnnounceSwitch)
-        callAnnounceStatusText = findViewById(R.id.callAnnounceStatusText)
-        grantPermissionsBtn = findViewById(R.id.grantPermissionsBtn)
-        permissionsStatusText = findViewById(R.id.permissionsStatusText)
-        screenVisionSwitch = findViewById(R.id.screenVisionSwitch)
-        screenVisionStatusText = findViewById(R.id.screenVisionStatusText)
-        languageBtn = findViewById(R.id.languageBtn)
+        try {
+            apiKeyInput = findViewById(R.id.apiKeyInput)
+            ttsApiKeyInput = findViewById(R.id.ttsApiKeyInput)
+            userNameInput = findViewById(R.id.userNameInput)
+            primeNameInput = findViewById(R.id.primeNameInput)
+            primeNumberInput = findViewById(R.id.primeNumberInput)
+            voiceTypeGroup = findViewById(R.id.voiceTypeGroup)
+            liveModeSwitch = findViewById(R.id.liveModeSwitch)
+            saveBtn = findViewById(R.id.saveBtn)
+            accessibilityStatus = findViewById(R.id.accessibilityStatus)
+            adminStatusText = findViewById(R.id.adminStatusText)
+            pickContactBtn = findViewById(R.id.pickContactBtn)
+            callAnnounceSwitch = findViewById(R.id.callAnnounceSwitch)
+            callAnnounceStatusText = findViewById(R.id.callAnnounceStatusText)
+            grantPermissionsBtn = findViewById(R.id.grantPermissionsBtn)
+            permissionsStatusText = findViewById(R.id.permissionsStatusText)
+            screenVisionSwitch = findViewById(R.id.screenVisionSwitch)
+            screenVisionStatusText = findViewById(R.id.screenVisionStatusText)
+            languageBtn = findViewById(R.id.languageBtn)
+        } catch (e: Exception) {
+            Log.e(TAG, "initViews: Failed to initialize views", e)
+        }
     }
 
     private fun loadPreferences() {
-        val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE)
-        apiKeyInput.setText(SecurePrefs.getApiKey(this))
-        ttsApiKeyInput.setText(SecurePrefs.getTtsApiKey(this))
-        userNameInput.setText(prefs.getString("user_name", "Sir"))
-        primeNameInput.setText(prefs.getString("prime_name", ""))
-        primeNumberInput.setText(prefs.getString("prime_number", ""))
+        try {
+            val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE)
 
-        JarvisSession.userName = userNameInput.text.toString()
+            apiKeyInput.setText(SecurePrefs.getApiKey(this))
+            ttsApiKeyInput.setText(SecurePrefs.getTtsApiKey(this))
+            userNameInput.setText(prefs.getString("user_name", "Sir"))
+            primeNameInput.setText(prefs.getString("prime_name", ""))
+            primeNumberInput.setText(prefs.getString("prime_number", ""))
 
-        val personality = prefs.getString("personality_mode", "gf") ?: "gf"
-        JarvisSession.setPreference("personality", personality)
+            try {
+                JarvisSession.userName = userNameInput.text.toString()
+            } catch (e: Exception) {
+                Log.e(TAG, "loadPreferences: Failed to set JarvisSession userName", e)
+            }
 
-        val voiceEngine = prefs.getString("voice_engine", "system") ?: "system"
-        when (voiceEngine) {
-            "elevenlabs" -> findViewById<RadioButton>(R.id.radioEleven).isChecked = true
-            else -> findViewById<RadioButton>(R.id.radioSystem).isChecked = true
+            val personality = prefs.getString("personality_mode", "gf") ?: "gf"
+            try {
+                JarvisSession.setPreference("personality", personality)
+            } catch (e: Exception) {
+                Log.e(TAG, "loadPreferences: Failed to set JarvisSession preference", e)
+            }
+
+            val voiceEngine = prefs.getString("voice_engine", "system") ?: "system"
+            try {
+                when (voiceEngine) {
+                    "elevenlabs" -> findViewById<RadioButton>(R.id.radioEleven).isChecked = true
+                    else -> findViewById<RadioButton>(R.id.radioSystem).isChecked = true
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "loadPreferences: Failed to set voice engine radio button", e)
+            }
+
+            liveModeSwitch.isChecked = prefs.getBoolean("live_mode_enabled", false)
+
+            val announceEnabled = prefs.getBoolean("call_announce_enabled", true)
+            callAnnounceSwitch.isChecked = announceEnabled
+            updateCallAnnounceStatus(announceEnabled)
+
+            val screenVisionEnabled = prefs.getBoolean("screen_vision_enabled", false)
+            screenVisionSwitch.isChecked = screenVisionEnabled
+            updateScreenVisionStatus(screenVisionEnabled)
+
+            updateLanguageButton()
+        } catch (e: Exception) {
+            Log.e(TAG, "loadPreferences: Failed to load preferences", e)
         }
-
-        liveModeSwitch.isChecked = prefs.getBoolean("live_mode_enabled", false)
-
-        val announceEnabled = prefs.getBoolean("call_announce_enabled", true)
-        callAnnounceSwitch.isChecked = announceEnabled
-        updateCallAnnounceStatus(announceEnabled)
-
-        val screenVisionEnabled = prefs.getBoolean("screen_vision_enabled", false)
-        screenVisionSwitch.isChecked = screenVisionEnabled
-        updateScreenVisionStatus(screenVisionEnabled)
-
-        updateLanguageButton()
     }
 
     private fun updateLanguageButton() {
@@ -257,43 +284,48 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun checkAndRequestPermissions() {
-        // Runtime permissions that CAN be requested via dialog
-        val runtimePermissions = arrayOf(
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_CONTACTS,
-            Manifest.permission.WRITE_CONTACTS,
-            Manifest.permission.CAMERA,
-            Manifest.permission.SEND_SMS
-        )
-
-        // Restricted permissions — need Settings page
-        val restrictedPermissions = arrayOf(
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.READ_CALL_LOG,
-            Manifest.permission.ANSWER_PHONE_CALLS
-        )
-
-        val missingRuntime = runtimePermissions.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-
-        val missingRestricted = restrictedPermissions.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-
-        if (missingRuntime.isNotEmpty()) {
-            // Show runtime permission dialog
-            ActivityCompat.requestPermissions(
-                this,
-                missingRuntime.toTypedArray(),
-                PERMISSIONS_REQUEST_CODE
+        try {
+            // Runtime permissions that CAN be requested via dialog
+            val runtimePermissions = arrayOf(
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_CONTACTS,
+                Manifest.permission.WRITE_CONTACTS,
+                Manifest.permission.CAMERA,
+                Manifest.permission.SEND_SMS
             )
-        } else if (missingRestricted.isNotEmpty()) {
-            // Guide user to Settings for restricted permissions
-            showRestrictedPermissionGuide(missingRestricted)
-        } else {
-            Toast.makeText(this, "সব Permission আগে থেকেই Granted! ✅", Toast.LENGTH_SHORT).show()
-            updatePermissionsStatus()
+
+            // Restricted permissions — need Settings page
+            val restrictedPermissions = arrayOf(
+                Manifest.permission.READ_PHONE_STATE,
+                Manifest.permission.READ_CALL_LOG,
+                Manifest.permission.ANSWER_PHONE_CALLS
+            )
+
+            val missingRuntime = runtimePermissions.filter {
+                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            }
+
+            val missingRestricted = restrictedPermissions.filter {
+                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            }
+
+            if (missingRuntime.isNotEmpty()) {
+                // Show runtime permission dialog
+                ActivityCompat.requestPermissions(
+                    this,
+                    missingRuntime.toTypedArray(),
+                    PERMISSIONS_REQUEST_CODE
+                )
+            } else if (missingRestricted.isNotEmpty()) {
+                // Guide user to Settings for restricted permissions
+                showRestrictedPermissionGuide(missingRestricted)
+            } else {
+                Toast.makeText(this, "সব Permission আগে থেকেই Granted! ✅", Toast.LENGTH_SHORT).show()
+                updatePermissionsStatus()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "checkAndRequestPermissions: Error requesting permissions", e)
+            Toast.makeText(this, "Permission request failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -330,15 +362,23 @@ class SettingsActivity : AppCompatActivity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSIONS_REQUEST_CODE) {
-            val granted = grantResults.count { it == PackageManager.PERMISSION_GRANTED }
-            val total = permissions.size
+            try {
+                if (grantResults.isEmpty()) {
+                    Toast.makeText(this, "Permission request cancelled", Toast.LENGTH_SHORT).show()
+                } else {
+                    val granted = grantResults.count { it == PackageManager.PERMISSION_GRANTED }
+                    val total = permissions.size
 
-            if (granted == total) {
-                Toast.makeText(this, "All permissions granted! ✅", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "$granted/$total permissions granted ⚠️", Toast.LENGTH_LONG).show()
+                    if (granted == total) {
+                        Toast.makeText(this, "All permissions granted! ✅", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "$granted/$total permissions granted ⚠️", Toast.LENGTH_LONG).show()
+                    }
+                }
+                updatePermissionsStatus()
+            } catch (e: Exception) {
+                Log.e(TAG, "onRequestPermissionsResult: Error handling permission result", e)
             }
-            updatePermissionsStatus()
         }
     }
 
@@ -365,83 +405,141 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updatePermissionsStatus() {
-        val missing = allPermissions.count {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        try {
+            val missing = allPermissions.count {
+                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            }
+            permissionsStatusText.text = when {
+                missing == 0 -> "✅ All Permissions Granted"
+                missing <= 2 -> "⚠️ $missing permissions pending"
+                else -> "❌ $missing permissions missing"
+            }
+            permissionsStatusText.setTextColor(when {
+                missing == 0 -> 0xFF00E676.toInt()
+                missing <= 2 -> 0xFFFFA726.toInt()
+                else -> 0xFFFF1744.toInt()
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "updatePermissionsStatus: Error updating permissions status", e)
         }
-        permissionsStatusText.text = when {
-            missing == 0 -> "✅ All Permissions Granted"
-            missing <= 2 -> "⚠️ $missing permissions pending"
-            else -> "❌ $missing permissions missing"
-        }
-        permissionsStatusText.setTextColor(when {
-            missing == 0 -> 0xFF00E676.toInt()
-            missing <= 2 -> 0xFFFFA726.toInt()
-            else -> 0xFFFF1744.toInt()
-        })
     }
 
     private fun handleContactResult(uri: Uri) {
-        val cursor = contentResolver.query(uri, null, null, null, null)
-        if (cursor?.moveToFirst() == true) {
-            val nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-            val numIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            primeNameInput.setText(cursor.getString(nameIndex))
-            primeNumberInput.setText(cursor.getString(numIndex).replace(" ", ""))
+        try {
+            val cursor = contentResolver.query(uri, null, null, null, null)
+            if (cursor?.moveToFirst() == true) {
+                val nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                val numIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                if (nameIndex >= 0) {
+                    primeNameInput.setText(cursor.getString(nameIndex))
+                }
+                if (numIndex >= 0) {
+                    primeNumberInput.setText(cursor.getString(numIndex)?.replace(" ", "") ?: "")
+                }
+            }
+            cursor?.close()
+        } catch (e: Exception) {
+            Log.e(TAG, "handleContactResult: Failed to process contact", e)
         }
-        cursor?.close()
     }
 
     private fun savePreferences() {
-        val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE).edit()
+        try {
+            val prefs = getSharedPreferences("maya_prefs", Context.MODE_PRIVATE).edit()
 
-        SecurePrefs.saveApiKey(this, apiKeyInput.text.toString().trim())
-        SecurePrefs.saveTtsApiKey(this, ttsApiKeyInput.text.toString().trim())
+            try {
+                SecurePrefs.saveApiKey(this, apiKeyInput.text.toString().trim())
+            } catch (e: Exception) {
+                Log.e(TAG, "savePreferences: Failed to save API key", e)
+            }
 
-        val userName = userNameInput.text.toString().trim()
-        prefs.putString("user_name", userName)
-        prefs.putString("prime_name", primeNameInput.text.toString().trim())
-        prefs.putString("prime_number", primeNumberInput.text.toString().trim())
+            try {
+                SecurePrefs.saveTtsApiKey(this, ttsApiKeyInput.text.toString().trim())
+            } catch (e: Exception) {
+                Log.e(TAG, "savePreferences: Failed to save TTS API key", e)
+            }
 
-        JarvisSession.userName = userName
+            val userName = userNameInput.text.toString().trim()
+            prefs.putString("user_name", userName)
+            prefs.putString("prime_name", primeNameInput.text.toString().trim())
+            prefs.putString("prime_number", primeNumberInput.text.toString().trim())
 
-        val personality = JarvisSession.getPreference("personality", "gf")
-        prefs.putString("personality_mode", personality)
+            try {
+                JarvisSession.userName = userName
+            } catch (e: Exception) {
+                Log.e(TAG, "savePreferences: Failed to set JarvisSession userName", e)
+            }
 
-        val voiceEngine = when (voiceTypeGroup.checkedRadioButtonId) {
-            R.id.radioEleven -> "elevenlabs"
-            else -> "system"
+            try {
+                val personality = JarvisSession.getPreference("personality", "gf")
+                prefs.putString("personality_mode", personality)
+            } catch (e: Exception) {
+                Log.e(TAG, "savePreferences: Failed to get JarvisSession preference, using default", e)
+                prefs.putString("personality_mode", "gf")
+            }
+
+            val voiceEngine = try {
+                when (voiceTypeGroup.checkedRadioButtonId) {
+                    R.id.radioEleven -> "elevenlabs"
+                    else -> "system"
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "savePreferences: Failed to get voice engine, using default", e)
+                "system"
+            }
+            prefs.putString("voice_engine", voiceEngine)
+
+            prefs.putBoolean("live_mode_enabled", liveModeSwitch.isChecked)
+            prefs.putBoolean("call_announce_enabled", callAnnounceSwitch.isChecked)
+            prefs.putBoolean("screen_vision_enabled", screenVisionSwitch.isChecked)
+
+            prefs.apply()
+            Toast.makeText(this, "Settings Saved! ✅", Toast.LENGTH_SHORT).show()
+
+            try {
+                JarvisSession.setPreference("gemini_api_key_set", apiKeyInput.text.toString().isNotEmpty().toString())
+                JarvisSession.setPreference("tts_api_key_set", ttsApiKeyInput.text.toString().isNotEmpty().toString())
+            } catch (e: Exception) {
+                Log.e(TAG, "savePreferences: Failed to set JarvisSession key preferences", e)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "savePreferences: Unexpected error during save", e)
+            Toast.makeText(this, "Error saving settings: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
         }
-        prefs.putString("voice_engine", voiceEngine)
-
-        prefs.putBoolean("live_mode_enabled", liveModeSwitch.isChecked)
-        prefs.putBoolean("call_announce_enabled", callAnnounceSwitch.isChecked)
-        prefs.putBoolean("screen_vision_enabled", screenVisionSwitch.isChecked)
-
-        prefs.apply()
-        Toast.makeText(this, "Settings Saved! ✅", Toast.LENGTH_SHORT).show()
-
-        JarvisSession.setPreference("gemini_api_key_set", apiKeyInput.text.toString().isNotEmpty().toString())
-        JarvisSession.setPreference("tts_api_key_set", ttsApiKeyInput.text.toString().isNotEmpty().toString())
     }
 
     private fun updateStatus() {
-        val enabled = AccessibilityHelperService.isEnabled(this)
-        accessibilityStatus.text = if (enabled) "✅ Enabled" else "❌ Disabled"
-        accessibilityStatus.setTextColor(if (enabled) 0xFF00E676.toInt() else 0xFFFF1744.toInt())
+        try {
+            val enabled = try {
+                AccessibilityHelperService.isEnabled(this)
+            } catch (e: Exception) {
+                Log.e(TAG, "updateStatus: Failed to check accessibility status", e)
+                false
+            }
+            accessibilityStatus.text = if (enabled) "✅ Enabled" else "❌ Disabled"
+            accessibilityStatus.setTextColor(if (enabled) 0xFF00E676.toInt() else 0xFFFF1744.toInt())
+        } catch (e: Exception) {
+            Log.e(TAG, "updateStatus: Failed to update accessibility status view", e)
+        }
 
-        val adminActive = devicePolicyManager.isAdminActive(componentName)
-        adminStatusText.text = if (adminActive) "✅ Active" else "❌ Inactive"
-        adminStatusText.setTextColor(if (adminActive) 0xFF00E676.toInt() else 0xFFFF1744.toInt())
+        try {
+            val adminActive = devicePolicyManager.isAdminActive(componentName)
+            adminStatusText.text = if (adminActive) "✅ Active" else "❌ Inactive"
+            adminStatusText.setTextColor(if (adminActive) 0xFF00E676.toInt() else 0xFFFF1744.toInt())
+        } catch (e: Exception) {
+            Log.e(TAG, "updateStatus: Failed to update admin status", e)
+        }
 
         updatePermissionsStatus()
     }
 
     override fun onResume() {
         super.onResume()
-        updateStatus()
+        try {
+            updateStatus()
+        } catch (e: Exception) {
+            Log.e(TAG, "onResume: Failed to update status", e)
+        }
     }
 
-    companion object {
-        private const val PERMISSIONS_REQUEST_CODE = 200
-    }
 }
