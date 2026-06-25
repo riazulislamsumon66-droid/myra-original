@@ -158,6 +158,13 @@ class ForegroundVoiceService : Service() {
             VoiceStateManager.setIdle()
             false
         } else {
+            // Ensure WebSocket is connected before recording
+            if (geminiClient == null || !geminiClient!!.isConnected()) {
+                val apiKey = prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+                if (apiKey.isNotEmpty()) {
+                    connectGemini(apiKey)
+                }
+            }
             vad.reset()
             audioRecorder.start()
             VoiceStateManager.setListening()
@@ -217,6 +224,18 @@ STRICT RULES:
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // User swiped app from recents — stop recording gracefully
+        if (audioRecorder.isActive()) {
+            audioRecorder.stop()
+            geminiClient?.sendTurnComplete()
+        }
+        VoiceStateManager.setIdle()
+        geminiClient?.disconnect()
+        // Remove notification — system may kill service soon
+        stopForeground(STOP_FOREGROUND_REMOVE)
+    }
 
     override fun onDestroy() {
         isRunning = false
