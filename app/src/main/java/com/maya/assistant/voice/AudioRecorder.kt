@@ -41,7 +41,6 @@ class AudioRecorder(
                 bufferSize
             )
 
-            EchoCancellationManager.attach(audioRecord!!.audioSessionId)
             audioRecord!!.startRecording()
             isRecording = true
 
@@ -74,7 +73,6 @@ class AudioRecorder(
             audioRecord?.stop()
             audioRecord?.release()
             audioRecord = null
-            EchoCancellationManager.release()
         } catch (e: Exception) {
             Logger.e(TAG, "Stop error: ${e.message}")
         }
