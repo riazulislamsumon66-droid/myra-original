@@ -1,7 +1,7 @@
 package com.maya.assistant.utils
 
 object Constants {
-    // Gemini Audio Streaming Models (primary = native audio, fallbacks for reliability)
+    // Gemini Audio Streaming Models (native audio for voice conversation)
     const val GEMINI_MODEL = "models/gemini-2.5-flash-native-audio"
     const val GEMINI_MODEL_FALLBACK_1 = "models/gemini-2.5-flash"
     const val GEMINI_MODEL_FALLBACK_2 = "models/gemini-2.0-flash-live-001"
