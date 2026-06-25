@@ -24,9 +24,7 @@ class CallReceiver : BroadcastReceiver() {
 
         when (stateStr) {
             TelephonyManager.EXTRA_STATE_RINGING -> {
-                // Incoming call ringing
                 Log.d(TAG, "Incoming call from: $number")
-                // Start CallMonitorService to handle the call
                 val serviceIntent = Intent(context, CallMonitorService::class.java).apply {
                     putExtra("CALL_STATE", "RINGING")
                     putExtra("PHONE_NUMBER", number ?: "")
@@ -38,11 +36,9 @@ class CallReceiver : BroadcastReceiver() {
                 }
             }
             TelephonyManager.EXTRA_STATE_OFFHOOK -> {
-                // Call answered (incoming or outgoing)
                 Log.d(TAG, "Call answered")
             }
             TelephonyManager.EXTRA_STATE_IDLE -> {
-                // Call ended or rejected
                 Log.d(TAG, "Call ended")
             }
         }

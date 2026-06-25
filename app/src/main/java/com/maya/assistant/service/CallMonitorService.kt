@@ -125,8 +125,15 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
     }
 
     private fun handleIncomingCall(number: String?) {
-        val callerName = resolveCallerName(number)
-        Log.d(TAG, "Incoming: $callerName from $number")
+        // If number from intent is empty, try CallLog
+        val finalNumber = if (number.isNullOrEmpty()) {
+            getLastIncomingNumber()
+        } else {
+            number
+        }
+
+        val callerName = resolveCallerName(finalNumber)
+        Log.d(TAG, "Incoming: $callerName from $finalNumber")
 
         val announceOn = getSharedPreferences("maya_prefs", MODE_PRIVATE)
             .getBoolean("call_announce_enabled", true)
@@ -142,7 +149,7 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
 
         val intent = Intent(this, CallAssistantActivity::class.java).apply {
             putExtra("CALLER_NAME", callerName)
-            putExtra("PHONE_NUMBER", number ?: "")
+            putExtra("PHONE_NUMBER", finalNumber ?: "")
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
         startActivity(intent)
@@ -156,7 +163,7 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
                 Manifest.permission.READ_CONTACTS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            return "অজানা নম্বর"
+            return number
         }
 
         return try {
@@ -173,15 +180,35 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
                 null
             )?.use { cursor ->
                 if (cursor.moveToFirst()) {
-                    cursor.getString(0) ?: "অজানা নম্বর"
-                } else {
-                    "অজানা নম্বর"
+                    val name = cursor.getString(0)
+                    if (!name.isNullOrBlank()) return name
                 }
-            } ?: "অজানা নম্বর"
+            }
 
+            // Also try: if number is saved without country code, try with +880
+            if (!number.startsWith("+")) {
+                val uri2 = android.net.Uri.withAppendedPath(
+                    android.provider.ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+                    android.net.Uri.encode("+880$number")
+                )
+                contentResolver.query(
+                    uri2,
+                    arrayOf(android.provider.ContactsContract.PhoneLookup.DISPLAY_NAME),
+                    null,
+                    null,
+                    null
+                )?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val name = cursor.getString(0)
+                        if (!name.isNullOrBlank()) return name
+                    }
+                }
+            }
+
+            number // Return number itself if no contact found
         } catch (e: Exception) {
             Log.e(TAG, "Contact lookup error: ${e.message}")
-            "অজানা নম্বর"
+            number
         }
     }
 
@@ -225,11 +252,13 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
             != PackageManager.PERMISSION_GRANTED
         ) return null
         return try {
+            // First check: recent incoming calls (within last 60 seconds)
+            val recentCutoff = System.currentTimeMillis() - 60_000
             contentResolver.query(
                 CallLog.Calls.CONTENT_URI,
-                arrayOf(CallLog.Calls.NUMBER, CallLog.Calls.TYPE),
-                "${CallLog.Calls.TYPE} = ${CallLog.Calls.INCOMING_TYPE}",
-                null,
+                arrayOf(CallLog.Calls.NUMBER, CallLog.Calls.TYPE, CallLog.Calls.DATE),
+                "${CallLog.Calls.TYPE} = ${CallLog.Calls.INCOMING_TYPE} AND ${CallLog.Calls.DATE} > ?",
+                arrayOf(recentCutoff.toString()),
                 "${CallLog.Calls.DATE} DESC"
             )?.use { cursor ->
                 if (cursor.moveToFirst()) cursor.getString(0) else null
