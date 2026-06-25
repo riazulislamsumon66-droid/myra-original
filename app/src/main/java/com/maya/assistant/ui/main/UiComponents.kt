@@ -171,12 +171,10 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     override fun getItemCount() = messages.size
 
     inner class UserMessageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        private val msgText: TextView = view.findViewById(R.id.msgText)
-        private val timeText: TextView = view.findViewById(R.id.timeText)
+        private val msgText: TextView = view.findViewById(R.id.chatMessageText)
 
         fun bind(msg: ChatMessage) {
             msgText.text = msg.text
-            timeText.text = formatTime(msg.timestamp)
 
             // ✅ FIX: Ensure text doesn't overflow
             msgText.maxLines = 100
