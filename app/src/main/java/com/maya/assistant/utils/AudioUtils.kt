@@ -28,6 +28,19 @@ object AudioUtils {
     }
 
     /**
+     * Calculate RMS from ShortArray (for wake word detection)
+     */
+    fun calculateRmsFromShort(buffer: ShortArray, length: Int): Float {
+        if (length == 0) return 0f
+        var sum = 0.0
+        for (i in 0 until length) {
+            val sample = buffer[i].toFloat() / 32768f
+            sum += sample * sample
+        }
+        return Math.sqrt(sum / length).toFloat()
+    }
+
+    /**
      * Convert PCM bytes to base64 for WebSocket transmission
      */
     fun pcmToBase64(pcm: ByteArray): String =

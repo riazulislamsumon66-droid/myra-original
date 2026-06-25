@@ -32,6 +32,7 @@ class GeminiWebSocketClient(
 
     fun connect() {
         isSetupComplete = false
+        Log.d(TAG, "Connecting to: ${url.take(80)}...")
         val request = Request.Builder()
             .url(url)
             .addHeader("Origin", "https://generativelanguage.googleapis.com")
@@ -39,7 +40,7 @@ class GeminiWebSocketClient(
 
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(ws: WebSocket, response: Response) {
-                Log.d(TAG, "Connected ✅")
+                Log.d(TAG, "WebSocket OPEN ✅ — sending setup message")
                 sendSetup(ws)
             }
 
@@ -88,7 +89,10 @@ class GeminiWebSocketClient(
     }
 
     fun sendAudioChunk(pcm: ByteArray) {
-        if (!isSetupComplete) return
+        if (!isSetupComplete) {
+            Log.w(TAG, "sendAudioChunk: DROPPED ${pcm.size} bytes — setup not complete yet")
+            return
+        }
         try {
             val b64 = Base64.encodeToString(pcm, Base64.NO_WRAP)
             val msg = JSONObject().apply {
@@ -100,13 +104,17 @@ class GeminiWebSocketClient(
                 })
             }
             webSocket?.send(msg.toString())
+            Log.v(TAG, "sendAudioChunk: sent ${pcm.size} bytes (base64 ${b64.length} chars)")
         } catch (e: Exception) {
             Log.e(TAG, "Audio send error: ${e.message}")
         }
     }
 
     fun sendTurnComplete() {
-        if (!isSetupComplete) return
+        if (!isSetupComplete) {
+            Log.w(TAG, "sendTurnComplete: DROPPED — setup not complete")
+            return
+        }
         try {
             val msg = JSONObject().apply {
                 put("clientContent", JSONObject().apply {
@@ -122,7 +130,10 @@ class GeminiWebSocketClient(
     }
 
     fun sendTextMessage(text: String) {
-        if (!isSetupComplete) return
+        if (!isSetupComplete) {
+            Log.w(TAG, "sendTextMessage: DROPPED — setup not complete")
+            return
+        }
         try {
             val msg = JSONObject().apply {
                 put("clientContent", JSONObject().apply {
@@ -146,12 +157,16 @@ class GeminiWebSocketClient(
             // Setup complete
             if (obj.has("setupComplete") || obj.optJSONObject("setupComplete") != null) {
                 isSetupComplete = true
-                Log.d(TAG, "Gemini Ready ✅")
+                Log.d(TAG, "Setup COMPLETE ✅ — Gemini ready for audio")
                 onConnected()
                 return
             }
 
-            val serverContent = obj.optJSONObject("serverContent") ?: return
+            val serverContent = obj.optJSONObject("serverContent")
+            if (serverContent == null) {
+                Log.w(TAG, "Response without serverContent: ${json.take(100)}")
+                return
+            }
 
             val modelTurn = serverContent.optJSONObject("modelTurn")
             if (modelTurn != null) {

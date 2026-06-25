@@ -65,6 +65,7 @@ class MainActivity : AppCompatActivity() {
     private val responseReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val text = intent?.getStringExtra("text") ?: return
+            Logger.d(TAG, "Broadcast received: '$text'")
             addBotMessage(text)
         }
     }
@@ -189,20 +190,25 @@ class MainActivity : AppCompatActivity() {
         chatRecycler.adapter = chatAdapter
 
         micButton.setOnClickListener {
+            Logger.d(TAG, "MIC BUTTON TAPPED")
             val svc = ForegroundVoiceService.instance
             if (svc != null) {
                 val isRecording = svc.toggleRecording()
                 if (isRecording) {
+                    Logger.d(TAG, "Mic button: STARTED recording (conversation mode)")
                     addUserMessage("🎤 Listening...")
                 } else {
+                    Logger.d(TAG, "Mic button: STOPPED recording → processing")
                     addUserMessage("🎤 Processing...")
                 }
             } else {
+                Logger.w(TAG, "Mic button: Service not running, starting service...")
                 startVoiceService()
             }
         }
 
         micButton.setOnLongClickListener {
+            Logger.d(TAG, "MIC BUTTON LONG PRESSED → reconnect Gemini")
             ForegroundVoiceService.instance?.reconnectGemini()
             addBotMessage("Reconnecting...")
             true
@@ -275,11 +281,13 @@ class MainActivity : AppCompatActivity() {
             prefs().getString(Constants.KEY_API_KEY, "") ?: ""
         }
         if (apiKey.isEmpty()) {
+            Logger.w(TAG, "API Key empty — cannot start voice service")
             addBotMessage("⚠️ API Key required. Settings → Enter Gemini API Key.")
             return
         }
+        Logger.d(TAG, "Starting ForegroundVoiceService...")
         ContextCompat.startForegroundService(this, Intent(this, ForegroundVoiceService::class.java))
-        Logger.d(TAG, "Jarvis voice service started")
+        Logger.d(TAG, "ForegroundVoiceService started")
     }
 
     private fun checkAccessibility() {
