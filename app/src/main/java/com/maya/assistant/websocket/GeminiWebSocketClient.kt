@@ -23,9 +23,14 @@ class GeminiWebSocketClient(
     private var webSocket: WebSocket? = null
     private var isSetupComplete = false
 
+    companion object {
+        // Max chunks to buffer (~10 seconds at 16kHz) before the WS setup
+        // handshake completes.
+        private const val MAX_BUFFER_SIZE = 16
+    }
+
     // Audio buffer — stores chunks before WS connects, flushes after setup
     private val audioBuffer = ConcurrentLinkedQueue<ByteArray>()
-    private const val MAX_BUFFER_SIZE = 16 // Max chunks to buffer (~10 seconds at 16kHz)
     private var currentModelIndex = 0
     private val modelQueue = listOf(Constants.GEMINI_MODEL) + Constants.GEMINI_FALLBACK_MODELS
 
