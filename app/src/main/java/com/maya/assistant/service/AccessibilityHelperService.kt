@@ -96,6 +96,31 @@ class AccessibilityHelperService : AccessibilityService() {
         currentRoot = rootInActiveWindow
         com.maya.assistant.accessibility.AccessibilityEventManager.onEvent(event)
         Log.d(TAG, "EVENT -> ${event.packageName} | ${event.className}")
+
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            checkAppLock(event.packageName?.toString())
+        }
+    }
+
+    private var lastCheckedPackage: String? = null
+
+    private fun checkAppLock(packageName: String?) {
+        if (packageName.isNullOrBlank()) return
+        // Ignore re-checking the same foreground package repeatedly
+        // (TYPE_WINDOW_STATE_CHANGED can fire multiple times for one app).
+        if (packageName == lastCheckedPackage) return
+        lastCheckedPackage = packageName
+
+        // Never lock our own app or the lock screen itself — would create
+        // an unlock loop.
+        if (packageName == this.packageName) return
+
+        if (com.maya.assistant.security.AppLockActivity.isUnlocked(packageName)) return
+
+        if (com.maya.assistant.security.SecurityManager.isPackageLocked(this, packageName)) {
+            Log.d(TAG, "Locked app opened: $packageName — launching AppLockActivity")
+            com.maya.assistant.security.AppLockActivity.launch(this, packageName)
+        }
     }
 
     override fun onInterrupt() {

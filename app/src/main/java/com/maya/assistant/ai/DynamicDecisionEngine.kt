@@ -44,12 +44,24 @@ object DynamicDecisionEngine {
     )
 
     suspend fun execute(context: Context, command: VoiceCommand): String {
+        val entry = com.maya.assistant.utils.CommandLogger.start(
+            commandType = command.type.name,
+            rawText = command.raw,
+            args = command.args
+        )
         return try {
             val result = executeInternal(context, command)
+            val looksLikeFailure = FAILURE_MARKERS.any { result.contains(it) }
+            if (looksLikeFailure) {
+                com.maya.assistant.utils.CommandLogger.failure(entry, result)
+            } else {
+                com.maya.assistant.utils.CommandLogger.success(entry, result)
+            }
             result
         } catch (e: Exception) {
             val msg = "${command.type} চালাতে সমস্যা: ${e.message}"
             Logger.e(TAG, "Unhandled exception executing ${command.type}: ${e.message}", e)
+            com.maya.assistant.utils.CommandLogger.failure(entry, e.message ?: e.javaClass.simpleName, e)
             msg
         }
     }
@@ -487,11 +499,27 @@ object DynamicDecisionEngine {
 
             // Face recognition commands
             CommandType.REGISTER_FACE -> {
-                "মুখ সংরক্ষণের জন্য Settings → Face Recognition এ যাও। সেখানে 'নতুন মুখ যোগ করো' বাটনে ক্লিক করো।"
+                try {
+                    context.startActivity(
+                        Intent(context, com.maya.assistant.ui.settings.FaceSettingsActivity::class.java)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                    "Face Recognition সেটিংস খুলে দিলাম, সেখানে 'নতুন মুখ যোগ করো' বাটনে ক্লিক করো।"
+                } catch (e: Exception) {
+                    "মুখ সংরক্ষণের জন্য Settings → Face Recognition এ যাও।"
+                }
             }
 
             CommandType.RECOGNIZE_FACE -> {
-                "চেহরা শনাক্ত করার জন্য Settings → Face Recognition → স্ক্যান করো। সম্পূর্ণ ফিচার শীঘ্রই আসছে!"
+                try {
+                    context.startActivity(
+                        Intent(context, com.maya.assistant.ui.settings.FaceSettingsActivity::class.java)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                    "Face Recognition সেটিংস খুলে দিলাম, ওখান থেকে স্ক্যান করো।"
+                } catch (e: Exception) {
+                    "চেহরা শনাক্ত করার জন্য Settings → Face Recognition এ যাও।"
+                }
             }
 
             CommandType.IDENTIFY_SPEAKER -> {
@@ -500,7 +528,16 @@ object DynamicDecisionEngine {
                 val enrolled = voiceId.getEnrolledProfiles()
                 if (enrolled.isNotEmpty()) {
                     voiceId.recognizeVoice { result ->
-                        // Result handled via broadcast from ForegroundVoiceService
+                        // Broadcast the actual result back to the UI/voice
+                        // pipeline — previously this callback was empty, so
+                        // recognition ran but the user never learned the
+                        // outcome.
+                        val msg = if (result.slotIndex >= 0 && result.speakerName != "Unknown") {
+                            "এটা ${result.speakerName} এর কন্ঠ মনে হচ্ছে।"
+                        } else {
+                            "কন্ঠ চিনতে পারলাম না।"
+                        }
+                        context.sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", msg))
                     }
                     "বক্তা শনাক্ত করছি..."
                 } else {

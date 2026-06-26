@@ -256,8 +256,11 @@ object SmartAccessibilityEngine {
     }
 
     private fun findEditableNode(
-        node: AccessibilityNodeInfo
+        node: AccessibilityNodeInfo,
+        depth: Int = 0
     ): AccessibilityNodeInfo? {
+
+        if (depth > 40) return null
 
         if (node.isEditable)
             return node
@@ -269,7 +272,7 @@ object SmartAccessibilityEngine {
             if (child != null) {
 
                 val result =
-                    findEditableNode(child)
+                    findEditableNode(child, depth + 1)
 
                 if (result != null)
                     return result

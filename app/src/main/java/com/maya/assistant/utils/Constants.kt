@@ -4,7 +4,7 @@ object Constants {
     // Gemini — model must include date suffix for Live API
     const val GEMINI_MODEL = "models/gemini-2.5-flash-native-audio-preview-12-2025"
     val GEMINI_FALLBACK_MODELS = listOf(
-        "models/gemini-2.5-flash-native-audio",
+        "models/gemini-2.0-flash-live-001",
         "models/gemini-2.5-flash",
         "models/gemini-2.0-flash"
     )

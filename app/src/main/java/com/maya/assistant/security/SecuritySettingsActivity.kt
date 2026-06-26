@@ -148,7 +148,7 @@ class SecuritySettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListene
                 SecurityManager.setAppLockEnabled(this, false)
                 PatternManager.disablePatternLock(this)
                 loadCurrentStatus()
-                AppLockActivity.isUnlockedThisSession = true
+                AppLockActivity.clearAll()
                 speak("App lock band kar diya", true)
             }
         }

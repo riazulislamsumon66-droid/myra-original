@@ -324,8 +324,8 @@ class MainActivity : AppCompatActivity() {
         if (com.maya.assistant.security.SecurityManager.isAppLockEnabled(this)
             || com.maya.assistant.security.PatternManager.isPatternLockEnabled(this)
         ) {
-            if (!com.maya.assistant.security.AppLockActivity.isUnlockedThisSession) {
-                com.maya.assistant.security.AppLockActivity.launch(this)
+            if (!com.maya.assistant.security.AppLockActivity.isUnlocked(packageName)) {
+                com.maya.assistant.security.AppLockActivity.launch(this, packageName)
                 return
             }
         }

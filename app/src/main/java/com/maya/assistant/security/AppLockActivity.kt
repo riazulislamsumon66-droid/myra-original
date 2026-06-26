@@ -63,10 +63,29 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     enum class Tab { PIN, PATTERN, VOICE, FINGER }
 
     companion object {
-        var isUnlockedThisSession = false
-        fun launch(context: Context) {
+        // Per-package unlock tracking. Replaces a previous single global
+        // boolean flag, which meant unlocking ANY one locked app also
+        // unlocked every other locked app for the rest of the process
+        // lifetime — clearly wrong when several different apps are locked
+        // individually.
+        private val unlockedPackagesThisSession = mutableSetOf<String>()
+
+        fun isUnlocked(packageName: String): Boolean = unlockedPackagesThisSession.contains(packageName)
+
+        fun markUnlocked(packageName: String) { unlockedPackagesThisSession.add(packageName) }
+
+        /** Call when a locked app goes to background, so re-opening it asks again. */
+        fun clearUnlock(packageName: String) { unlockedPackagesThisSession.remove(packageName) }
+
+        /** Call when app-lock is disabled entirely, to drop all pending unlock state. */
+        fun clearAll() { unlockedPackagesThisSession.clear() }
+
+        const val EXTRA_TARGET_PACKAGE = "target_package"
+
+        fun launch(context: Context, targetPackage: String? = null) {
             context.startActivity(Intent(context, AppLockActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                if (targetPackage != null) putExtra(EXTRA_TARGET_PACKAGE, targetPackage)
             })
         }
     }
@@ -378,7 +397,7 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun onSuccess() {
-        isUnlockedThisSession = true
+        intent.getStringExtra(EXTRA_TARGET_PACKAGE)?.let { markUnlocked(it) }
         val prefs = getSharedPreferences("maya_prefs", MODE_PRIVATE)
         val name  = prefs.getString("user_name", "Jaan") ?: "Jaan"
         val mode  = prefs.getString("personality_mode", "gf") ?: "gf"

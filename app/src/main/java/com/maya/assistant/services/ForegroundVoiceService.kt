@@ -138,7 +138,10 @@ class ForegroundVoiceService : Service() {
 
             // Start recording for command
             vad.reset()
-            audioRecorder.start()
+            audioFocus.requestFocus(
+                onGained = { if (!audioRecorder.isActive()) audioRecorder.start() },
+                onLost = { audioRecorder.stop() }
+            )
             VoiceStateManager.setListening()
             Logger.d(TAG, "Recording started — waiting for command (10s timeout)")
 
@@ -177,7 +180,11 @@ class ForegroundVoiceService : Service() {
             },
             onTextReceived = { text ->
                 val clean = AIResponseManager.clean(text)
-                if (clean.isNotBlank()) {
+                // Defense in depth: clean() strips known thinking-trace patterns,
+                // but if Gemini phrases its internal reasoning in a way clean()
+                // didn't anticipate, hasThinkingText() catches it here so it's
+                // never shown in the UI or treated as a command.
+                if (clean.isNotBlank() && !AIResponseManager.hasThinkingText(clean)) {
                     ConversationMemory.addAssistant(clean)
 
                     // Only execute commands if voice is authorized
@@ -343,6 +350,7 @@ STRICT RULES:
         wakeWordDetector?.stop()
         audioRecorder.stop()
         audioPlayer.release()
+        audioFocus.abandonFocus()
         geminiClient?.disconnect()
         job.cancel()
         super.onDestroy()

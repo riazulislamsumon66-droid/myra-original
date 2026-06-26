@@ -64,6 +64,14 @@ class NotificationReaderService : NotificationListenerService() {
 
         if (text.isBlank()) return
 
+        // Privacy safeguard: don't read OTP/verification-code notifications
+        // aloud or broadcast them — these are exactly the messages that
+        // shouldn't be spoken where a bystander could overhear them.
+        if (looksLikeSensitiveCode(text)) {
+            Log.d(TAG, "Skipping sensitive-looking notification from $pkg")
+            return
+        }
+
         val appName = getAppName(pkg)
         val notificationText = "🔔 $appName: $text"
 
@@ -79,10 +87,21 @@ class NotificationReaderService : NotificationListenerService() {
         // Read aloud if user has enabled
         if (prefs.getBoolean("notification_read_aloud", false)) {
             val responseText = "📢 $appName থেকে বার্তা: $text"
-            sendBroadcast(Intent("MAYA_RESPONSE").apply {
-                putExtra("text", responseText)
-                putExtra("is_result", true)
-            })
+            // NOTE: previously this only sent a MAYA_RESPONSE broadcast,
+            // which MainActivity displays as a chat bubble but never speaks.
+            // Routing through sendTextToGemini() uses the same TTS path as
+            // every other spoken reply, so "read aloud" actually reads aloud.
+            val voiceService = com.maya.assistant.services.ForegroundVoiceService.instance
+            if (voiceService != null) {
+                voiceService.sendTextToGemini("এই নোটিফিকেশনটা সংক্ষেপে আমাকে পড়ে শোনাও: $responseText")
+            } else {
+                // Voice service not running — fall back to the text-only
+                // broadcast so the notification is at least visible.
+                sendBroadcast(Intent("MAYA_RESPONSE").apply {
+                    putExtra("text", responseText)
+                    putExtra("is_result", true)
+                })
+            }
         }
     }
 
@@ -104,5 +123,20 @@ class NotificationReaderService : NotificationListenerService() {
         } catch (e: Exception) {
             packageName
         }
+    }
+
+    private fun looksLikeSensitiveCode(text: String): Boolean {
+        val lower = text.lowercase()
+        val keywords = listOf(
+            "otp", "one-time password", "one time password", "verification code",
+            "security code", "passcode", "pin code", "২fa", "2fa",
+            "যাচাইকরণ কোড", "নিরাপত্তা কোড"
+        )
+        if (keywords.any { lower.contains(it) }) return true
+        // A standalone 4-8 digit number alongside the message is also a
+        // strong OTP signal (e.g. "123456 is your verification code").
+        if (Regex("\\b\\d{4,8}\\b").containsMatchIn(text) &&
+            (lower.contains("code") || lower.contains("otp") || lower.contains("verify"))) return true
+        return false
     }
 }

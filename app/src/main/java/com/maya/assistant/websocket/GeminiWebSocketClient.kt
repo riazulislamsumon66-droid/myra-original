@@ -21,6 +21,8 @@ class GeminiWebSocketClient(
     private val TAG = "GEMINI_WS"
     private var webSocket: WebSocket? = null
     private var isSetupComplete = false
+    private var currentModelIndex = 0
+    private val modelQueue = listOf(Constants.GEMINI_MODEL) + Constants.GEMINI_FALLBACK_MODELS
 
     private val client = OkHttpClient.Builder()
         .readTimeout(0, TimeUnit.MILLISECONDS)
@@ -31,8 +33,19 @@ class GeminiWebSocketClient(
     private val url = "${Constants.GEMINI_WS_BASE}?key=$apiKey"
 
     fun connect() {
+        currentModelIndex = 0
+        connectInternal()
+    }
+
+    private fun connectInternal() {
+        if (currentModelIndex >= modelQueue.size) {
+            Log.e(TAG, "All ${modelQueue.size} models exhausted — giving up")
+            onError("সব Gemini মডেল connect করতে ব্যর্থ হলো")
+            return
+        }
         isSetupComplete = false
-        Log.d(TAG, "Connecting to: ${url.take(80)}...")
+        val model = modelQueue[currentModelIndex]
+        Log.d(TAG, "Connecting (model ${currentModelIndex + 1}/${modelQueue.size}: $model) to: ${url.take(80)}...")
         val request = Request.Builder()
             .url(url)
             .addHeader("Origin", "https://generativelanguage.googleapis.com")
@@ -41,7 +54,7 @@ class GeminiWebSocketClient(
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(ws: WebSocket, response: Response) {
                 Log.d(TAG, "WebSocket OPEN ✅ — sending setup message")
-                sendSetup(ws)
+                sendSetup(ws, model)
             }
 
             override fun onMessage(ws: WebSocket, text: String) {
@@ -54,8 +67,14 @@ class GeminiWebSocketClient(
 
             override fun onFailure(ws: WebSocket, t: Throwable, response: Response?) {
                 isSetupComplete = false
-                Log.e(TAG, "WS Failure: ${t.message}")
-                onError("Connection failed: ${t.message}")
+                Log.e(TAG, "WS Failure (model #$currentModelIndex: $model): ${t.message}")
+                currentModelIndex++
+                if (currentModelIndex < modelQueue.size) {
+                    Log.w(TAG, "Retrying with fallback model: ${modelQueue[currentModelIndex]}")
+                    connectInternal()
+                } else {
+                    onError("Connection failed: ${t.message}")
+                }
             }
 
             override fun onClosed(ws: WebSocket, code: Int, reason: String) {
@@ -65,10 +84,10 @@ class GeminiWebSocketClient(
         })
     }
 
-    private fun sendSetup(ws: WebSocket) {
+    private fun sendSetup(ws: WebSocket, model: String) {
         val setup = JSONObject().apply {
             put("setup", JSONObject().apply {
-                put("model", Constants.GEMINI_MODEL)
+                put("model", model)
                 put("generationConfig", JSONObject().apply {
                     put("responseModalities", JSONArray().put("AUDIO"))
                     put("speechConfig", JSONObject().apply {
