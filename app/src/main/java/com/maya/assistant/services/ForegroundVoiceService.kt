@@ -18,6 +18,7 @@ import com.maya.assistant.utils.prefs
 import com.maya.assistant.voice.AudioFocusManager
 import com.maya.assistant.voice.AudioPlayer
 import com.maya.assistant.voice.AudioRecorder
+import com.maya.assistant.security.SecurePrefs
 import com.maya.assistant.voice.VoiceActivityDetector
 import com.maya.assistant.voice.VoiceAuthManager
 import com.maya.assistant.voice.VoiceStateManager
@@ -106,7 +107,9 @@ class ForegroundVoiceService : Service() {
         // Start wake word detection
         startWakeWordDetection()
 
-        val apiKey = prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+        val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
+            prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+        }
         if (apiKey.isNotEmpty()) {
             Logger.d(TAG, "API key found, connecting to Gemini...")
             connectGemini(apiKey)
@@ -236,7 +239,9 @@ class ForegroundVoiceService : Service() {
 
     fun reconnectGemini() {
         Logger.d(TAG, "reconnectGemini called")
-        val apiKey = prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+        val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
+            prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+        }
         if (apiKey.isNotEmpty()) {
             geminiClient?.disconnect()
             connectGemini(apiKey)
@@ -259,7 +264,9 @@ class ForegroundVoiceService : Service() {
         } else {
             // Ensure WebSocket is connected
             if (geminiClient == null || !geminiClient!!.isConnected()) {
-                val apiKey = prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+                val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
+                    prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+                }
                 if (apiKey.isNotEmpty()) {
                     Logger.d(TAG, "toggleRecording: WebSocket not connected, connecting...")
                     connectGemini(apiKey)

@@ -8,6 +8,7 @@ import okio.ByteString
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class GeminiWebSocketClient(
     private val apiKey: String,
@@ -21,6 +22,10 @@ class GeminiWebSocketClient(
     private val TAG = "GEMINI_WS"
     private var webSocket: WebSocket? = null
     private var isSetupComplete = false
+
+    // Audio buffer — stores chunks before WS connects, flushes after setup
+    private val audioBuffer = ConcurrentLinkedQueue<ByteArray>()
+    private const val MAX_BUFFER_SIZE = 16 // Max chunks to buffer (~10 seconds at 16kHz)
     private var currentModelIndex = 0
     private val modelQueue = listOf(Constants.GEMINI_MODEL) + Constants.GEMINI_FALLBACK_MODELS
 
@@ -109,9 +114,33 @@ class GeminiWebSocketClient(
 
     fun sendAudioChunk(pcm: ByteArray) {
         if (!isSetupComplete) {
-            Log.w(TAG, "sendAudioChunk: DROPPED ${pcm.size} bytes — setup not complete yet")
+            // Buffer the audio for later delivery
+            if (audioBuffer.size < MAX_BUFFER_SIZE) {
+                audioBuffer.offer(pcm)
+                Log.d(TAG, "sendAudioChunk: BUFFERED ${pcm.size} bytes (buffer size: ${audioBuffer.size}/$MAX_BUFFER_SIZE)")
+            } else {
+                Log.w(TAG, "sendAudioChunk: BUFFER FULL — dropping oldest chunk")
+                audioBuffer.poll()
+                audioBuffer.offer(pcm)
+            }
             return
         }
+        // If we have buffered audio, flush it first
+        flushAudioBuffer()
+        // Send current chunk
+        sendAudioChunkInternal(pcm)
+    }
+
+    private fun flushAudioBuffer() {
+        if (audioBuffer.isEmpty()) return
+        Log.d(TAG, "Flushing audio buffer: ${audioBuffer.size} chunks")
+        while (audioBuffer.isNotEmpty()) {
+            val buffered = audioBuffer.poll() ?: break
+            sendAudioChunkInternal(buffered)
+        }
+    }
+
+    private fun sendAudioChunkInternal(pcm: ByteArray) {
         try {
             val b64 = Base64.encodeToString(pcm, Base64.NO_WRAP)
             val msg = JSONObject().apply {
@@ -123,7 +152,7 @@ class GeminiWebSocketClient(
                 })
             }
             webSocket?.send(msg.toString())
-            Log.v(TAG, "sendAudioChunk: sent ${pcm.size} bytes (base64 ${b64.length} chars)")
+            Log.v(TAG, "sendAudioChunk: sent ${pcm.size} bytes")
         } catch (e: Exception) {
             Log.e(TAG, "Audio send error: ${e.message}")
         }
@@ -173,10 +202,14 @@ class GeminiWebSocketClient(
         try {
             val obj = JSONObject(json)
 
-            // Setup complete
-            if (obj.has("setupComplete") || obj.optJSONObject("setupComplete") != null) {
+            // Setup complete — check both formats Gemini may send
+            val setupOk = obj.optBoolean("setupComplete", false) ||
+                obj.optJSONObject("setupComplete") != null
+            if (setupOk) {
                 isSetupComplete = true
-                Log.d(TAG, "Setup COMPLETE ✅ — Gemini ready for audio")
+                Log.d(TAG, "Setup COMPLETE ✅ — Gemini ready for audio (${audioBuffer.size} buffered chunks to flush)")
+                // Flush any audio that was buffered before connection
+                flushAudioBuffer()
                 onConnected()
                 return
             }

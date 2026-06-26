@@ -13,7 +13,7 @@ class VoiceActivityDetector(
     private val TAG = "VAD"
 
     private val SPEECH_THRESHOLD = 0.015f   // RMS threshold to detect speech
-    private val SILENCE_FRAMES = 25          // ~500ms silence to detect end of speech
+    private val SILENCE_FRAMES = 50          // ~1000ms silence to detect end of speech (Bangla has longer pauses)
     private val SPEECH_FRAMES = 3            // Consecutive frames to confirm speech start
 
     private var silenceCount = 0
