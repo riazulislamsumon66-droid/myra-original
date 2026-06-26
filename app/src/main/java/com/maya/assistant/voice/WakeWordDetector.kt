@@ -88,8 +88,9 @@ class WakeWordDetector(
 
     private suspend fun processAudioStream() {
         val buffer = ShortArray(SAMPLE_RATE) // 1 second of audio
+        val scope = currentCoroutineContext()
 
-        while (isListening && isActive) {
+        while (isListening && scope.isActive) {
             try {
                 val read = audioRecord?.read(buffer, 0, buffer.size) ?: 0
                 if (read > 0) {
@@ -108,7 +109,7 @@ class WakeWordDetector(
                     }
                 }
             } catch (e: Exception) {
-                if (isActive) Log.e(TAG, "Audio process error: ${e.message}")
+                if (scope.isActive) Log.e(TAG, "Audio process error: ${e.message}")
             }
         }
     }
