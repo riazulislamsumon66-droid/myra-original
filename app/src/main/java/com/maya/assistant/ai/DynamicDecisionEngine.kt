@@ -320,11 +320,15 @@ object DynamicDecisionEngine {
 
             CommandType.BATTERY_CHECK -> {
                 try {
-                    val bm = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
-                    val level = bm?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
-                    val scale = bm?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
-                    val pct = if (level >= 0 && scale > 0) (level * 100 / scale) else -1
-                    if (pct >= 0) "ব্যাটারি এখন $pct% আছে"
+                    // BatteryManager.getIntProperty() gives real-time battery %
+                    // directly from the hardware — never returns stale cached data
+                    // unlike registerReceiver(null, ACTION_BATTERY_CHANGED) which
+                    // can return the last sticky broadcast (seconds or more old).
+                    val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+                    val pct = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                    val isCharging = batteryManager.isCharging
+                    val chargingStatus = if (isCharging) ", চার্জ হচ্ছে ⚡" else ""
+                    if (pct in 0..100) "ব্যাটারি এখন $pct% আছে$chargingStatus"
                     else "ব্যাটারি তথ্য পাওয়া যায়নি"
                 } catch (e: Exception) { "ব্যাটারি চেক করতে সমস্যা" }
             }
