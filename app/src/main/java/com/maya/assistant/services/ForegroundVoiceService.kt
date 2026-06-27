@@ -88,7 +88,7 @@ class ForegroundVoiceService : Service() {
             onSpeechStart = {
                 Logger.d(TAG, "VAD: Speech STARTED")
                 VoiceStateManager.setListening()
-                resetInactivityTimer()
+                // No inactivity reset needed — always-on mic mode
             },
             onSpeechEnd = {
                 Logger.d(TAG, "VAD: Speech ENDED — sending turnComplete")
@@ -159,23 +159,13 @@ class ForegroundVoiceService : Service() {
                 onLost = { audioRecorder.stop() }
             )
             VoiceStateManager.setListening()
-            resetInactivityTimer()
-            Logger.d(TAG, "Recording started — waiting for command (10s timeout)")
+            // Siri-style: mic is open, VAD waits for speech, then sends to Gemini.
+            // After MAYA responds (onTurnComplete), returns to wake-word mode.
+            Logger.d(TAG, "Recording started — Siri-style, VAD waiting for speech")
 
             // Broadcast to UI
             val authStatus = if (isAuthorized) "✅ $speakerName recognized — commands enabled" else "⚠️ Unknown voice — conversation only"
             sendBroadcast(Intent("MAYA_RESPONSE").putExtra("text", authStatus))
-
-            // Auto-stop after 10 seconds if no speech
-            scope.launch {
-                kotlinx.coroutines.delay(10000)
-                if (currentMode == Mode.ACTIVE && audioRecorder.isActive()) {
-                    Logger.w(TAG, "10s timeout — no speech detected, returning to wake word mode")
-                    audioRecorder.stop()
-                    geminiClient?.sendTurnComplete()
-                    returnToWakeWordMode()
-                }
-            }
         }
     }
 
@@ -195,43 +185,18 @@ class ForegroundVoiceService : Service() {
         }
     }
 
-    private var inactivityJob: kotlinx.coroutines.Job? = null
-    private val INACTIVITY_TIMEOUT_MS = 30_000L // 30s of no speech/command while ACTIVE -> back to wake-word-only
-
+    /**
+     * Returns to wake-word-only mode.
+     * Called ONLY from: onTaskRemoved() or onDestroy().
+     * NOT called on silence/inactivity — mic stays open always in ACTIVE mode.
+     */
     private fun returnToWakeWordMode() {
         currentMode = Mode.WAKE_WORD
-        inactivityJob?.cancel()
-        inactivityJob = null
-        // Disconnect Gemini — no need to hold a live WebSocket open while
-        // just idling for the next "Hey MAYA". Reconnects on demand the
-        // next time onWakeWordDetected()/toggleRecording() fires.
         geminiClient?.disconnect()
         VoiceStateManager.setIdle()
-        // Brief delay before claiming the mic with SpeechRecognizer — same
-        // handoff-race reasoning as in onWakeWordDetected(), just in the
-        // opposite direction (AudioRecorder releasing -> SpeechRecognizer
-        // claiming, instead of the other way around).
         scope.launch {
             kotlinx.coroutines.delay(200)
             startWakeWordDetection()
-        }
-    }
-
-    /**
-     * Restarts the inactivity countdown. Call this whenever there's a sign
-     * of life in the conversation (speech detected, response received,
-     * etc.) so an active conversation doesn't get cut off just because the
-     * timer happened to be close to firing.
-     */
-    private fun resetInactivityTimer() {
-        inactivityJob?.cancel()
-        inactivityJob = scope.launch {
-            kotlinx.coroutines.delay(INACTIVITY_TIMEOUT_MS)
-            if (currentMode == Mode.ACTIVE) {
-                Logger.d(TAG, "Inactivity timeout (${INACTIVITY_TIMEOUT_MS}ms) — returning to wake-word-only mode")
-                if (audioRecorder.isActive()) audioRecorder.stop()
-                returnToWakeWordMode()
-            }
         }
     }
 
@@ -274,14 +239,15 @@ class ForegroundVoiceService : Service() {
                 }
             },
             onTurnComplete = {
-                if (!audioRecorder.isActive()) audioRecorder.start()
-                // Give the user a real window to keep the conversation
-                // going (follow-up question, etc.) instead of unconditionally
-                // snapping back to wake-word-only mode 2s after every single
-                // response — resetInactivityTimer() means it only times out
-                // after genuine silence.
-                if (currentMode == Mode.ACTIVE) {
-                    resetInactivityTimer()
+                // Siri-style: after MAYA finishes responding, go back to
+                // wake-word-only mode. The mic is NOT kept open — user must
+                // say "Hey MAYA" again for the next command. Service never
+                // idles or stops; it just quietly listens for the wake word.
+                Logger.d(TAG, "Turn complete — returning to wake-word mode (say 'Hey MAYA' again)")
+                audioRecorder.stop()
+                scope.launch {
+                    kotlinx.coroutines.delay(300) // brief pause after response
+                    returnToWakeWordMode()
                 }
             },
             onError = { msg ->
@@ -353,7 +319,7 @@ class ForegroundVoiceService : Service() {
             currentMode = Mode.ACTIVE
             vad.reset()
             VoiceStateManager.setListening()
-            resetInactivityTimer()
+            // Always-on mic — no inactivity timer
             // Same SpeechRecognizer/AudioRecorder mic-handoff race as
             // onWakeWordDetected() — brief delay so the previous mic
             // session has actually released before AudioRecorder claims it.
@@ -441,7 +407,6 @@ STRICT RULES:
         isRunning = false
         instance = null
         wakeWordDetector?.stop()
-        inactivityJob?.cancel()
         audioRecorder.stop()
         audioPlayer.release()
         audioFocus.abandonFocus()
