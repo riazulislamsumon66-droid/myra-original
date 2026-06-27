@@ -22,7 +22,7 @@ import com.maya.assistant.security.SecurePrefs
 import com.maya.assistant.voice.VoiceActivityDetector
 import com.maya.assistant.voice.VoiceAuthManager
 import com.maya.assistant.voice.VoiceStateManager
-import com.maya.assistant.voice.PorcupineWakeWordDetector
+import com.maya.assistant.voice.SpeechRecognizerWakeWordDetector
 import com.maya.assistant.websocket.GeminiWebSocketClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +39,7 @@ class ForegroundVoiceService : Service() {
     private lateinit var vad: VoiceActivityDetector
     private lateinit var audioFocus: AudioFocusManager
     private lateinit var voiceAuth: VoiceAuthManager
-    private var wakeWordDetector: PorcupineWakeWordDetector? = null
+    private var wakeWordDetector: SpeechRecognizerWakeWordDetector? = null
     private var geminiClient: GeminiWebSocketClient? = null
 
     // Mode: WAKE_WORD (listening for "Hey MAYA") or ACTIVE (recording user command)
@@ -88,6 +88,7 @@ class ForegroundVoiceService : Service() {
             onSpeechStart = {
                 Logger.d(TAG, "VAD: Speech STARTED")
                 VoiceStateManager.setListening()
+                resetInactivityTimer()
             },
             onSpeechEnd = {
                 Logger.d(TAG, "VAD: Speech ENDED — sending turnComplete")
@@ -104,23 +105,19 @@ class ForegroundVoiceService : Service() {
             }
         }
 
-        // Start wake word detection
+        // NOTE: previously this also eagerly called connectGemini() here,
+        // meaning a live WebSocket to Gemini was held open for the entire
+        // lifetime of the service — even while just idling in wake-word
+        // mode, never having heard "Hey MAYA". That's wasted battery/data
+        // for a connection that's only needed once a conversation actually
+        // starts. Now only the lightweight wake-word detector starts;
+        // Gemini connects on-demand in onWakeWordDetected()/toggleRecording().
         startWakeWordDetection()
-
-        val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
-            prefs().getString(Constants.KEY_API_KEY, "") ?: ""
-        }
-        if (apiKey.isNotEmpty()) {
-            Logger.d(TAG, "API key found, connecting to Gemini...")
-            connectGemini(apiKey)
-        } else {
-            Logger.w(TAG, "API KEY EMPTY — voice service running but no AI. Set API key in Settings.")
-        }
-        Logger.d(TAG, "Components initialized. Mode: WAKE_WORD, waiting for 'Hey MAYA'...")
+        Logger.d(TAG, "Components initialized. Mode: WAKE_WORD (Gemini not connected — connects on demand), waiting for 'Hey MAYA'...")
     }
 
     private fun startWakeWordDetection() {
-        wakeWordDetector = PorcupineWakeWordDetector(this) {
+        wakeWordDetector = SpeechRecognizerWakeWordDetector(this) {
             // Wake word detected — switch to active mode and authenticate
             onWakeWordDetected()
         }
@@ -134,6 +131,22 @@ class ForegroundVoiceService : Service() {
         wakeWordDetector?.stop()
         currentMode = Mode.ACTIVE
 
+        // Connect to Gemini now that a real conversation is starting —
+        // not held open the whole time the service was idling in
+        // wake-word mode.
+        ensureGeminiConnected()
+
+        // SpeechRecognizer releases the microphone asynchronously (its
+        // internal stop()/destroy() are posted to the main handler), so a
+        // short delay here avoids a race where AudioRecorder tries to open
+        // the mic before the previous session has actually let go of it.
+        scope.launch {
+            kotlinx.coroutines.delay(200)
+            startActiveConversation()
+        }
+    }
+
+    private fun startActiveConversation() {
         // Authenticate voice
         Logger.d(TAG, "Starting voice authentication...")
         voiceAuth.authenticateVoice { isAuthorized, speakerName ->
@@ -146,6 +159,7 @@ class ForegroundVoiceService : Service() {
                 onLost = { audioRecorder.stop() }
             )
             VoiceStateManager.setListening()
+            resetInactivityTimer()
             Logger.d(TAG, "Recording started — waiting for command (10s timeout)")
 
             // Broadcast to UI
@@ -165,10 +179,60 @@ class ForegroundVoiceService : Service() {
         }
     }
 
+    /**
+     * Connects Gemini if it isn't already connected. Safe to call multiple
+     * times — connectGemini() itself disconnects any stale client first.
+     */
+    private fun ensureGeminiConnected() {
+        if (geminiClient != null && geminiClient!!.isConnected()) return
+        val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
+            prefs().getString(Constants.KEY_API_KEY, "") ?: ""
+        }
+        if (apiKey.isNotEmpty()) {
+            connectGemini(apiKey)
+        } else {
+            Logger.w(TAG, "ensureGeminiConnected: no API key set")
+        }
+    }
+
+    private var inactivityJob: kotlinx.coroutines.Job? = null
+    private val INACTIVITY_TIMEOUT_MS = 30_000L // 30s of no speech/command while ACTIVE -> back to wake-word-only
+
     private fun returnToWakeWordMode() {
         currentMode = Mode.WAKE_WORD
+        inactivityJob?.cancel()
+        inactivityJob = null
+        // Disconnect Gemini — no need to hold a live WebSocket open while
+        // just idling for the next "Hey MAYA". Reconnects on demand the
+        // next time onWakeWordDetected()/toggleRecording() fires.
+        geminiClient?.disconnect()
         VoiceStateManager.setIdle()
-        startWakeWordDetection()
+        // Brief delay before claiming the mic with SpeechRecognizer — same
+        // handoff-race reasoning as in onWakeWordDetected(), just in the
+        // opposite direction (AudioRecorder releasing -> SpeechRecognizer
+        // claiming, instead of the other way around).
+        scope.launch {
+            kotlinx.coroutines.delay(200)
+            startWakeWordDetection()
+        }
+    }
+
+    /**
+     * Restarts the inactivity countdown. Call this whenever there's a sign
+     * of life in the conversation (speech detected, response received,
+     * etc.) so an active conversation doesn't get cut off just because the
+     * timer happened to be close to firing.
+     */
+    private fun resetInactivityTimer() {
+        inactivityJob?.cancel()
+        inactivityJob = scope.launch {
+            kotlinx.coroutines.delay(INACTIVITY_TIMEOUT_MS)
+            if (currentMode == Mode.ACTIVE) {
+                Logger.d(TAG, "Inactivity timeout (${INACTIVITY_TIMEOUT_MS}ms) — returning to wake-word-only mode")
+                if (audioRecorder.isActive()) audioRecorder.stop()
+                returnToWakeWordMode()
+            }
+        }
     }
 
     private fun connectGemini(apiKey: String) {
@@ -211,12 +275,13 @@ class ForegroundVoiceService : Service() {
             },
             onTurnComplete = {
                 if (!audioRecorder.isActive()) audioRecorder.start()
-                // After response, return to wake word mode
-                scope.launch {
-                    kotlinx.coroutines.delay(2000)
-                    if (currentMode == Mode.ACTIVE) {
-                        returnToWakeWordMode()
-                    }
+                // Give the user a real window to keep the conversation
+                // going (follow-up question, etc.) instead of unconditionally
+                // snapping back to wake-word-only mode 2s after every single
+                // response — resetInactivityTimer() means it only times out
+                // after genuine silence.
+                if (currentMode == Mode.ACTIVE) {
+                    resetInactivityTimer()
                 }
             },
             onError = { msg ->
@@ -282,24 +347,20 @@ class ForegroundVoiceService : Service() {
             }
             false
         } else {
-            // Ensure WebSocket is connected
-            if (geminiClient == null || !geminiClient!!.isConnected()) {
-                val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
-                    prefs().getString(Constants.KEY_API_KEY, "") ?: ""
-                }
-                if (apiKey.isNotEmpty()) {
-                    Logger.d(TAG, "toggleRecording: WebSocket not connected, connecting...")
-                    connectGemini(apiKey)
-                } else {
-                    Logger.w(TAG, "toggleRecording: No API key, cannot connect")
-                }
-            }
+            ensureGeminiConnected()
             // Stop wake word detection during button recording
             wakeWordDetector?.stop()
             currentMode = Mode.ACTIVE
             vad.reset()
-            audioRecorder.start()
             VoiceStateManager.setListening()
+            resetInactivityTimer()
+            // Same SpeechRecognizer/AudioRecorder mic-handoff race as
+            // onWakeWordDetected() — brief delay so the previous mic
+            // session has actually released before AudioRecorder claims it.
+            scope.launch {
+                kotlinx.coroutines.delay(200)
+                audioRecorder.start()
+            }
             Logger.d(TAG, "toggleRecording: START recording — conversation mode (no device commands)")
             true
         }
@@ -359,15 +420,20 @@ STRICT RULES:
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        Logger.w(TAG, "⚠️ APP SWIPED FROM RECENTS — stopping recording")
+        Logger.w(TAG, "App swiped from recents — ending any active conversation, staying alive in background for 'Hey MAYA'")
         if (audioRecorder.isActive()) {
             audioRecorder.stop()
             geminiClient?.sendTurnComplete()
         }
-        wakeWordDetector?.stop()
-        VoiceStateManager.setIdle()
-        geminiClient?.disconnect()
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        // Intentionally NOT stopping the wake-word detector or calling
+        // stopForeground() here. The whole point of this service is to
+        // keep listening for "Hey MAYA" in the background even after the
+        // user has closed/swiped the app — only an explicit user action
+        // (disabling the assistant in Settings, or a real onDestroy from
+        // the system under extreme memory pressure) should stop that.
+        if (currentMode == Mode.ACTIVE) {
+            returnToWakeWordMode()
+        }
     }
 
     override fun onDestroy() {
@@ -375,6 +441,7 @@ STRICT RULES:
         isRunning = false
         instance = null
         wakeWordDetector?.stop()
+        inactivityJob?.cancel()
         audioRecorder.stop()
         audioPlayer.release()
         audioFocus.abandonFocus()
