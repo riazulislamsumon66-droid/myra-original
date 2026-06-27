@@ -26,6 +26,38 @@ class NotificationReaderService : NotificationListenerService() {
         private var lastNotifTime = 0L
         private const val DEBOUNCE_MS = 3000L // Prevent duplicate reads
 
+        // VoIP call notification tracking — for FB/WA/IMO/Telegram incoming calls
+        private var lastCallNotification: StatusBarNotification? = null
+        private val VOIP_PACKAGES = setOf(
+            "com.facebook.orca",          // Messenger
+            "com.facebook.katana",        // Facebook
+            "com.whatsapp",               // WhatsApp
+            "com.whatsapp.w4b",           // WhatsApp Business
+            "org.telegram.messenger",     // Telegram
+            "com.imo.android.imoim",      // IMO
+            "com.viber.voip",             // Viber
+            "com.skype.raider",           // Skype
+            "us.zoom.videomeetings"       // Zoom
+        )
+        private val CALL_NOTIFICATION_KEYWORDS = listOf(
+            "incoming call", "video call", "voice call", "audio call",
+            "is calling", "calling you", "wants to video chat",
+            "কল আসছে", "ভিডিও কল", "অডিও কল"
+        )
+
+        /**
+         * Returns the most recent VoIP incoming call notification.
+         * Called by CallMonitorService to get the caller name for
+         * Facebook/WhatsApp/IMO/Telegram calls that don't go through
+         * the phone network (so have no phone number in CallLog).
+         */
+        fun getLastCallNotification(): StatusBarNotification? {
+            val sbn = lastCallNotification ?: return null
+            // Only return if it's recent (within last 10 seconds)
+            val age = System.currentTimeMillis() - sbn.postTime
+            return if (age < 10_000L) sbn else null
+        }
+
         fun isRunning() = isActive
     }
 
@@ -53,6 +85,18 @@ class NotificationReaderService : NotificationListenerService() {
 
         // Skip system notifications
         if (pkg == "android" || pkg == "com.android.systemui") return
+
+        // Track VoIP call notifications for caller name resolution
+        if (VOIP_PACKAGES.contains(pkg)) {
+            val extras = sbn.notification.extras
+            val title = extras.getCharSequence(android.app.Notification.EXTRA_TITLE)?.toString() ?: ""
+            val text = extras.getCharSequence(android.app.Notification.EXTRA_TEXT)?.toString() ?: ""
+            val combined = "$title $text".lowercase()
+            if (CALL_NOTIFICATION_KEYWORDS.any { combined.contains(it) }) {
+                Log.d(TAG, "VoIP call notification detected from $pkg: title='$title' text='$text'")
+                lastCallNotification = sbn
+            }
+        }
 
         lastNotifPackage = pkg
         lastNotifTime = now
