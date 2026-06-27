@@ -38,18 +38,18 @@ jobs:
 
     - name: Build Debug APK
       run: ./gradlew assembleDebug --no-daemon --stacktrace
-      timeout-minutes: 15
+      timeout-minutes: 20
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
-        name: myra-debug-apk
+        name: maya-debug-apk
         path: app/build/outputs/apk/debug/app-debug.apk
 
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
 
@@ -57,7 +57,7 @@ jobs:
     - name: Download APK
       uses: actions/download-artifact@v4
       with:
-        name: myra-debug-apk
+        name: maya-debug-apk
         path: apk
 
     - name: Create GitHub Release
@@ -70,13 +70,21 @@ jobs:
           ## 📱 MAYA AI Voice Assistant
 
           ### ✅ Features
-          - Lightweight Shimeji-style 2D character (Canvas-based, no GPU overhead)
-          - Voice Identification (3-slot enrollment)
-          - Screen Reading, Battery Check, Settings Control
-          - Autonomous character movement (walk, fall, climb, sleep)
-          - Drag, pinch-zoom, TTS sync
+          - Free Wake Word Detection (SpeechRecognizer-based, no paid SDK)
+          - Voice Authentication (3-slot enrollment)
+          - Screen Reading & OCR (ML Kit Text Recognition)
+          - Face Recognition (ML Kit Face Detection)
+          - Accessibility Automation (Smart click, typing, UI tree)
+          - App Lock & Pattern/Biometric Security
+          - Call Assistant & Notification Reader
+          - Gemini Live AI integration
+          - Overlay Orb (Jarvis-style UI)
+          - Multi-language support (EN, BN, HI, CRS)
 
           ### 🔧 Build Info
+          - Package: `com.maya.assistant`
+          - Version: 8.0.0 (versionCode 99)
+          - Min SDK: 24 | Target SDK: 35
           - Run: ${{ github.run_number }}
           - Commit: ${{ github.sha }}
       env:
