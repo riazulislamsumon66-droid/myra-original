@@ -339,42 +339,84 @@ object DynamicDecisionEngine {
             }
 
             CommandType.SETTINGS_WIFI_ON -> {
-                try {
-                    val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                    "WiFi Settings খুলে দিলাম — চালু করো"
-                } catch (e: Exception) { "WiFi Settings খুলতে সমস্যা" }
+                val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                if (wifiManager.isWifiEnabled) {
+                    "WiFi already চালু আছে"
+                } else if (com.maya.assistant.automation.QuickSettingsController.toggleWifi()) {
+                    "WiFi চালু করে দিলাম"
+                } else {
+                    try {
+                        context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        "নিজে থেকে WiFi চালু করতে পারলাম না, Settings খুলে দিলাম — চালু করো"
+                    } catch (e: Exception) { "WiFi চালু করতে সমস্যা" }
+                }
             }
 
             CommandType.SETTINGS_WIFI_OFF -> {
-                try {
-                    val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                    "WiFi Settings খুলে দিলাম — বন্ধ করো"
-                } catch (e: Exception) { "WiFi Settings খুলতে সমস্যা" }
+                val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                if (!wifiManager.isWifiEnabled) {
+                    "WiFi already বন্ধ আছে"
+                } else if (com.maya.assistant.automation.QuickSettingsController.toggleWifi()) {
+                    "WiFi বন্ধ করে দিলাম"
+                } else {
+                    try {
+                        context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        "নিজে থেকে WiFi বন্ধ করতে পারলাম না, Settings খুলে দিলাম — বন্ধ করো"
+                    } catch (e: Exception) { "WiFi বন্ধ করতে সমস্যা" }
+                }
             }
 
             CommandType.SETTINGS_BLUETOOTH_ON -> {
-                try {
-                    val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                    "Bluetooth Settings খুলে দিলাম — চালু করো"
-                } catch (e: Exception) { "Bluetooth Settings খুলতে সমস্যা" }
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
+                    androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    "Bluetooth নিয়ন্ত্রণ করতে permission লাগবে, Settings থেকে allow করো"
+                } else {
+                val btAdapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter()
+                if (btAdapter?.isEnabled == true) {
+                    "Bluetooth already চালু আছে"
+                } else if (com.maya.assistant.automation.QuickSettingsController.toggleBluetooth()) {
+                    "Bluetooth চালু করে দিলাম"
+                } else {
+                    try {
+                        context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        "নিজে থেকে Bluetooth চালু করতে পারলাম না, Settings খুলে দিলাম — চালু করো"
+                    } catch (e: Exception) { "Bluetooth চালু করতে সমস্যা" }
+                }
+                }
             }
 
             CommandType.SETTINGS_BLUETOOTH_OFF -> {
-                try {
-                    val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                    "Bluetooth Settings খুলে দিলাম — বন্ধ করো"
-                } catch (e: Exception) { "Bluetooth Settings খুলতে সমস্যা" }
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
+                    androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    "Bluetooth নিয়ন্ত্রণ করতে permission লাগবে, Settings থেকে allow করো"
+                } else {
+                val btAdapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter()
+                if (btAdapter?.isEnabled != true) {
+                    "Bluetooth already বন্ধ আছে"
+                } else if (com.maya.assistant.automation.QuickSettingsController.toggleBluetooth()) {
+                    "Bluetooth বন্ধ করে দিলাম"
+                } else {
+                    try {
+                        context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        "নিজে থেকে Bluetooth বন্ধ করতে পারলাম না, Settings খুলে দিলাম — বন্ধ করো"
+                    } catch (e: Exception) { "Bluetooth বন্ধ করতে সমস্যা" }
+                }
+                }
             }
 
             CommandType.SETTINGS_BRIGHTNESS -> {
+                if (!android.provider.Settings.System.canWrite(context)) {
+                    try {
+                        context.startActivity(
+                            Intent(android.provider.Settings.ACTION_MANAGE_WRITE_SETTINGS,
+                                android.net.Uri.parse("package:${context.packageName}"))
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        )
+                    } catch (e: Exception) { /* message below still informs the user */ }
+                    return "ব্রাইটনেস বদলাতে একটা permission লাগবে — যেই স্ক্রিন খুললাম, সেখানে MAYA-কে allow করো"
+                }
                 try {
                     val level = command.args["level"] ?: "50"
                     if (level == "up") {

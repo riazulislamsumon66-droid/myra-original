@@ -27,6 +27,18 @@ object PermissionUtils {
         Manifest.permission.POST_NOTIFICATIONS,
         Manifest.permission.READ_CALENDAR,
         Manifest.permission.WRITE_CALENDAR
+    ) + (
+        // BLUETOOTH_CONNECT only exists on API 31+ (Android 12). Requesting
+        // it on older versions would crash, so it's added conditionally.
+        // Needed for BluetoothAdapter.isEnabled() — used by the
+        // state-aware SETTINGS_BLUETOOTH_ON/OFF voice commands so they only
+        // tap the Quick Settings tile when it would actually move toward
+        // the requested state.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            arrayOf(Manifest.permission.BLUETOOTH_CONNECT)
+        } else {
+            emptyArray()
+        }
     )
 
     fun hasPermission(context: Context, permission: String): Boolean =

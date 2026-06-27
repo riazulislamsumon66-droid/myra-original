@@ -14,6 +14,19 @@ android {
         versionCode 99
         versionName "8.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // Reads PICOVOICE_ACCESS_KEY from gradle.properties (or an env var
+        // exported as ORG_GRADLE_PROJECT_PICOVOICE_ACCESS_KEY in CI), so the
+        // wake-word AccessKey never needs to be committed to source code.
+        // Falls back to an empty string if not set; PorcupineWakeWordDetector
+        // detects the empty key and falls back to the energy-based detector
+        // instead of crashing.
+        buildConfigField "String", "PICOVOICE_ACCESS_KEY", "\"${project.findProperty('PICOVOICE_ACCESS_KEY') ?: ''}\""
+    }
+
+    buildFeatures {
+        viewBinding true
+        buildConfig true
     }
 
     buildTypes {
@@ -34,10 +47,6 @@ android {
 
     kotlinOptions {
         jvmTarget = '17'
-    }
-
-    buildFeatures {
-        viewBinding true
     }
 
     packagingOptions {
@@ -91,6 +100,11 @@ dependencies {
 
     // ML Kit OCR for screen vision
     implementation 'com.google.mlkit:text-recognition:16.0.1'
+
+    // Picovoice Porcupine — accurate on-device wake-word detection
+    // (replaces the energy-threshold guesser, which could false-trigger
+    // on any loud sound and missed real "Hey MAYA" utterances)
+    implementation 'ai.picovoice:porcupine-android:3.0.2'
 
     // Testing
     testImplementation 'junit:junit:4.13.2'

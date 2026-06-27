@@ -22,7 +22,7 @@ import com.maya.assistant.security.SecurePrefs
 import com.maya.assistant.voice.VoiceActivityDetector
 import com.maya.assistant.voice.VoiceAuthManager
 import com.maya.assistant.voice.VoiceStateManager
-import com.maya.assistant.voice.WakeWordDetector
+import com.maya.assistant.voice.PorcupineWakeWordDetector
 import com.maya.assistant.websocket.GeminiWebSocketClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +39,7 @@ class ForegroundVoiceService : Service() {
     private lateinit var vad: VoiceActivityDetector
     private lateinit var audioFocus: AudioFocusManager
     private lateinit var voiceAuth: VoiceAuthManager
-    private var wakeWordDetector: WakeWordDetector? = null
+    private var wakeWordDetector: PorcupineWakeWordDetector? = null
     private var geminiClient: GeminiWebSocketClient? = null
 
     // Mode: WAKE_WORD (listening for "Hey MAYA") or ACTIVE (recording user command)
@@ -120,7 +120,7 @@ class ForegroundVoiceService : Service() {
     }
 
     private fun startWakeWordDetection() {
-        wakeWordDetector = WakeWordDetector(this) {
+        wakeWordDetector = PorcupineWakeWordDetector(this) {
             // Wake word detected — switch to active mode and authenticate
             onWakeWordDetected()
         }
@@ -172,6 +172,7 @@ class ForegroundVoiceService : Service() {
     }
 
     private fun connectGemini(apiKey: String) {
+        geminiClient?.disconnect()
         geminiClient = GeminiWebSocketClient(
             apiKey = apiKey,
             systemPrompt = buildSystemPrompt(),
@@ -256,10 +257,29 @@ class ForegroundVoiceService : Service() {
     fun toggleRecording(): Boolean {
         Logger.d(TAG, "toggleRecording called — currentMode=$currentMode, isActive=${if (::audioRecorder.isInitialized) audioRecorder.isActive() else "N/A"}")
         return if (audioRecorder.isActive()) {
-            Logger.d(TAG, "toggleRecording: STOP recording → send turnComplete → IDLE")
+            Logger.d(TAG, "toggleRecording: STOP recording → send turnComplete → THINKING")
             audioRecorder.stop()
             geminiClient?.sendTurnComplete()
-            VoiceStateManager.setIdle()
+            // NOTE: previously this called setIdle(), which immediately
+            // showed "SYSTEM READY" even though Gemini was still
+            // processing the turn in the background — making it look like
+            // nothing was happening until a response eventually arrived
+            // (or never did, if turnComplete had been silently dropped —
+            // see the GeminiWebSocketClient fix). setThinking() reflects
+            // the actual state; onTextReceived/onAudioReceived/onTurnComplete
+            // will move it to SPEAKING or back to IDLE once a real response
+            // (or its absence) is known.
+            VoiceStateManager.setThinking()
+
+            // Safety-net: if nothing comes back (network glitch, API
+            // hiccup, etc.) don't leave the UI stuck on "THINKING" forever.
+            scope.launch {
+                kotlinx.coroutines.delay(15000)
+                if (VoiceStateManager.state.value == Constants.STATE_THINKING) {
+                    Logger.w(TAG, "No response within 15s of turnComplete — resetting to idle")
+                    VoiceStateManager.setError("কোনো response আসলো না, আবার চেষ্টা করো")
+                }
+            }
             false
         } else {
             // Ensure WebSocket is connected

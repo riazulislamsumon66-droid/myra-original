@@ -163,11 +163,27 @@ class GeminiWebSocketClient(
         }
     }
 
+    // Tracks whether a turn-complete was requested while setup wasn't ready
+    // yet, so it can be sent once buffered audio is flushed instead of
+    // being silently lost.
+    @Volatile private var pendingTurnComplete = false
+
     fun sendTurnComplete() {
         if (!isSetupComplete) {
-            Log.w(TAG, "sendTurnComplete: DROPPED — setup not complete")
+            // Previously this just dropped the signal entirely. If VAD
+            // detected speech-end (or the mic button was released) before
+            // the WS handshake finished, the buffered audio would still
+            // reach Gemini once setup completed, but Gemini would never be
+            // told the turn was over — so it would never generate a
+            // response. Queue it instead so it fires right after flush.
+            Log.w(TAG, "sendTurnComplete: setup not complete yet — queuing for after flush")
+            pendingTurnComplete = true
             return
         }
+        sendTurnCompleteInternal()
+    }
+
+    private fun sendTurnCompleteInternal() {
         try {
             val msg = JSONObject().apply {
                 put("clientContent", JSONObject().apply {
@@ -182,11 +198,18 @@ class GeminiWebSocketClient(
         }
     }
 
+    @Volatile private var pendingTextMessage: String? = null
+
     fun sendTextMessage(text: String) {
         if (!isSetupComplete) {
-            Log.w(TAG, "sendTextMessage: DROPPED — setup not complete")
+            Log.w(TAG, "sendTextMessage: setup not complete yet — queuing")
+            pendingTextMessage = text
             return
         }
+        sendTextMessageInternal(text)
+    }
+
+    private fun sendTextMessageInternal(text: String) {
         try {
             val msg = JSONObject().apply {
                 put("clientContent", JSONObject().apply {
@@ -215,6 +238,16 @@ class GeminiWebSocketClient(
                 Log.d(TAG, "Setup COMPLETE ✅ — Gemini ready for audio (${audioBuffer.size} buffered chunks to flush)")
                 // Flush any audio that was buffered before connection
                 flushAudioBuffer()
+                if (pendingTurnComplete) {
+                    Log.d(TAG, "Sending queued turn-complete after flush")
+                    pendingTurnComplete = false
+                    sendTurnCompleteInternal()
+                }
+                pendingTextMessage?.let {
+                    Log.d(TAG, "Sending queued text message after flush")
+                    pendingTextMessage = null
+                    sendTextMessageInternal(it)
+                }
                 onConnected()
                 return
             }
