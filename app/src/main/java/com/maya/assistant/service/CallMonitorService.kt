@@ -69,10 +69,23 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
                 val callback = object : android.telephony.TelephonyCallback(),
                     android.telephony.TelephonyCallback.CallStateListener {
                     override fun onCallStateChanged(state: Int) {
-                        val number = if (state == TelephonyManager.CALL_STATE_RINGING) {
-                            getLastIncomingNumber()
-                        } else null
-                        handleCallState(state, number)
+                        if (state == TelephonyManager.CALL_STATE_RINGING) {
+                            // Android 12+: EXTRA_INCOMING_NUMBER blocked by privacy policy.
+                            // Strategy: wait 600ms for CallLog to update, then read number.
+                            // For VoIP calls (FB/WA/IMO), CallLog won't have it — fall back
+                            // to NotificationReaderService which captures the caller name
+                            // from the incoming call notification.
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                val number = getLastIncomingNumber()
+                                val callerInfo = if (number.isNullOrEmpty()) {
+                                    // VoIP call (FB/WA/IMO) — try notification-based name
+                                    getCallerFromNotification()
+                                } else number
+                                handleCallState(state, callerInfo)
+                            }, 600)
+                        } else {
+                            handleCallState(state, null)
+                        }
                     }
                 }
                 telephonyCallback = callback
@@ -125,11 +138,10 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
     }
 
     private fun handleIncomingCall(number: String?) {
-        // If number from intent is empty, try CallLog
-        val finalNumber = if (number.isNullOrEmpty()) {
-            getLastIncomingNumber()
-        } else {
-            number
+        // number may be: a phone number, a display name (from notification), or null
+        val finalNumber = when {
+            !number.isNullOrEmpty() -> number
+            else -> getLastIncomingNumber() ?: getCallerFromNotification()
         }
 
         val callerName = resolveCallerName(finalNumber)
@@ -155,8 +167,19 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
         startActivity(intent)
     }
 
+    /**
+     * Resolves a caller name from either:
+     * - A phone number → looks up in Contacts
+     * - A display name string (from VoIP notification) → returns as-is
+     * - null/empty → returns "অজানা নম্বর"
+     */
     private fun resolveCallerName(number: String?): String {
         if (number.isNullOrEmpty()) return "অজানা নম্বর"
+
+        // If it looks like a display name (not a phone number), return directly
+        // Phone numbers: digits, +, -, spaces only
+        val isPhoneNumber = number.matches(Regex("[+\\d\\s\\-()]{5,20}"))
+        if (!isPhoneNumber) return number  // Already a name from notification
 
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -246,6 +269,49 @@ class CallMonitorService : Service(), TextToSpeech.OnInitListener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    /**
+     * Reads the caller name from the most recent active call notification.
+     * Works for Facebook, WhatsApp, IMO, Telegram calls — any VoIP app
+     * that posts a "Incoming call from X" style notification.
+     * Requires Notification Listener permission to be granted.
+     */
+    private fun getCallerFromNotification(): String? {
+        return try {
+            val sbn = com.maya.assistant.service.NotificationReaderService.getLastCallNotification()
+            if (sbn != null) {
+                val extras = sbn.notification.extras
+                // Try title first (usually "Incoming call" or caller name)
+                val title = extras.getCharSequence(android.app.Notification.EXTRA_TITLE)?.toString()
+                val text = extras.getCharSequence(android.app.Notification.EXTRA_TEXT)?.toString()
+                val bigText = extras.getCharSequence(android.app.Notification.EXTRA_BIG_TEXT)?.toString()
+
+                // Find the actual caller name — remove generic phrases
+                val candidates = listOf(title, text, bigText).filterNotNull()
+                val callKeywords = listOf(
+                    "incoming call", "video call", "voice call", "audio call",
+                    "calling", "is calling", "wants to video chat", "wants to talk",
+                    "incoming video call", "incoming voice call"
+                )
+                for (candidate in candidates) {
+                    var clean = candidate
+                    for (kw in callKeywords) {
+                        clean = clean.replace(kw, "", ignoreCase = true).trim()
+                    }
+                    // Remove trailing punctuation
+                    clean = clean.trimEnd('.', ',', ':', '-').trim()
+                    if (clean.isNotEmpty() && clean.length < 50) {
+                        Log.d(TAG, "Caller name from notification: $clean (from: $candidate)")
+                        return clean
+                    }
+                }
+                null
+            } else null
+        } catch (e: Exception) {
+            Log.e(TAG, "getCallerFromNotification error: ${e.message}")
+            null
+        }
+    }
 
     private fun getLastIncomingNumber(): String? {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG)
