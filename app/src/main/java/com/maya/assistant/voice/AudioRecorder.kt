@@ -22,12 +22,24 @@ class AudioRecorder(
     private var recordThread: Thread? = null
     @Volatile private var isRecording = false
 
+    @Synchronized
     fun start() {
-        if (isRecording) return
+        if (isRecording) {
+            Logger.d(TAG, "start() called but already recording — ignored (prevents mic flicker)")
+            return
+        }
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED) {
             Logger.e(TAG, "RECORD_AUDIO permission not granted")
             return
+        }
+
+        // Release any stale AudioRecord before creating a new one.
+        // This prevents "mic already in use" errors after an unclean stop.
+        audioRecord?.let {
+            try { it.stop() } catch (_: Exception) {}
+            try { it.release() } catch (_: Exception) {}
+            audioRecord = null
         }
 
         val bufferSize = AudioUtils.getMinBufferSize(SAMPLE_RATE)
@@ -40,6 +52,13 @@ class AudioRecorder(
                 AudioFormat.ENCODING_PCM_16BIT,
                 bufferSize
             )
+
+            if (audioRecord!!.state != AudioRecord.STATE_INITIALIZED) {
+                Logger.e(TAG, "AudioRecord failed to initialize — mic may be in use by another app")
+                audioRecord?.release()
+                audioRecord = null
+                return
+            }
 
             audioRecord!!.startRecording()
             isRecording = true
@@ -64,7 +83,12 @@ class AudioRecorder(
         }
     }
 
+    @Synchronized
     fun stop() {
+        if (!isRecording) {
+            Logger.d(TAG, "stop() called but not recording — ignored")
+            return
+        }
         isRecording = false
         recordThread?.interrupt()
         recordThread = null
@@ -74,9 +98,9 @@ class AudioRecorder(
             audioRecord?.release()
             audioRecord = null
         } catch (e: Exception) {
-            Logger.e(TAG, "Stop error: ${e.message}")
+            Logger.e(TAG, "Stop error: \${e.message}")
         }
-        Logger.d(TAG, "Recording stopped")
+        Logger.d(TAG, "Recording stopped cleanly")
     }
 
     fun isActive() = isRecording

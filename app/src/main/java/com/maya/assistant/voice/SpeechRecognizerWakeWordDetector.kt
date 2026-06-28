@@ -61,7 +61,7 @@ class SpeechRecognizerWakeWordDetector(
         "hey maya", "hi maya", "hey mayah", "hey maaya", "ok maya", "okay maya", "maya"
     )
 
-    private val RESTART_DELAY_MS = 350L
+    private val RESTART_DELAY_MS = 800L  // Longer delay = less mic connect/disconnect cycling
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
@@ -174,7 +174,13 @@ class SpeechRecognizerWakeWordDetector(
             // wake-word listener should never just give up.
             when (error) {
                 SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
-                    // expected — silence
+                    // Expected during silence — restart with longer delay to reduce
+                    // mic connect/disconnect cycling when no one is speaking.
+                    restartRunnable?.let { mainHandler.removeCallbacks(it) }
+                    val runnable = Runnable { startListeningInternal() }
+                    restartRunnable = runnable
+                    mainHandler.postDelayed(runnable, 1200L)
+                    return
                 }
                 else -> {
                     Log.w(TAG, "SpeechRecognizer error: $error")

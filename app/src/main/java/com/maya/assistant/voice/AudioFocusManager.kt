@@ -15,9 +15,21 @@ class AudioFocusManager(private val context: Context) {
     fun requestFocus(onGained: () -> Unit, onLost: () -> Unit) {
         val listener = AudioManager.OnAudioFocusChangeListener { change ->
             when (change) {
-                AudioManager.AUDIOFOCUS_GAIN -> onGained()
-                AudioManager.AUDIOFOCUS_LOSS,
-                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> onLost()
+                AudioManager.AUDIOFOCUS_GAIN -> {
+                    // Re-gained focus (e.g. notification sound finished) — mic restarts
+                    onGained()
+                }
+                AudioManager.AUDIOFOCUS_LOSS -> {
+                    // Permanent loss (e.g. phone call) — stop mic
+                    onLost()
+                }
+                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                    // Transient loss (notification, music ducking) — do NOT stop mic.
+                    // AudioRecorder has its own silence detection (VAD); a short
+                    // notification beep will just be ignored as non-speech audio.
+                    Logger.d("AUDIO_FOCUS", "Transient focus loss — mic stays running (VAD will filter noise)")
+                }
             }
         }
 
