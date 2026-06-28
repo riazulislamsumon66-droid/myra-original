@@ -1,6 +1,7 @@
 package com.maya.assistant.voice
 
 import com.maya.assistant.websocket.GeminiWebSocketClient
+import com.maya.assistant.voice.VoiceStateManager
 
 /**
  * Bridges AudioRecorder PCM chunks → GeminiWebSocketClient.
