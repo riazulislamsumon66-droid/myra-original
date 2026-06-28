@@ -61,6 +61,8 @@ class AudioRecorder(
             }
 
             audioRecord!!.startRecording()
+            // Attach AEC, Noise Suppressor, AGC for cleaner voice input
+            EchoCancellationManager.attach(audioRecord!!.audioSessionId)
             isRecording = true
 
             recordThread = Thread {
@@ -94,11 +96,12 @@ class AudioRecorder(
         recordThread = null
 
         try {
+            EchoCancellationManager.release()
             audioRecord?.stop()
             audioRecord?.release()
             audioRecord = null
         } catch (e: Exception) {
-            Logger.e(TAG, "Stop error: \${e.message}")
+            Logger.e(TAG, "Stop error: ${e.message}")
         }
         Logger.d(TAG, "Recording stopped cleanly")
     }
