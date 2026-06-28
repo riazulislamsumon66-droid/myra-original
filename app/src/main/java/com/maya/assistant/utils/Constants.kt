@@ -1,8 +1,13 @@
-package com.myra.assistant.utils
+package com.maya.assistant.utils
 
 object Constants {
-    // Gemini
+    // Gemini — model must include date suffix for Live API
     const val GEMINI_MODEL = "models/gemini-2.5-flash-native-audio-preview-12-2025"
+    val GEMINI_FALLBACK_MODELS = listOf(
+        "models/gemini-2.0-flash-live-001"
+        // Note: gemini-2.5-flash and gemini-2.0-flash are REST models only —
+        // they do NOT support the BidiGenerateContent WebSocket Live API.
+    )
     const val GEMINI_WS_BASE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
     const val GEMINI_VOICE = "Aoede"
 
