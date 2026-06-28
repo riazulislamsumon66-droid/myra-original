@@ -1,14 +1,13 @@
-package com.maya.assistant.websocket
+package com.myra.assistant.websocket
 
 import android.util.Base64
 import android.util.Log
-import com.maya.assistant.utils.Constants
+import com.myra.assistant.utils.Constants
 import okhttp3.*
 import okio.ByteString
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.ConcurrentLinkedQueue
 
 class GeminiWebSocketClient(
     private val apiKey: String,
@@ -23,16 +22,9 @@ class GeminiWebSocketClient(
     private var webSocket: WebSocket? = null
     private var isSetupComplete = false
 
-    companion object {
-        // Max chunks to buffer (~10 seconds at 16kHz) before the WS setup
-        // handshake completes.
-        private const val MAX_BUFFER_SIZE = 16
-    }
-
-    // Audio buffer — stores chunks before WS connects, flushes after setup
-    private val audioBuffer = ConcurrentLinkedQueue<ByteArray>()
-    private var currentModelIndex = 0
-    private val modelQueue = listOf(Constants.GEMINI_MODEL) + Constants.GEMINI_FALLBACK_MODELS
+    // Buffer audio chunks that arrive before setup completes
+    private val audioBuffer = ArrayDeque<ByteArray>()
+    private val MAX_BUFFER = 20
 
     private val client = OkHttpClient.Builder()
         .readTimeout(0, TimeUnit.MILLISECONDS)
@@ -43,19 +35,7 @@ class GeminiWebSocketClient(
     private val url = "${Constants.GEMINI_WS_BASE}?key=$apiKey"
 
     fun connect() {
-        currentModelIndex = 0
-        connectInternal()
-    }
-
-    private fun connectInternal() {
-        if (currentModelIndex >= modelQueue.size) {
-            Log.e(TAG, "All ${modelQueue.size} models exhausted — giving up")
-            onError("সব Gemini মডেল connect করতে ব্যর্থ হলো")
-            return
-        }
         isSetupComplete = false
-        val model = modelQueue[currentModelIndex]
-        Log.d(TAG, "Connecting (model ${currentModelIndex + 1}/${modelQueue.size}: $model) to: ${url.take(80)}...")
         val request = Request.Builder()
             .url(url)
             .addHeader("Origin", "https://generativelanguage.googleapis.com")
@@ -63,8 +43,8 @@ class GeminiWebSocketClient(
 
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(ws: WebSocket, response: Response) {
-                Log.d(TAG, "WebSocket OPEN ✅ — sending setup message")
-                sendSetup(ws, model)
+                Log.d(TAG, "Connected ✅")
+                sendSetup(ws)
             }
 
             override fun onMessage(ws: WebSocket, text: String) {
@@ -77,14 +57,8 @@ class GeminiWebSocketClient(
 
             override fun onFailure(ws: WebSocket, t: Throwable, response: Response?) {
                 isSetupComplete = false
-                Log.e(TAG, "WS Failure (model #$currentModelIndex: $model): ${t.message}")
-                currentModelIndex++
-                if (currentModelIndex < modelQueue.size) {
-                    Log.w(TAG, "Retrying with fallback model: ${modelQueue[currentModelIndex]}")
-                    connectInternal()
-                } else {
-                    onError("Connection failed: ${t.message}")
-                }
+                Log.e(TAG, "WS Failure: ${t.message}")
+                onError("Connection failed: ${t.message}")
             }
 
             override fun onClosed(ws: WebSocket, code: Int, reason: String) {
@@ -94,10 +68,10 @@ class GeminiWebSocketClient(
         })
     }
 
-    private fun sendSetup(ws: WebSocket, model: String) {
+    private fun sendSetup(ws: WebSocket) {
         val setup = JSONObject().apply {
             put("setup", JSONObject().apply {
-                put("model", model)
+                put("model", Constants.GEMINI_MODEL)
                 put("generationConfig", JSONObject().apply {
                     put("responseModalities", JSONArray().put("AUDIO"))
                     put("speechConfig", JSONObject().apply {
@@ -119,33 +93,14 @@ class GeminiWebSocketClient(
 
     fun sendAudioChunk(pcm: ByteArray) {
         if (!isSetupComplete) {
-            // Buffer the audio for later delivery
-            if (audioBuffer.size < MAX_BUFFER_SIZE) {
-                audioBuffer.offer(pcm)
-                Log.d(TAG, "sendAudioChunk: BUFFERED ${pcm.size} bytes (buffer size: ${audioBuffer.size}/$MAX_BUFFER_SIZE)")
-            } else {
-                Log.w(TAG, "sendAudioChunk: BUFFER FULL — dropping oldest chunk")
-                audioBuffer.poll()
-                audioBuffer.offer(pcm)
-            }
+            // Buffer chunks until setup completes
+            if (audioBuffer.size < MAX_BUFFER) audioBuffer.addLast(pcm)
             return
         }
-        // If we have buffered audio, flush it first
-        flushAudioBuffer()
-        // Send current chunk
-        sendAudioChunkInternal(pcm)
+        sendAudioInternal(pcm)
     }
 
-    private fun flushAudioBuffer() {
-        if (audioBuffer.isEmpty()) return
-        Log.d(TAG, "Flushing audio buffer: ${audioBuffer.size} chunks")
-        while (audioBuffer.isNotEmpty()) {
-            val buffered = audioBuffer.poll() ?: break
-            sendAudioChunkInternal(buffered)
-        }
-    }
-
-    private fun sendAudioChunkInternal(pcm: ByteArray) {
+    private fun sendAudioInternal(pcm: ByteArray) {
         try {
             val b64 = Base64.encodeToString(pcm, Base64.NO_WRAP)
             val msg = JSONObject().apply {
@@ -157,33 +112,20 @@ class GeminiWebSocketClient(
                 })
             }
             webSocket?.send(msg.toString())
-            Log.v(TAG, "sendAudioChunk: sent ${pcm.size} bytes")
         } catch (e: Exception) {
             Log.e(TAG, "Audio send error: ${e.message}")
         }
     }
 
-    // Tracks whether a turn-complete was requested while setup wasn't ready
-    // yet, so it can be sent once buffered audio is flushed instead of
-    // being silently lost.
-    @Volatile private var pendingTurnComplete = false
-
-    fun sendTurnComplete() {
-        if (!isSetupComplete) {
-            // Previously this just dropped the signal entirely. If VAD
-            // detected speech-end (or the mic button was released) before
-            // the WS handshake finished, the buffered audio would still
-            // reach Gemini once setup completed, but Gemini would never be
-            // told the turn was over — so it would never generate a
-            // response. Queue it instead so it fires right after flush.
-            Log.w(TAG, "sendTurnComplete: setup not complete yet — queuing for after flush")
-            pendingTurnComplete = true
-            return
+    // Flush buffered audio after setup completes
+    private fun flushBuffer() {
+        while (audioBuffer.isNotEmpty()) {
+            sendAudioInternal(audioBuffer.removeFirst())
         }
-        sendTurnCompleteInternal()
     }
 
-    private fun sendTurnCompleteInternal() {
+    fun sendTurnComplete() {
+        if (!isSetupComplete) return
         try {
             val msg = JSONObject().apply {
                 put("clientContent", JSONObject().apply {
@@ -198,18 +140,8 @@ class GeminiWebSocketClient(
         }
     }
 
-    @Volatile private var pendingTextMessage: String? = null
-
     fun sendTextMessage(text: String) {
-        if (!isSetupComplete) {
-            Log.w(TAG, "sendTextMessage: setup not complete yet — queuing")
-            pendingTextMessage = text
-            return
-        }
-        sendTextMessageInternal(text)
-    }
-
-    private fun sendTextMessageInternal(text: String) {
+        if (!isSetupComplete) return
         try {
             val msg = JSONObject().apply {
                 put("clientContent", JSONObject().apply {
@@ -230,33 +162,16 @@ class GeminiWebSocketClient(
         try {
             val obj = JSONObject(json)
 
-            // Setup complete — check both formats Gemini may send
-            val setupOk = obj.optBoolean("setupComplete", false) ||
-                obj.optJSONObject("setupComplete") != null
-            if (setupOk) {
+            // Setup complete
+            if (obj.has("setupComplete") || obj.optJSONObject("setupComplete") != null) {
                 isSetupComplete = true
-                Log.d(TAG, "Setup COMPLETE ✅ — Gemini ready for audio (${audioBuffer.size} buffered chunks to flush)")
-                // Flush any audio that was buffered before connection
-                flushAudioBuffer()
-                if (pendingTurnComplete) {
-                    Log.d(TAG, "Sending queued turn-complete after flush")
-                    pendingTurnComplete = false
-                    sendTurnCompleteInternal()
-                }
-                pendingTextMessage?.let {
-                    Log.d(TAG, "Sending queued text message after flush")
-                    pendingTextMessage = null
-                    sendTextMessageInternal(it)
-                }
+                Log.d(TAG, "Gemini Ready ✅")
+                flushBuffer()  // send any audio buffered before setup finished
                 onConnected()
                 return
             }
 
-            val serverContent = obj.optJSONObject("serverContent")
-            if (serverContent == null) {
-                Log.w(TAG, "Response without serverContent: ${json.take(100)}")
-                return
-            }
+            val serverContent = obj.optJSONObject("serverContent") ?: return
 
             val modelTurn = serverContent.optJSONObject("modelTurn")
             if (modelTurn != null) {
