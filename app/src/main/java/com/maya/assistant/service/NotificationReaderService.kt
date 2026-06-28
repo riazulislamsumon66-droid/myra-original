@@ -8,6 +8,7 @@ import android.os.Build
 import android.util.Log
 import com.maya.assistant.ai.AIResponseManager
 import com.maya.assistant.ai.DynamicDecisionEngine
+import com.maya.assistant.services.ForegroundVoiceService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -135,7 +136,7 @@ class NotificationReaderService : NotificationListenerService() {
             // which MainActivity displays as a chat bubble but never speaks.
             // Routing through sendTextToGemini() uses the same TTS path as
             // every other spoken reply, so "read aloud" actually reads aloud.
-            val voiceService = com.maya.assistant.services.ForegroundVoiceService.instance
+            val voiceService = ForegroundVoiceService.instance
             if (voiceService != null) {
                 voiceService.sendTextToGemini("এই নোটিফিকেশনটা সংক্ষেপে আমাকে পড়ে শোনাও: $responseText")
             } else {
