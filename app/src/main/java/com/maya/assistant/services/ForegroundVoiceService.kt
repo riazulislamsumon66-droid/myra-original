@@ -156,7 +156,13 @@ class ForegroundVoiceService : Service() {
             vad.reset()
             audioFocus.requestFocus(
                 onGained = { if (!audioRecorder.isActive()) audioRecorder.start() },
-                onLost = { audioRecorder.stop() }
+                onLost = {
+                    // Only stop mic on permanent audio focus loss (e.g. phone call).
+                    // Transient losses (notification sounds, music ducking) are
+                    // handled inside AudioFocusManager — mic keeps running.
+                    Logger.w(TAG, "Audio focus lost permanently — stopping mic")
+                    audioRecorder.stop()
+                }
             )
             VoiceStateManager.setListening()
             // Siri-style: mic is open, VAD waits for speech, then sends to Gemini.
