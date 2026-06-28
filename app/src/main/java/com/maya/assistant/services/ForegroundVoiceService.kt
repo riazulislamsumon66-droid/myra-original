@@ -24,6 +24,7 @@ import com.maya.assistant.voice.VoiceAuthManager
 import com.maya.assistant.voice.VoiceStateManager
 import com.maya.assistant.voice.SpeechRecognizerWakeWordDetector
 import com.maya.assistant.websocket.GeminiWebSocketClient
+import com.maya.assistant.websocket.ConnectionManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -40,7 +41,7 @@ class ForegroundVoiceService : Service() {
     private lateinit var audioFocus: AudioFocusManager
     private lateinit var voiceAuth: VoiceAuthManager
     private var wakeWordDetector: SpeechRecognizerWakeWordDetector? = null
-    private var geminiClient: GeminiWebSocketClient? = null
+    private var connectionManager: ConnectionManager? = null
 
     // Mode: WAKE_WORD (listening for "Hey MAYA") or ACTIVE (recording user command)
     private var currentMode = Mode.WAKE_WORD
@@ -94,14 +95,14 @@ class ForegroundVoiceService : Service() {
                 Logger.d(TAG, "VAD: Speech ENDED — sending turnComplete")
                 VoiceStateManager.setThinking()
                 audioRecorder.stop()
-                geminiClient?.sendTurnComplete()
+                connectionManager?.sendTurnComplete()
             }
         )
 
         audioRecorder = AudioRecorder(this) { chunk ->
             if (!VoiceStateManager.isAiSpeaking()) {
                 vad.processChunk(chunk)
-                geminiClient?.sendAudioChunk(chunk)
+                connectionManager?.sendAudioChunk(chunk)
             }
         }
 
@@ -180,7 +181,7 @@ class ForegroundVoiceService : Service() {
      * times — connectGemini() itself disconnects any stale client first.
      */
     private fun ensureGeminiConnected() {
-        if (geminiClient != null && geminiClient!!.isConnected()) return
+        if (connectionManager?.isConnected() == true) return
         val apiKey = SecurePrefs.getApiKey(this).ifEmpty {
             prefs().getString(Constants.KEY_API_KEY, "") ?: ""
         }
@@ -198,7 +199,7 @@ class ForegroundVoiceService : Service() {
      */
     private fun returnToWakeWordMode() {
         currentMode = Mode.WAKE_WORD
-        geminiClient?.disconnect()
+        connectionManager?.disconnect()
         VoiceStateManager.setIdle()
         scope.launch {
             kotlinx.coroutines.delay(200)
@@ -207,8 +208,9 @@ class ForegroundVoiceService : Service() {
     }
 
     private fun connectGemini(apiKey: String) {
-        geminiClient?.disconnect()
-        geminiClient = GeminiWebSocketClient(
+        connectionManager?.disconnect()
+        // ConnectionManager handles auto-reconnect (up to 5 attempts, 3s delay)
+        connectionManager = ConnectionManager(
             apiKey = apiKey,
             systemPrompt = buildSystemPrompt(),
             onConnected = {
@@ -261,18 +263,17 @@ class ForegroundVoiceService : Service() {
                 VoiceStateManager.setError("Reconnecting...")
                 scope.launch {
                     kotlinx.coroutines.delay(3000)
-                    geminiClient?.connect()
+                    connectionManager?.connect()
                 }
             }
         )
-        geminiClient?.connect()
     }
 
     fun sendTextToGemini(text: String) {
         Logger.d(TAG, "sendTextToGemini: '$text'")
         ConversationMemory.addUser(text)
         VoiceStateManager.setThinking()
-        geminiClient?.sendTextMessage(text)
+        connectionManager?.sendTextMessage(text)
     }
 
     fun reconnectGemini() {
@@ -281,7 +282,7 @@ class ForegroundVoiceService : Service() {
             prefs().getString(Constants.KEY_API_KEY, "") ?: ""
         }
         if (apiKey.isNotEmpty()) {
-            geminiClient?.disconnect()
+            connectionManager?.disconnect()
             connectGemini(apiKey)
         } else {
             Logger.w(TAG, "reconnectGemini: API key empty, cannot reconnect")
@@ -296,7 +297,7 @@ class ForegroundVoiceService : Service() {
         return if (audioRecorder.isActive()) {
             Logger.d(TAG, "toggleRecording: STOP recording → send turnComplete → THINKING")
             audioRecorder.stop()
-            geminiClient?.sendTurnComplete()
+            connectionManager?.sendTurnComplete()
             // NOTE: previously this called setIdle(), which immediately
             // showed "SYSTEM READY" even though Gemini was still
             // processing the turn in the background — making it look like
@@ -395,7 +396,7 @@ STRICT RULES:
         Logger.w(TAG, "App swiped from recents — ending any active conversation, staying alive in background for 'Hey MAYA'")
         if (audioRecorder.isActive()) {
             audioRecorder.stop()
-            geminiClient?.sendTurnComplete()
+            connectionManager?.sendTurnComplete()
         }
         // Intentionally NOT stopping the wake-word detector or calling
         // stopForeground() here. The whole point of this service is to
@@ -416,7 +417,7 @@ STRICT RULES:
         audioRecorder.stop()
         audioPlayer.release()
         audioFocus.abandonFocus()
-        geminiClient?.disconnect()
+        connectionManager?.disconnect()
         job.cancel()
         super.onDestroy()
     }
